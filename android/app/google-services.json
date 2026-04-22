@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "1002532399609",
+    "project_id": "heroic-gamma-268212",
+    "storage_bucket": "heroic-gamma-268212.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1002532399609:android:89f6d34937f3f1de9df528",
+        "android_client_info": {
+          "package_name": "com.example.ezan_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1002532399609-6spr8ma3f3vak7r70ipi0faq3skpgsb8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ezan_app",
+            "certificate_hash": "5f354297900f3dbfcf4cb1929a31dcf4a68908da"
+          }
+        },
+        {
+          "client_id": "1002532399609-8pm1o1jo4o15bk1jk2s5ntusb19mupqa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQYfgmJaQARDif2L2q-NPi8O1HntjSkEc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1002532399609-8pm1o1jo4o15bk1jk2s5ntusb19mupqa.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1002532399609-ev7pm44g258c09ulv2nkakioe60iluf7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.ezanVaktiApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
