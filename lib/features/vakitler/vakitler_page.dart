@@ -4,13 +4,14 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'main.dart';
-import 'auth_service.dart';
-import 'kuran_page.dart';
-import 'pusula_page.dart';
-import 'imsakiye_page.dart';
-import 'settings_page.dart';
-import 'zikirmatik_page.dart'; // Zikirmatik sayfası eklendi
+import 'package:geolocator/geolocator.dart';
+import '../../main.dart';
+import '../auth/auth_service.dart';
+import '../kuran/kuran_page.dart';
+import '../pusula/pusula_page.dart';
+import '../imsakiye/imsakiye_page.dart';
+import '../settings/settings_page.dart';
+import '../zikirmatik/zikirmatik_page.dart'; // Zikirmatik sayfası eklendi
 
 class EzanVaktiPage extends StatefulWidget {
   const EzanVaktiPage({super.key});
@@ -30,17 +31,19 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
   String _lastCity = "";
   int _lastMethod = -1;
   String? _temporaryCity;
+  StreamSubscription<Position>? _positionSubscription;
+  Position? _lastPosition;
 
   late DateTime _currentTime;
   double _timeProgress = 0.0;
 
   List<Map<String, String>> vakitler = [
-    {"vakit": "İmsak", "saat": "05:00", "image": "imsak.jpg"},
-    {"vakit": "Güneş", "saat": "06:30", "image": "gunes.jpg"},
-    {"vakit": "Öğle", "saat": "13:00", "image": "ogle.jpg"},
-    {"vakit": "İkindi", "saat": "16:00", "image": "ikindi.jpg"},
-    {"vakit": "Akşam", "saat": "19:00", "image": "aksam.jpg"},
-    {"vakit": "Yatsı", "saat": "20:30", "image": "yatsi.jpg"},
+    {"vakit": "İmsak", "saat": "--:--", "image": "imsak.jpg"},
+    {"vakit": "Güneş", "saat": "--:--", "image": "gunes.jpg"},
+    {"vakit": "Öğle", "saat": "--:--", "image": "ogle.jpg"},
+    {"vakit": "İkindi", "saat": "--:--", "image": "ikindi.jpg"},
+    {"vakit": "Akşam", "saat": "--:--", "image": "aksam.jpg"},
+    {"vakit": "Yatsı", "saat": "--:--", "image": "yatsi.jpg"},
   ];
 
   @override
@@ -71,11 +74,12 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
 
   Future<void> _fetchData(String city, int method) async {
     if (!mounted) return;
-    if (vakitler[0]['saat'] == "05:00") setState(() => _isLoading = true);
+    if (vakitler[0]['saat'] == "--:--") setState(() => _isLoading = true);
 
     try {
+      final apiKey = context.read<AuthService>().apiKey;
       final weatherUrl =
-          "https://api.openweathermap.org/data/2.5/weather?q=$city,TR&units=metric&appid=$myApiKey&lang=tr";
+          "https://api.openweathermap.org/data/2.5/weather?q=$city,TR&units=metric&appid=$apiKey&lang=tr";
       final weatherRes = await http.get(Uri.parse(weatherUrl));
       if (weatherRes.statusCode == 200) {
         final wData = json.decode(weatherRes.body);
@@ -93,6 +97,7 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
       final timingsRes = await http.get(Uri.parse(timingsUrl));
       if (timingsRes.statusCode == 200) {
         final tData = json.decode(timingsRes.body)['data']['timings'];
+        context.read<AuthService>().cachePrayerTimes(city, tData);
         if (mounted) {
           setState(() {
             vakitler[0]['saat'] = tData['Fajr'].split(' ')[0];
@@ -107,10 +112,47 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
         _calculateNextVakit();
         _calculateTimeProgress();
       } else {
-        if (mounted) setState(() => _isLoading = false);
+        final cached =
+            await context.read<AuthService>().getCachedPrayerTimes(city);
+        if (cached != null && mounted) {
+          setState(() {
+            vakitler[0]['saat'] = cached['Fajr'].split(' ')[0];
+            vakitler[1]['saat'] = cached['Sunrise'].split(' ')[0];
+            vakitler[2]['saat'] = cached['Dhuhr'].split(' ')[0];
+            vakitler[3]['saat'] = cached['Asr'].split(' ')[0];
+            vakitler[4]['saat'] = cached['Maghrib'].split(' ')[0];
+            vakitler[5]['saat'] = cached['Isha'].split(' ')[0];
+            _isLoading = false;
+          });
+          _calculateNextVakit();
+          _calculateTimeProgress();
+          _showSnackBar("Çevrimdışı mod: Önbellekten gösteriliyor.");
+        } else if (mounted) {
+          setState(() => _isLoading = false);
+          _showSnackBar(
+              "Ezan vakitleri alınamadı. Lütfen daha sonra tekrar deneyin.");
+        }
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      final cached =
+          await context.read<AuthService>().getCachedPrayerTimes(city);
+      if (cached != null && mounted) {
+        setState(() {
+          vakitler[0]['saat'] = cached['Fajr'].split(' ')[0];
+          vakitler[1]['saat'] = cached['Sunrise'].split(' ')[0];
+          vakitler[2]['saat'] = cached['Dhuhr'].split(' ')[0];
+          vakitler[3]['saat'] = cached['Asr'].split(' ')[0];
+          vakitler[4]['saat'] = cached['Maghrib'].split(' ')[0];
+          vakitler[5]['saat'] = cached['Isha'].split(' ')[0];
+          _isLoading = false;
+        });
+        _calculateNextVakit();
+        _calculateTimeProgress();
+        _showSnackBar("Çevrimdışı mod: Önbellekten gösteriliyor.");
+      } else if (mounted) {
+        setState(() => _isLoading = false);
+        _showSnackBar("Veri alınırken bir hata oluştu: $e");
+      }
     }
   }
 
@@ -208,6 +250,16 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
         _siradakiVakit = nextVakitName;
       });
     }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   String format(Duration d) {

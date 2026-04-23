@@ -5,23 +5,21 @@ import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'firebase_options.dart';
-import 'auth_service.dart';
+import 'features/auth/auth_service.dart';
 
-import 'vakitler_page.dart';
-import 'kuran_page.dart';
-import 'pusula_page.dart';
-import 'imsakiye_page.dart';
-import 'menu_page.dart';
+import 'features/vakitler/vakitler_page.dart';
+import 'features/kuran/kuran_page.dart';
+import 'features/pusula/pusula_page.dart';
+import 'features/imsakiye/imsakiye_page.dart';
+import 'features/menu/menu_page.dart';
 
 // --- GLOBAL HAFIZA VE TEMA MOTORU ---
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
 final ValueNotifier<Map<String, dynamic>?> globalLocation = ValueNotifier(null);
-String myApiKey = "";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  myApiKey = dotenv.env['OWM_API_KEY'] ?? '';
   await initializeDateFormatting('tr_TR', null);
 
   await Firebase.initializeApp(
@@ -31,7 +29,11 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (_) {
+          final auth = AuthService();
+          auth.setApiKey(dotenv.env['OWM_API_KEY'] ?? '');
+          return auth;
+        }),
       ],
       child: ValueListenableBuilder<ThemeMode>(
         valueListenable: themeNotifier,

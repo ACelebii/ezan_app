@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'auth_service.dart';
-import 'settings_page.dart';
-import 'kuran_page.dart';
-import 'imsakiye_page.dart';
-import 'pusula_page.dart';
-import 'theme_selector_page.dart';
-import 'zikirmatik_page.dart';
-import 'dini_gunler_page.dart';
-import 'hutbe_page.dart';
+import '../auth/auth_service.dart';
+import '../settings/settings_page.dart';
+import '../kuran/kuran_page.dart';
+import '../imsakiye/imsakiye_page.dart';
+import '../pusula/pusula_page.dart';
+import '../settings/theme_selector_page.dart';
+import '../zikirmatik/zikirmatik_page.dart';
+import '../dini_gunler/dini_gunler_page.dart';
+import '../hutbe/hutbe_page.dart';
 
 bool _isDark(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;

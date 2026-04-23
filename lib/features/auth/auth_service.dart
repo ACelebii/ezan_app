@@ -18,6 +18,24 @@ class AuthService extends ChangeNotifier {
   StreamSubscription<DocumentSnapshot>? _userDocSubscription;
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+  String? _apiKey;
+  String? get apiKey => _apiKey;
+
+  void setApiKey(String key) => _apiKey = key;
+
+  Future<void> cachePrayerTimes(String city, Map<String, dynamic> data) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('cached_vakitler_$city', jsonEncode(data));
+  }
+
+  Future<Map<String, dynamic>?> getCachedPrayerTimes(String city) async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? data = prefs.getString('cached_vakitler_$city');
+    if (data != null) {
+      return jsonDecode(data);
+    }
+    return null;
+  }
 
   final Map<String, dynamic> _guestSettings = {
     'hesaplama_yontemi': 'Diyanet Takvimi',

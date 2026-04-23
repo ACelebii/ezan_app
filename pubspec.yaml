@@ -48,3 +48,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/Images/
+    - assets/ezan.mp3
+    - assets/uyari.mp3.mp3

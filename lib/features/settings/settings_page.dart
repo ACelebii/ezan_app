@@ -6,8 +6,8 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'main.dart';
-import 'auth_service.dart';
+import '../../main.dart';
+import '../auth/auth_service.dart';
 import 'theme_selector_page.dart';
 
 // ============================================================================
