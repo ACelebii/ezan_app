@@ -1,0 +1,577 @@
+[
+  {
+    "category": "Yemek ve İçecek Duaları",
+    "items": [
+      {
+        "id": "1",
+        "title": "Yemeğe başlarken",
+        "arabic": "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ",
+        "pronunciation": "Bismillâhirrahmânirrahîm.",
+        "meaning": "Rahman ve Rahim olan Allah'ın adıyla.",
+        "reference": "Sünnet"
+      },
+      {
+        "id": "2",
+        "title": "Yemeğin başında 'Bismillah' demeyi unutan",
+        "arabic": "بِسْمِ اللَّهِ فِي أَوَّلِهِ وَآخِرِهِ",
+        "pronunciation": "Bismillâhi fî evvelihî ve âhirih.",
+        "meaning": "Başında da sonunda da Allah'ın adıyla.",
+        "reference": "Ebû Dâvûd, 3/347"
+      },
+      {
+        "id": "3",
+        "title": "Yemekten sonra",
+        "arabic": "الْحَمْدُ لِلَّهِ الَّذِى اطْعَمَنَا وَسَقَانَا ، وَجَعَلنَا مُسْلِمِينَ",
+        "pronunciation": "Elhamdülillâhillezî at'amenâ, ve sekânâ, ve cealenâ mine'l-müslimîn.",
+        "meaning": "Bizi yediren, içiren ve bizi Müslüman kılan Allah'a hamdolsun.",
+        "reference": "Ebû Dâvûd"
+      },
+      {
+        "id": "4",
+        "title": "Süt içtikten sonra",
+        "arabic": "اللَّهُمَّ بَارِِكْ لَنا فِيهِ وَزِدْنَا مِنْهُ",
+        "pronunciation": "Allâhümme bârik lenâ fîhi ve zidnâ minhü.",
+        "meaning": "Allah'ım! Bunu bize bereketli kıl ve ondan bize daha fazlasını ver.",
+        "reference": "Tirmizî 5:506"
+      },
+      {
+        "id": "5",
+        "title": "Birinin evinde yemek yendiğinde",
+        "arabic": "اللَّهُمَّ بَارِكْ لَهُمْ فِيمَا رَزَقْتَهُمْ ، وَاغْفِرْ لَهُمْ وَارْحَمْهُمْ",
+        "pronunciation": "Allâhümme bârik lehüm fîmâ razaktehüm, vağfir lehüm verhamhüm.",
+        "meaning": "Allah'ım! Onlara verdiğin rızkı bereketli kıl, onları bağışla ve onlara merhamet et.",
+        "reference": "Müslim 3:1615"
+      },
+      {
+        "id": "6",
+        "title": "Yemek veya su ikram edene",
+        "arabic": "اللَّهُمَّ اطْعِمَّ مَنْ اطْعَمَنِي وَاسْقِِِ ِ مَنْ سَقَانِيِ",
+        "pronunciation": "Allâhümme at'ım men at'amenî veski men sekânî.",
+        "meaning": "Allah'ım! Bana yedirene sen de yedir, bana içirene sen de içir.",
+        "reference": "Müslim 3:126"
+      }
+    ]
+  },
+  {
+    "category": "Temizlik ve Cami Duaları",
+    "items": [
+      {
+        "id": "7",
+        "title": "Tuvalete girerken",
+        "arabic": "بِسْمِ اللَّهِ. اللَّهُـمَّ إِنِّي أَعُـوذُ بِـكَ مِـنَ الْخُـبْثِ وَالْخَبَائِثِ",
+        "pronunciation": "Bismillâh. Allâhümme innî eûzü bike mine'l-hubsi ve'l-habâis.",
+        "meaning": "Allah'ın adıyla. Allah'ım! Bütün kötülüklerden ve pisliklerden sana sığınırım.",
+        "reference": "Buhârî 1:45"
+      },
+      {
+        "id": "8",
+        "title": "Tuvaletten çıkarken",
+        "arabic": "غُفْرَانَكَ",
+        "pronunciation": "Ğufrânek.",
+        "meaning": "Allah'ım! Affını dilerim.",
+        "reference": "Zâdü'l-Meâd 2:387"
+      },
+      {
+        "id": "9",
+        "title": "Abdeste başlarken",
+        "arabic": "بِسْمِ اللّهِ",
+        "pronunciation": "Bismillâh.",
+        "meaning": "Allah'ın adıyla.",
+        "reference": "İrvâu'l-Ğalîl 1:122"
+      },
+      {
+        "id": "10",
+        "title": "Abdesti bitirince",
+        "arabic": "أَشْهَدُ أَنْ لَا إِلَـهَ إِلاَّ اللّهُ وَحْدَهُ لَا شَريـكَ لَـهُ وَأَشْهَدُ أَنَّ مُحَمَّـداً عَبْـدُهُ وَرَسُـولُـهُ. اَللَّهُـمَّ اجْعَلْنِـي مِنَ التَّـوَّابِينَ وَاجْعَـلْنِي مِنَ الْمُتَطَهِّـرِينَ",
+        "pronunciation": "Eşhedü en lâ ilâhe illallâhu vahdehû lâ şerîke leh, ve eşhedü enne Muhammeden abdühû ve rasûlüh. Allâhümme'c'alnî mine't-tevvâbîne vec'alnî mine'l-mütetahhirîn.",
+        "meaning": "Allah'tan başka ilah olmadığına şahitlik ederim, O tektir ve ortağı yoktur. Muhammed'in O'nun kulu ve elçisi olduğuna da şahitlik ederim. Allah'ım! Beni çokça tövbe edenlerden ve temizlenenlerden kıl.",
+        "reference": "Müslim 1:209, Tirmizî 1:78"
+      },
+      {
+        "id": "11",
+        "title": "Camiye giderken",
+        "arabic": "اللّهُـمَّ اجْعَـلْ في قَلْبـي نورا ، وَفي لِسـاني نورا، وَاجْعَـلْ في سَمْعي نورا، وَاجْعَـلْ في بَصَري نورا",
+        "pronunciation": "Allâhümme'c'al fî kalbî nûrâ, ve fî lisânî nûrâ, vec'al fî sem'î nûrâ, vec'al fî basarî nûrâ...",
+        "meaning": "Allah'ım! Kalbime nur ver, dilime nur ver, kulağıma nur ver, gözüme nur ver...",
+        "reference": "Müslim 1:526"
+      },
+      {
+        "id": "12",
+        "title": "Camiye girerken",
+        "arabic": "اَللَّهُـمَّ افْتَـحْ لِي أَبْوَابَ رَحْمَتـِكَ",
+        "pronunciation": "Bismillâh vessalâtü vesselâmü alâ rasûlillâh. Allâhümme'ftah lî ebvâbe rahmetik.",
+        "meaning": "Allah'ın adıyla, salat ve selam Allah'ın elçisinin üzerine olsun. Allah'ım! Bana rahmetinin kapılarını aç.",
+        "reference": "Ebû Dâvûd 4591"
+      },
+      {
+        "id": "13",
+        "title": "Camiden çıkarken",
+        "arabic": "اَللَّهُـمَّ إِنِّي أَسْأَلُكَ مِنْ فَضْـلِكَ",
+        "pronunciation": "Bismillâh vessalâtü vesselâmü alâ rasûlillâh. Allâhümme innî es'elüke min fadlik.",
+        "meaning": "Allah'ın adıyla, salat ve selam Allah'ın elçisinin üzerine olsun. Allah'ım! Senin lütfunu ve fazlını diliyorum.",
+        "reference": "Müslim 1:494"
+      },
+      {
+        "id": "14",
+        "title": "Ezan duyulunca",
+        "arabic": "اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ، وَالصَّلَاةِ الْقَائِمَةِ، آتِ مُحَمَّداً الْوَسِيلَةَ وَالْفَضِيلَةَ، وَابْعَثْهُ مَقَاماً مَحْمُوداً الَّذِي وَعَدْتَهُ",
+        "pronunciation": "Allâhümme Rabbe hâzihi'd-da'veti't-tâmmeh, ves-salâti'l-kâimeh, âti Muhammedenil-vesîlete vel-fadîleh, veb'ashü makâmen mahmûdenillezî ve'adteh.",
+        "meaning": "Ey bu eksiksiz davetin ve kılınacak namazın Rabbi olan Allah'ım! Muhammed'e (s.a.v) vesileyi ve fazileti ver. Onu, kendisine vaat ettiğin Makam-ı Mahmud'a ulaştır.",
+        "reference": "Buhârî 1:152"
+      }
+    ]
+  },
+  {
+    "category": "Namaz Duaları ve Tesbihat",
+    "items": [
+      {
+        "id": "15",
+        "title": "İftitah Tekbirinden Sonra (Sübhaneke)",
+        "arabic": "سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، وَتَبَارَكَ اسْمُكَ، وَتَعَالَى جَدُّكَ، وَلَا إِلَهَ غَيْرُكَ",
+        "pronunciation": "Sübhânekellâhümme ve bi-hamdik, ve tebârakesmük, ve teâlâ ceddük, ve lâ ilâhe ğayrük.",
+        "meaning": "Allah'ım! Sen eksik sıfatlardan münezzehsin. Seni daima överim. Senin adın mübarektir, şanın yücedir. Senden başka ilah yoktur.",
+        "reference": "Nesâî 900"
+      },
+      {
+        "id": "16",
+        "title": "Kunut Duası (Vitir Namazı)",
+        "arabic": "اَللَّهُمَّ إنا نَسْتَعِينُكَ وَنَسْتَغْفِرُكَ وَنُؤْمِنُ بِكَ وَنَتَوَكَّلُ عَلَيْكَ وَنُثْنِئْ عَلَيْكَ الخَيْرَ",
+        "pronunciation": "Allâhümme innâ nesteînüke ve nestağfirüke ve nü'minü bike ve netevekkelü aleyke ve nüsnî aleyke'l-hayr...",
+        "meaning": "Allah'ım! Biz yalnız senden yardım dileriz, affını isteriz. Sana inanır, sana güveniriz. Her türlü hayırla seni överiz...",
+        "reference": "Tirmizî 464"
+      },
+      {
+        "id": "17",
+        "title": "Rükûda okunan",
+        "arabic": "سُبْحَانَ رَبِّيَ الْعَظِيمِ",
+        "pronunciation": "Sübhâne Rabbiyel-Azîm.",
+        "meaning": "Büyük olan Rabbimi noksan sıfatlardan tenzih ederim.",
+        "reference": "Tirmizî 1:83"
+      },
+      {
+        "id": "18",
+        "title": "Secdede okunan",
+        "arabic": "سُبْحَانَ رَبِّيَ الأَعْلَى",
+        "pronunciation": "Sübhâne Rabbiyel-A'lâ.",
+        "meaning": "Yüce olan Rabbimi noksan sıfatlardan tenzih ederim.",
+        "reference": "Tirmizî 1:83"
+      },
+      {
+        "id": "19",
+        "title": "İki secde arasında",
+        "arabic": "رَبِّ اغْفِرْ لِي رَبِّ اغْفِرْ لِي",
+        "pronunciation": "Rabbigfirlî, Rabbigfirlî.",
+        "meaning": "Rabbim, beni bağışla. Rabbim, beni bağışla.",
+        "reference": "Ebû Dâvûd 874"
+      },
+      {
+        "id": "20",
+        "title": "Teşehhütte otururken (Tahiyyat)",
+        "arabic": "التَّحِيَّاتُ للهِ، وَالصَّلَوَاتُ، وَالطَّيِّبَاتُ، السَّلَامُ عَلَيْكَ أَيُّهَا النَّبِيُّ وَرَحْمَةُ اللهِ وَبَرَكَاتُهُ",
+        "pronunciation": "Ettehiyyâtü lillâhi vessalevâtü vettayyibât. Esselâmü aleyke eyyühen-Nebiyyü ve rahmetullâhi ve berakâtüh...",
+        "meaning": "Her türlü hürmet, salavat ve bütün iyilikler Allah'a mahsustur. Ey Peygamber! Allah'ın rahmeti, bereketi ve selamı senin üzerine olsun...",
+        "reference": "Buhârî 7381"
+      },
+      {
+        "id": "21",
+        "title": "Salavat (Salli - Bârik)",
+        "arabic": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ",
+        "pronunciation": "Allâhümme salli alâ Muhammedin ve alâ âli Muhammed, kemâ salleyte alâ İbrâhîme ve alâ âli İbrâhîm. İnneke Hamîdün Mecîd.",
+        "meaning": "Allah'ım! İbrahim'e ve ailesine rahmet ettiğin gibi Muhammed'e ve ailesine de rahmet et. Şüphesiz sen övülmeye layık ve yücesin.",
+        "reference": "Buhârî 320"
+      },
+      {
+        "id": "22",
+        "title": "Namaz bittikten sonra (Selamdan hemen sonra)",
+        "arabic": "أَسْتَغْفِرُ اللَّهَ . (ثَلاثاً) اللَّهُمَّ أَنْتَ السَّلاَمُ، وَمِنْكَ السَّلَامُ، تَبَارَكْتَ يَا ذَا الْجَلَالِ وَالإِكْرَامِ",
+        "pronunciation": "Estağfirullâh (3 defa). Allâhümme ente's-selâmü ve minke's-selâm, tebârakte yâ ze'l-celâli ve'l-ikrâm.",
+        "meaning": "Allah'tan bağışlanma dilerim (3 defa). Allah'ım! Sen Selâm'sın, selamet sendendir. Ey celâl ve ikram sahibi, sen çok yücesin.",
+        "reference": "Müslim 1:414"
+      },
+      {
+        "id": "23",
+        "title": "Namaz Tesbihatı",
+        "arabic": "سُبْحَانَ اللَّه (33) اَلْحَمْدُ لِلَّه (33) اَللَّهُ أَكْبَر (34)",
+        "pronunciation": "Sübhânallâh (33 defa), Elhamdülillâh (33 defa), Allâhu Ekber (34 defa).",
+        "meaning": "Allah eksikliklerden uzaktır. Hamd Allah'adır. Allah en büyüktür.",
+        "reference": "Müslim 1:415"
+      }
+    ]
+  },
+  {
+    "category": "Sabah, Akşam ve Uyku Duaları",
+    "items": [
+      {
+        "id": "24",
+        "title": "Uyumadan önce",
+        "arabic": "بِاسْمِكَ رَبِّي وَضَعْتُ جَنْبِي، وَبِكَ أَرْفَعُهُ، فَإِنْ أَمْسَكْتَ نَفْسِي فَارْحَمْهَا، وَإِنْ أَرْسَلْتَهَا فَاحْفَظْهَا",
+        "pronunciation": "Bismike Rabbî vada'tü cenbî ve bike erfeuh, fe-in emsekte nefsî ferhamhâ, ve in erseltehâ fahfazhâ...",
+        "meaning": "Rabbim! Senin adınla yatağıma yattım, senin adınla kalkarım. Eğer ruhumu alırsan ona merhamet et; eğer geri gönderirsen onu koru.",
+        "reference": "Buhârî 11:126"
+      },
+      {
+        "id": "25",
+        "title": "Uykudan uyanınca",
+        "arabic": "اَلْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ",
+        "pronunciation": "Elhamdülillâhillezî ahyânâ ba'de mâ emâtenâ ve ileyhin-nüşûr.",
+        "meaning": "Bizi öldükten sonra dirilten Allah'a hamdolsun. Diriltmek ve dönüş ancak O'nadır.",
+        "reference": "Buhârî 11:113"
+      },
+      {
+        "id": "26",
+        "title": "Sabah zikri",
+        "arabic": "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ",
+        "pronunciation": "Asbahnâ ve asbeha'l-mülkü lillâh, velhamdülillâh, lâ ilâhe illallâhu vahdehû lâ şerîke leh.",
+        "meaning": "Sabaha erdik, mülk de Allah'a ait olarak sabaha erdi. Hamd Allah'adır. O'ndan başka ilah yoktur, tektir ve ortağı yoktur.",
+        "reference": "Müslim 4:2088"
+      },
+      {
+        "id": "27",
+        "title": "Akşam zikri",
+        "arabic": "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ",
+        "pronunciation": "Emseynâ ve emse'l-mülkü lillâh, velhamdülillâh, lâ ilâhe illallâhu vahdehû lâ şerîke leh.",
+        "meaning": "Akşama erdik, mülk de Allah'a ait olarak akşama erdi. Hamd Allah'adır. O'ndan başka ilah yoktur, tektir ve ortağı yoktur.",
+        "reference": "Müslim 4:2088"
+      }
+    ]
+  },
+  {
+    "category": "Sıkıntı, Korku ve Korunma Duaları",
+    "items": [
+      {
+        "id": "28",
+        "title": "Sıkıntı ve üzüntü anında",
+        "arabic": "اللّهُـمَّ إِنِّي أَعْوذُ بِكَ مِنَ الهَـمِّ وَ الْحُـزْنِ، والعًجْـزِ والكَسَلِ والبُخْـلِ والجُـبْنِ، وضَلْـعِ الـدَّيْنِ وغَلَبَـةِ الرِّجال",
+        "pronunciation": "Allâhümme innî eûzü bike mine'l-hemmi ve'l-hazen, ve'l-aczi ve'l-kesel, ve'l-buhli ve'l-cübni ve dalai'd-deyni ve galebeti'r-ricâl.",
+        "meaning": "Allah'ım! Üzüntüden ve kederden sana sığınırım. Acizlikten ve tembellikten sana sığınırım. Cimrilikten ve korkaklıktan sana sığınırım. Borç altında ezilmekten ve insanların kahrından sana sığınırım.",
+        "reference": "Buhârî 2893"
+      },
+      {
+        "id": "29",
+        "title": "Korku ve çaresizlik anında (Tevekkül)",
+        "arabic": "حَسْبِيَ اللّٰهُ لا إِلَـهَ إِلاَّ هُوَ عَلَيْهِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ",
+        "pronunciation": "Hasbiyallâhu lâ ilâhe illâ hû, aleyhi tevekkeltü ve hüve Rabbü'l-Arşi'l-Azîm.",
+        "meaning": "Allah bana yeter. O'ndan başka ilah yoktur. Ben sadece O'na güvenip dayandım. O, yüce Arş'ın Rabbidir.",
+        "reference": "Tevbe Suresi 129"
+      },
+      {
+        "id": "30",
+        "title": "Zorlukları aşmak için",
+        "arabic": "لَّآ اِلٰهَ اِلَّآ اَنْتَ سُبْحٰــنَكَ اِنِّىْ كُنْتُ مِنَ الظّٰلِمِيْنَ",
+        "pronunciation": "Lâ ilâhe illâ ente sübhâneke innî küntü mine'z-zâlimîn.",
+        "meaning": "Senden başka hiçbir ilah yoktur. Seni eksikliklerden uzak tutarım. Ben gerçekten zalimlerden oldum.",
+        "reference": "Enbiyâ Suresi 87"
+      },
+      {
+        "id": "31",
+        "title": "Musibet ve kayıp anında",
+        "arabic": "إِنّا للهِ وَإِنَا إِلَـيْهِ رَاجِِعُـونَ ، اللهُـمِّ اْجُـرْني فِي مُصِـيبَتي، وَاخْلُـفْ لِي خَيْـراً مِنْـها",
+        "pronunciation": "İnnâ lillâhi ve innâ ileyhi râciûn. Allâhümme'curnî fî musîbetî vahluf lî hayran minhâ.",
+        "meaning": "Şüphesiz biz Allah'a aidiz ve O'na döneceğiz. Allah'ım! Bu musibetimde bana ecir ver ve bana ondan daha hayırlısını ihsan et.",
+        "reference": "Müslim 2:632"
+      },
+      {
+        "id": "32",
+        "title": "Borçtan kurtulmak için",
+        "arabic": "اللّهُـمَّ اكْفِـني بِحَلالِـكَ عَنْ حَـرامِـك، وَأَغْنِـني بِفَضْـلِكِ عَمَّـنْ سِـواك",
+        "pronunciation": "Allâhümmekfinî bi-helâlike an harâmik, ve ağninî bi-fadlike ammen sivâk.",
+        "meaning": "Allah'ım! Helâl kıldıklarınla beni yetindirerek haram kıldıklarından beni koru. Lütfunla beni senden başkasına muhtaç etme.",
+        "reference": "Tirmizî 3563"
+      },
+      {
+        "id": "33",
+        "title": "Öfkelenince",
+        "arabic": "أَعُوذُ بِاللَّهِ مِنَ الشَّيْطانِ الرَّجِيْمِ",
+        "pronunciation": "Eûzü billâhi mineş-şeytânir-racîm.",
+        "meaning": "Kovulmuş şeytanın şerrinden Allah'a sığınırım.",
+        "reference": "Buhârî 6115"
+      },
+      {
+        "id": "34",
+        "title": "Zalimlerden korunma",
+        "arabic": "اللّهُـمَّ أَنْتَ عَضُـدي، وَأَنْتَ نَصـيري، بِكَ أَجـولُ وَبِكَ أَصـولُ وَبِكَ أُقـاتِل",
+        "pronunciation": "Allâhümme ente adudî, ve ente nasîrî, bike ecûlü, ve bike esûlü, ve bike ükâtil.",
+        "meaning": "Allah'ım! Sen benim gücümsün, sen benim yardımcımsın. Senin yardımınla hareket eder, senin yardımınla hücum eder ve senin yardımınla savaşırım.",
+        "reference": "Ebû Dâvûd 2632"
+      },
+      {
+        "id": "35",
+        "title": "Çocukları koruma duası",
+        "arabic": "أُعيـذُكُمـا بِكَلِـماتِ اللهِ التّـامَّة، مِنْ كُلِّ شَيْـطانٍ وَهـامَّة، وَمِنْ كُـلِّ عَـيْنٍ لامَّـة",
+        "pronunciation": "U'îzükümâ bikelimâtillâhit-tâmmeti min külli şeytânin ve hâmmetin, ve min külli aynin lâmmeh.",
+        "meaning": "Her türlü şeytandan, zararlı canlılardan ve kem gözlerden (nazardan) Allah'ın eksiksiz kelimelerine (sizleri) emanet ederim.",
+        "reference": "Ebû Dâvûd 4737"
+      }
+    ]
+  },
+  {
+    "category": "Rızık, Başarı ve Sosyal Hayat",
+    "items": [
+      {
+        "id": "36",
+        "title": "Günlük rızık ve ilim talebi",
+        "arabic": "اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْماً نَافِعاً، وَرِزْقاً طَيِّباً، وَعَمَلاً مُتَقَبَّلاً",
+        "pronunciation": "Allâhümme innî es'elüke ilmen nâfian, ve rizkan tayyiben, ve amelen mütekabbelen.",
+        "meaning": "Allah'ım! Senden faydalı bir ilim, temiz bir rızık ve kabul olunmuş bir amel dilerim.",
+        "reference": "İbn Mâce 925"
+      },
+      {
+        "id": "37",
+        "title": "Özgüven, hitabet ve başarı (Hz. Musa'nın Duası)",
+        "arabic": "رَبِّ اشْرَحْ لِيْ صَدْرِيْ. وَيَسِّرْ لِيْٓ اَمْرِيْ. وَاحْلُلْ عُقْدَةً مِّنْ لِّسَانِيْ. يَفْقَـــهُوْا قَوْلِيْ.",
+        "pronunciation": "Rabbişrah lî sadrî. Ve yessir lî emrî. Vahlul ukdeten min lisânî. Yefkahû kavlî.",
+        "meaning": "Rabbim! Göğsümü genişlet, işimi kolaylaştır. Dilimden düğümü çöz ki sözümü iyi anlasınlar.",
+        "reference": "Tâhâ Suresi 20:25-28"
+      },
+      {
+        "id": "38",
+        "title": "Aynaya bakarken",
+        "arabic": "اللَّهُمَّ أَنْتَ حَسَّنْتَ خَلْقِي فَحَسِّنْ خُلُقِي",
+        "pronunciation": "Allâhümme ente hassente halkī fe hassin hulukī.",
+        "meaning": "Allah'ım! Yaratılışımı güzel yaptığın gibi ahlakımı da güzelleştir.",
+        "reference": "Hısnü'l-Hasîn S. 206"
+      },
+      {
+        "id": "39",
+        "title": "Yeni bir elbise giyildiğinde",
+        "arabic": "اَلْحَمْدُ لِلّهِ الَّذِي كَسَانِي هَذَا وَرَزَقَنِيهِ مِنْ غَـيـْرِ حَوْلٍ مِنِّي وَلَا قُـوَّةٍ",
+        "pronunciation": "Elhamdülillâhillezî kesânî hâzâ ve razakanîhi min ğayri havlin minnî ve lâ kuvveh.",
+        "meaning": "Benden hiçbir güç ve kuvvet olmadan bu elbiseyi bana giydiren ve beni rızıklandıran Allah'a hamdolsun.",
+        "reference": "İrvâu'l-Ğalîl 7:47"
+      },
+      {
+        "id": "40",
+        "title": "Evden çıkarken",
+        "arabic": "بِسْمِ اللَّهِ تَوَكَّلْـتُ عَلَى اللَّهِ، وَلاَ حَوْلَ وَلاَ قُـوَّةَ إِلاَّ بِاللَّهِ",
+        "pronunciation": "Bismillâh, tevekkeltü alellâh, ve lâ havle ve lâ kuvvete illâ billâh.",
+        "meaning": "Allah'ın adıyla. Allah'a tevekkül ettim. Güç ve kuvvet ancak Allah'ın yardımıyladır.",
+        "reference": "Ebû Dâvûd 4:325"
+      },
+      {
+        "id": "41",
+        "title": "Eve girerken",
+        "arabic": "بِسْـمِ اللّهِ وَلَجْنـَا، وَبِسْـمِ اللّهِ خَـرَجْنـَا، وَعَلَـى رَبِّنـَا تَوَكّلْـنَا",
+        "pronunciation": "Bismillâhi velecnâ, ve bismillâhi haracnâ, ve alâ Rabbinâ tevekkelnâ.",
+        "meaning": "Allah'ın adıyla girdik, Allah'ın adıyla çıktık ve Rabbimize tevekkül ettik.",
+        "reference": "Ebû Dâvûd 4:325"
+      },
+      {
+        "id": "42",
+        "title": "Çarşı ve Pazara girerken",
+        "arabic": "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ يُحْيِي وَيُمِيتُ وَهُوَ حَيٌّ لَا يَمُوتُ بِيَدِهِ الْخُيْرُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٍ",
+        "pronunciation": "Lâ ilâhe illallâhu vahdehû lâ şerîke leh, lehü'l-mülkü ve lehü'l-hamdü, yuhyî ve yümît, ve hüve hayyün lâ yemût, biyedihi'l-hayru, ve hüve alâ külli şey'in kadîr.",
+        "meaning": "Allah'tan başka ilah yoktur, O tektir, ortağı yoktur. Mülk O'nundur, hamd O'nadır. Diriltir ve öldürür. O hiç ölmeyecek olan diridir. Bütün hayırlar O'nun elindedir ve O her şeye kâdirdir.",
+        "reference": "Tirmizî 5:291"
+      }
+    ]
+  },
+  {
+    "category": "Doğa Olayları ve Yolculuk",
+    "items": [
+      {
+        "id": "43",
+        "title": "Yolculuğa çıkarken (Vasıtaya binerken)",
+        "arabic": "سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ وَإِنَّا إِلَى رَبِّنَا لَمُنْقَلِبُونَ",
+        "pronunciation": "Sübhânellezî sahhara lenâ hâzâ ve mâ künnâ lehû mukrinîn. Ve innâ ilâ Rabbinâ le-munkalibûn.",
+        "meaning": "Bunu (bu vasıtayı) bizim hizmetimize veren Allah'ı tenzih ederiz. Yoksa biz buna güç yetiremezdik. Şüphesiz biz Rabbimize döneceğiz.",
+        "reference": "Zuhruf Suresi 43:13-14"
+      },
+      {
+        "id": "44",
+        "title": "Uzun yolculuktan dönerken",
+        "arabic": "آيِبـونَ تائِبـونَ عابِـدونَ لِرَبِّـنا حـامِـدون",
+        "pronunciation": "Âyibûne, tâibûne, âbidûne, li-Rabbinâ hâmidûn.",
+        "meaning": "Bizler dönenler, tövbe edenler, ibadet edenler ve Rabbimize hamd edenleriz.",
+        "reference": "Buhârî 7:163"
+      },
+      {
+        "id": "45",
+        "title": "Yağmur yağarken",
+        "arabic": "اللّهُمَّ اَسْقِـنا غَيْـثاً مُغيـثاً مَريئاً مُريـعاً، نافِعـاً غَيْـرَ ضَّارٌ، عاجِـلاً غَـيْرَ آجِلٍ",
+        "pronunciation": "Allâhümme askınâ ğaysen muğîsen merîen merîan, nâfian ğayra dârrin, âcilen ğayra âcilin.",
+        "meaning": "Allah'ım, bize bol, faydalı, zararsız, hemen ve gecikmeksizin imdadımıza yetişen bir yağmur ver.",
+        "reference": "Ebû Dâvûd 1:303"
+      },
+      {
+        "id": "46",
+        "title": "Fırtına koptuğunda",
+        "arabic": "اللّهُـمَّ إِنَّـي أَسْـأَلُـكَ خَيْـرَها، وَأَعـوذُ بِكَ مِنْ شَـرِّها",
+        "pronunciation": "Allâhümme innî es'elüke hayrahâ, ve eûzü bike min şerrihâ.",
+        "meaning": "Allah'ım! Senden bunun hayrını dilerim ve şerrinden sana sığınırım.",
+        "reference": "Ebû Dâvûd 5084"
+      },
+      {
+        "id": "47",
+        "title": "Gök gürlediğinde",
+        "arabic": "سُبْـحانَ الّذي يُسَبِّـحُ الـرَّعْدُ بِحَمْـدِهِ، وَالملائِكـةُ مِنْ خيـفَته",
+        "pronunciation": "Sübhânellezî yüsebbihur-ra'dü bihamdihî vel-melâiketü min hîfetih.",
+        "meaning": "Gök gürültüsünün hamd ederek, meleklerin de korkusundan tesbih ettiği Allah'ı noksan sıfatlardan tenzih ederim.",
+        "reference": "Muvatta 2:992"
+      }
+    ]
+  },
+  {
+    "category": "Tövbe, Mağfiret ve Şükür",
+    "items": [
+      {
+        "id": "48",
+        "title": "Dünya ve Ahiret iyiliği (Rabbena)",
+        "arabic": "رَبَّنَآ اٰتِنَا فِي الدُّنْيَا حَسَنَةً وَّفِي الْاٰخِرَةِ حَسَـنَةً وَّقِنَا عَذَابَ النَّارِ",
+        "pronunciation": "Rabbenâ âtinâ fi'd-dünyâ haseneten ve fi'l-âhirati haseneten ve kınâ azâbe'n-nâr.",
+        "meaning": "Rabbimiz! Bize dünyada iyilik ve güzellik, ahirette de iyilik ve güzellik ver. Bizi ateş azabından koru.",
+        "reference": "Bakara Suresi 2:201"
+      },
+      {
+        "id": "49",
+        "title": "Anne Baba ve Müminler için (Rabbenâğfirlî)",
+        "arabic": "رَبَّنَا اغْفِرْ لِي وَلِوَالِدَيَّ وَلِلْمُؤْمِنِينَ يَوْمَ يَقُومُ الْحِسَابُ",
+        "pronunciation": "Rabbenâğfirlî ve li-vâlideyye ve lil-mü'minîne yevme yekūmü'l-hisâb.",
+        "meaning": "Rabbimiz! Hesap kurulacağı gün beni, anamı, babamı ve müminleri bağışla.",
+        "reference": "İbrahim Suresi 14:41"
+      },
+      {
+        "id": "50",
+        "title": "Seyyidü'l İstiğfar (İstiğfarların Efendisi)",
+        "arabic": "اللَّهُمَّ أَنْتَ رَبِّي لَّا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِر لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ.",
+        "pronunciation": "Allâhümme ente Rabbî lâ ilâhe illâ ente, halaktenî ve ene abdüke, ve ene alâ ahdike ve va'dike m'esteta'tü. Eûzü bike min şerri mâ sana'tü, ebûu leke bini'metike aleyye, ve ebûu bi zenbî fağfirlî fe-innehû lâ yağfiruz-zünûbe illâ ente.",
+        "meaning": "Allah'ım! Sen benim Rabbimsin. Senden başka ilah yoktur. Beni sen yarattın. Ben senin kulunum. Gücüm yettiği kadar sana verdiğim söz üzereyim. Yaptığım kötülüklerden sana sığınırım. Bana verdiğin nimetleri itiraf ediyorum, günahımı da itiraf ediyorum. Beni bağışla; çünkü senden başka günahları bağışlayacak kimse yoktur.",
+        "reference": "Buhârî 7:150"
+      },
+      {
+        "id": "51",
+        "title": "Hata ve Günahlar İçin Tövbe",
+        "arabic": "أَسْتَغْفِرُ اللهَ الَّذِي لاَ إِلَهَ إلاَّ هُوَ الحَيُّ القَيّوُمُ وأَتُوبُ إِلَيهِ",
+        "pronunciation": "Estağfirullâhellezî lâ ilâhe illâ hüvel hayyel kayyûme ve etûbü ileyh.",
+        "meaning": "Kendisinden başka ilah olmayan, diri ve her an yarattıklarını gözetip duran Allah'tan bağışlanma dilerim ve O'na tövbe ederim.",
+        "reference": "Ebû Dâvûd 1517"
+      },
+      {
+        "id": "52",
+        "title": "Büyük Şükür ve Hamd",
+        "arabic": "سُبْحَانَ اللهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ وَمِدَادَ كَلِمَاتِهِ",
+        "pronunciation": "Sübhânallâhi ve bi-hamdihî adede halkıhî, ve rıdâ nefsihî, ve zinete arşihî ve midâde kelimâtihî.",
+        "meaning": "Yarattıklarının sayısınca, kendisinin hoşnutluğunca, Arş'ının ağırlığınca ve kelimelerinin mürekkebince Allah'ı hamd ile tesbih ederim.",
+        "reference": "Ebû Dâvûd 1503"
+      }
+    ]
+  },
+  {
+    "category": "Kur'an-ı Kerim'den Korunma Duaları (Manzil)",
+    "items": [
+      {
+        "id": "53",
+        "title": "Ayetü'l Kürsi",
+        "arabic": "اللهُ لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ...",
+        "pronunciation": "Allâhu lâ ilâhe illâ hüvel hayyül kayyûm, lâ te'huzühu sinetün velâ nevm...",
+        "meaning": "Allah, kendisinden başka hiçbir ilâh olmayandır. Diridir, kayyumdur. Onu ne bir uyuklama tutabilir, ne de bir uyku...",
+        "reference": "Bakara Suresi 2:255"
+      },
+      {
+        "id": "54",
+        "title": "İhlas Suresi",
+        "arabic": "قُلْ هُوَ اللهُ أَحَدٌ اللهُ الصَّمَدُ لَمْ يَلِدْ وَلَمْ يُولَدْ وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ",
+        "pronunciation": "Kul hüvellâhu ehad. Allâhus-samed. Lem yelid ve lem yûled. Ve lem yekün lehû küfüven ehad.",
+        "meaning": "De ki: O Allah tektir. Allah Samed'dir (Her şey O'na muhtaçtır, O hiçbir şeye muhtaç değildir). O doğurmamış ve doğmamıştır. O'nun hiçbir dengi yoktur.",
+        "reference": "İhlas Suresi 112:1-4"
+      },
+      {
+        "id": "55",
+        "title": "Felak Suresi",
+        "arabic": "قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ مِنْ شَرِّ مَا خَلَقَ وَمِنْ شَرِّ غَاسِقٍ إِذَا وَقَبَ وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ وَمِنْ شَرِّ حَاسِدٍ إِذَا حَسَدَ",
+        "pronunciation": "Kul eûzü birabbil-felak. Min şerri mâ halak. Ve min şerri ğâsikın izâ vekab. Ve min şerrin-neffâsâti fil-ukad. Ve min şerri hâsidin izâ hased.",
+        "meaning": "De ki: Yarattığı şeylerin şerrinden, karanlığı çöktüğü zaman gecenin şerrinden, düğümlere üfleyen büyücülerin şerrinden ve haset ettiği zaman hasetçinin şerrinden sabahın Rabbine sığınırım.",
+        "reference": "Felak Suresi 113:1-5"
+      },
+      {
+        "id": "56",
+        "title": "Nas Suresi",
+        "arabic": "قُلْ أَعُوذُ بِرَبِّ النَّاسِ مَلِكِ النَّاسِ إِلَهِ النَّاسِ مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ مِنَ الْجِنَّةِ وَالنَّاسِ",
+        "pronunciation": "Kul eûzü birabbin-nâs. Melikin-nâs. İlâhin-nâs. Min şerril-vesvâsil-hannâs. Ellezî yüvesvisü fî sudûrin-nâs. Minel-cinneti ven-nâs.",
+        "meaning": "De ki: İnsanların kalplerine vesvese sokan, (insan Allah'ı andığında) pusuya çekilen cin ve insan şeytanının şerrinden insanların Rabbine, insanların Melikine, insanların İlahına sığınırım.",
+        "reference": "Nas Suresi 114:1-6"
+      }
+    ]
+  },
+  {
+    "category": "Hac, Umre ve Oruç Duaları",
+    "items": [
+      {
+        "id": "57",
+        "title": "Telbiye",
+        "arabic": "لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ، لَبَّيْكَ لَا شَرِيكَ لَكَ لَبَّيْكَ، انَّالْحَمْدَ، وَالنِّعْمَةَ، لَكَ وَالْمُلْكَ، لا شَرِيكَ لَكَ",
+        "pronunciation": "Lebbeyk Allâhümme lebbeyk, lebbeyke lâ şerîke leke lebbeyk. İnne'l-hamde ve'n-ni'mete leke ve'l-mülk, lâ şerîke lek.",
+        "meaning": "Buyur Allah'ım buyur! Buyur, senin hiçbir ortağın yoktur, buyur! Şüphesiz hamd sana mahsustur. Nimet de senin, mülk de senindir. Senin hiçbir ortağın yoktur.",
+        "reference": "Müslim 2:841"
+      },
+      {
+        "id": "58",
+        "title": "Safa ve Merve'de Okunacak Dua",
+        "arabic": "لَا إِلهَ إِلَّا اللهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ المُلْكُ وَلَهُ الحَمْدُ وهُوَ عَلى كُلِّ شَيءٍ قَديرٌ، لَا إِلَهَ إِلَّا اللهُ وَحْدَهُ أَنْجَزَ وَعْدَهُ، وَنَصَرَ عَبْدَهُ وَهَزَمَ الأَحْزَابَ وَحْدَهُ",
+        "pronunciation": "Allâhu ekber (3 defa). Lâ ilâhe illallâhu vahdehû lâ şerîke leh, lehü'l-mülkü ve lehü'l-hamdü ve hüve alâ külli şey'in kadîr. Lâ ilâhe illallâhu vahdehû, enceze va'dehû, ve nasara abdehû ve hezemel-ahzâbe vahdeh.",
+        "meaning": "Allah en büyüktür (3 defa). Allah'tan başka ilah yoktur, tektir, ortağı yoktur. Mülk O'nundur, hamd O'nadır ve O her şeye kâdirdir. Allah'tan başka ilah yoktur, tektir. O vaadini yerine getirdi, kuluna yardım etti ve düşman topluluklarını tek başına hezimete uğrattı.",
+        "reference": "Müslim 2:888"
+      },
+      {
+        "id": "59",
+        "title": "Oruca Başlarken (Sahur)",
+        "arabic": "وَبِصَوْمِ غَدٍ نَّوَيْتُ مِنْ شَهْرِ رَمَضَانَ",
+        "pronunciation": "Ve bisavmi ğadin neveytü min şehri ramadân.",
+        "meaning": "Ramazan ayının yarınki orucunu tutmaya niyet ettim.",
+        "reference": "Ebû Dâvûd"
+      },
+      {
+        "id": "60",
+        "title": "Oruç Açarken (İftar)",
+        "arabic": "اللَّهُمَّ اِنِّى لَكَ صُمْتُ وَبِكَ امنْتُ وَعَليْكَ تَوَكّلتُ وَ عَلى رِزْقِكَ اَفْطَرْتُ",
+        "pronunciation": "Allâhümme innî leke sumtü ve bike âmentü ve aleyke tevekkeltü ve alâ rizkıke eftartü.",
+        "meaning": "Allah'ım! Senin rızan için oruç tuttum, sana inandım, sana güvendim ve senin rızkınla orucumu açtım.",
+        "reference": "Ebû Dâvûd 2358"
+      },
+      {
+        "id": "61",
+        "title": "İftar Verene Yapılacak Dua",
+        "arabic": "أَفْطَـرَ عِنْدَكُم الصّـائِمونَ وَأَكَلَ طَعامَـكُمُ الأبْـرار، وَصَلَّـتْ عَلَـيْكُمُ الملائِكَـة",
+        "pronunciation": "Eftara ındekümü's-sâimûne ve ekele taâmekümü'l-ebrâru ve sallet aleykümü'l-melâiketü.",
+        "meaning": "Yanınızda oruçlular iftar etsin, yemeğinizi iyi insanlar yesin ve melekler size dua etsin.",
+        "reference": "Ebû Dâvûd 3854"
+      }
+    ]
+  },
+  {
+    "category": "Hastalık, Şifa ve Cenaze Duaları",
+    "items": [
+      {
+        "id": "62",
+        "title": "Ağrıları Dindirmek İçin",
+        "arabic": "بِسْمِ اللهِ، أَعُوذُ باللهِ وَقُدْرَتِهِ مَنْ شَرِّ مَا أَجِدُ وَأُحَاذِرُ",
+        "pronunciation": "Bismillâh (3 defa). Eûzü billâhi ve kudretihî min şerri mâ ecidü ve uhâziru (7 defa).",
+        "meaning": "Allah'ın adıyla (3 defa). Bedenimde hissettiğim ve çekindiğim ağrının şerrinden Allah'a ve O'nun kudretine sığınırım (7 defa).",
+        "reference": "İbn Mâce 3522"
+      },
+      {
+        "id": "63",
+        "title": "Hasta Ziyaretinde Okunacak",
+        "arabic": "أَسْأَلُ اللَّهَ الْعَظِيمَ رَبَّ الْعَرْشِ الْعَظِيمِ أَنْ يَشْفِيَكَ",
+        "pronunciation": "Es'elüllâhel-Azîme Rabbe'l-Arşil-Azîmi en yeşfiyek.",
+        "meaning": "Büyük Arş'ın Rabbi olan Yüce Allah'tan sana şifa vermesini dilerim.",
+        "reference": "Tirmizî 2:210"
+      },
+      {
+        "id": "64",
+        "title": "Cenaze Namazında Ölü İçin",
+        "arabic": "اللَّهُمَّ اغْفِرْ لَهُ الَّلهُمَّ ثَبِّتْهُ",
+        "pronunciation": "Allâhümmağfir lehû, Allâhümme sebbit'hü.",
+        "meaning": "Allah'ım, onu bağışla. Allah'ım, (sorgu anında) onu sabit (sağlam) kıl.",
+        "reference": "Ebû Dâvûd 3:315"
+      },
+      {
+        "id": "65",
+        "title": "Kabristan Ziyareti",
+        "arabic": "السَّلَامُ عَلَيْكُمُ أَهْلَ الدِّيَارِ مِنَ الْمُؤْمِنِينَ وَالْمُسْلِمِينَ وَإِنَّا إِنْ شَاءَ اللَّهُ بِكُمْ لَاحِقُونَ نَسْأَلُ اللَّهَ لَنَا وَلَكُمُ الْعَافِيَةَ",
+        "pronunciation": "Esselâmü aleyküm ehle'd-diyâri minel-mü'minîne vel-müslimîn. Ve innâ inşâallâhu biküm lâhikûn. Nes'elüllâhe lenâ ve lekümü'l-âfiyeh.",
+        "meaning": "Ey buraların mümin ve Müslüman sakinleri, selam üzerinize olsun. İnşallah biz de size katılacağız. Allah'tan bizim için ve sizin için afiyet (bağışlanma) dileriz.",
+        "reference": "Müslim 2:671"
+      }
+    ]
+  }
+]

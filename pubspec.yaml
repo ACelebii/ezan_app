@@ -54,3 +54,4 @@ flutter:
     - assets/uyari.mp3.mp3
     - .env
     - .env_production
+    - assets/dualar.json
