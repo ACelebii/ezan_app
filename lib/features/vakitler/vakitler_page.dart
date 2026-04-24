@@ -12,6 +12,7 @@ import '../pusula/pusula_page.dart';
 import '../imsakiye/imsakiye_page.dart';
 import '../settings/settings_page.dart';
 import '../zikirmatik/zikirmatik_page.dart'; // Zikirmatik sayfası eklendi
+import '../../utils/assets_constants.dart';
 
 class EzanVaktiPage extends StatefulWidget {
   const EzanVaktiPage({super.key});
@@ -582,7 +583,7 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
   Widget _buildFotografliLayout(BuildContext context) {
     final authService = context.read<AuthService>();
     Color accentColor = Colors.redAccent.shade200;
-    String mosqueBg = "assets/Images/fotografcamitema.jpg";
+    String mosqueBg = Assets.fotografCamiteMa;
 
     String hours = _remainingTime.inHours.toString().padLeft(2, '0');
     String minutes = (_remainingTime.inMinutes % 60).toString().padLeft(2, '0');

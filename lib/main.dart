@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'firebase_options.dart';
 import 'features/auth/auth_service.dart';
+import 'theme/app_theme.dart';
 
 import 'features/vakitler/vakitler_page.dart';
 import 'features/kuran/kuran_page.dart';
@@ -46,24 +47,8 @@ void main() async {
         builder: (_, ThemeMode currentMode, __) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              brightness: Brightness.light,
-              scaffoldBackgroundColor: const Color(0xFFF2F2F7),
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                elevation: 0,
-              ),
-            ),
-            darkTheme: ThemeData(
-              brightness: Brightness.dark,
-              scaffoldBackgroundColor: Colors.black,
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Color(0xFF031F1F),
-                foregroundColor: Colors.white,
-                elevation: 0,
-              ),
-            ),
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
             themeMode: currentMode,
             home: const MainNavigationPage(),
           );

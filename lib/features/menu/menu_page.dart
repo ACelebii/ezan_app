@@ -12,6 +12,8 @@ import '../dini_gunler/dini_gunler_page.dart';
 import '../hutbe/hutbe_page.dart';
 import '../camiler/cami_page.dart';
 import '../dualar/dualar_page.dart';
+import '../dualar/dualar_page.dart';
+import '../kutuphane/kutuphane_page.dart';
 
 bool _isDark(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;
@@ -224,6 +226,11 @@ class MenuPage extends StatelessWidget {
                   } else if (item['t'] == 'Dualar') {
                     Navigator.push(context,
                         MaterialPageRoute(builder: (context) => DualarPage()));
+                  } else if (item['t'] == 'Kütüphane') {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => KutuphanePage()));
                   } else {
                     _showSnack(context,
                         "${authService.translate(item['t'])} yakında eklenecek...");

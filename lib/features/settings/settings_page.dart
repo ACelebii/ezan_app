@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../main.dart';
+import '../../theme/app_theme.dart';
 import '../auth/auth_service.dart';
 import 'theme_selector_page.dart';
 
@@ -352,16 +353,16 @@ class _SettingsPageState extends State<SettingsPage> {
           ? TextDirection.rtl
           : TextDirection.ltr,
       child: Scaffold(
-        backgroundColor: getBgColor(context),
+        backgroundColor: AppTheme.getBgColor(context),
         appBar: AppBar(
           automaticallyImplyLeading: false,
           leading: buildBeautifulBackButton(context),
           title: Text(authService.translate("Ayarlar"),
               style: TextStyle(
-                  color: getTextColor(context),
+                  color: AppTheme.getTextColor(context),
                   fontWeight: FontWeight.bold,
                   fontSize: 18)),
-          backgroundColor: getBgColor(context),
+          backgroundColor: AppTheme.getBgColor(context),
           centerTitle: true,
           elevation: 0,
         ),
@@ -373,7 +374,7 @@ class _SettingsPageState extends State<SettingsPage> {
               height: 170,
               margin: const EdgeInsets.only(bottom: 25),
               decoration: BoxDecoration(
-                color: getCardColor(context),
+                color: AppTheme.getCardColor(context),
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
@@ -391,7 +392,8 @@ class _SettingsPageState extends State<SettingsPage> {
                         top: -20,
                         child: Icon(Icons.style_rounded,
                             size: 150,
-                            color: getAccentColor(context).withOpacity(0.05))),
+                            color: AppTheme.getAccentColor(context)
+                                .withOpacity(0.05))),
                     Padding(
                       padding: const EdgeInsets.all(24),
                       child: Row(
@@ -399,17 +401,18 @@ class _SettingsPageState extends State<SettingsPage> {
                           Container(
                             padding: const EdgeInsets.all(15),
                             decoration: BoxDecoration(
-                                color: getAccentColor(context),
+                                color: AppTheme.getAccentColor(context),
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                      color: getAccentColor(context)
+                                      color: AppTheme.getAccentColor(context)
                                           .withOpacity(0.3),
                                       blurRadius: 15,
                                       offset: const Offset(0, 5))
                                 ]),
                             child: Icon(Icons.check_rounded,
-                                color: isDark(context)
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
                                     ? Colors.black
                                     : Colors.white,
                                 size: 32),
@@ -422,7 +425,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               children: [
                                 Text(authService.translate("AKTİF GÖRÜNÜM"),
                                     style: TextStyle(
-                                        color: getAccentColor(context),
+                                        color: AppTheme.getAccentColor(context),
                                         fontSize: 11,
                                         fontWeight: FontWeight.w900,
                                         letterSpacing: 1.2)),
@@ -431,14 +434,15 @@ class _SettingsPageState extends State<SettingsPage> {
                                     authService
                                         .translate(authService.anaSayfaStili),
                                     style: TextStyle(
-                                        color: getTextColor(context),
+                                        color: AppTheme.getTextColor(context),
                                         fontSize: 24,
                                         fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 18),
                                 Container(
                                   height: 8,
                                   decoration: BoxDecoration(
-                                      color: isDark(context)
+                                      color: Theme.of(context).brightness ==
+                                              Brightness.dark
                                           ? Colors.white10
                                           : Colors.black12,
                                       borderRadius: BorderRadius.circular(10)),
@@ -447,7 +451,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                       child: Container(
                                           decoration: BoxDecoration(
                                               gradient: LinearGradient(colors: [
-                                                getAccentColor(context),
+                                                AppTheme.getAccentColor(
+                                                    context),
                                                 Colors.orange.shade400
                                               ]),
                                               borderRadius:

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../theme/app_theme.dart';
 import 'dualar_model.dart';
 import 'dua_detail_page.dart';
 
@@ -103,11 +104,7 @@ class _DualarPageState extends State<DualarPage> {
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Text(
                 "Dualar",
-                style: TextStyle(
-                    color: textColor,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -0.5),
+                style: AppTheme.headerStyle.copyWith(color: textColor),
               ),
             ),
             const SizedBox(height: 20),
