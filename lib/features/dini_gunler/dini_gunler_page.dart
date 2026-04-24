@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../theme/app_theme.dart';
 import '../auth/auth_service.dart';
 
 // ============================================================================
@@ -14,9 +15,7 @@ Widget _buildGlassButton(BuildContext context,
     child: Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withOpacity(0.1)
-            : Colors.black.withOpacity(0.05),
+        color: AppTheme.getCardColor(context).withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: isDark ? Colors.white24 : Colors.black12),
       ),
@@ -181,8 +180,8 @@ class _DiniGunlerPageState extends State<DiniGunlerPage> {
   Widget build(BuildContext context) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     final authService = context.watch<AuthService>();
-    Color bgColor = isDark ? Colors.black : const Color(0xFFF2F2F7);
-    Color textColor = isDark ? Colors.white : Colors.black;
+    Color bgColor = AppTheme.getBgColor(context);
+    Color textColor = AppTheme.getTextColor(context);
 
     // Seçili yıla göre veriyi filtrele ve aylara göre grupla
     var yillikVeri =
