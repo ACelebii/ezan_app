@@ -4,8 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart'
     hide TextDirection; // intl çakışma hatası çözüldü
 import 'package:provider/provider.dart';
-import 'auth_service.dart';
-import 'main.dart'; // Vakitler sayfasına dönebilmek için eklendi
+import '../auth/auth_service.dart';
+import '../../main.dart';
 
 class ImsakiyePage extends StatefulWidget {
   const ImsakiyePage({super.key});

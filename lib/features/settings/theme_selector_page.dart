@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'auth_service.dart';
+import '../auth/auth_service.dart';
 
 class ThemeSelectorPage extends StatefulWidget {
   const ThemeSelectorPage({super.key});

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'main.dart'; // Vakitler sayfasına dönebilmek için eklendi
+import '../../main.dart';
 
 class KuranPage extends StatefulWidget {
   const KuranPage({super.key});

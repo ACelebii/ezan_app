@@ -19,12 +19,18 @@ final ValueNotifier<Map<String, dynamic>?> globalLocation = ValueNotifier(null);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: ".env_production");
   await initializeDateFormatting('tr_TR', null);
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  debugPrint("Firebase initializing...");
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint("Firebase initialized.");
+  } catch (e) {
+    debugPrint("Firebase initialization failed: $e");
+  }
 
   runApp(
     MultiProvider(
@@ -145,11 +151,12 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
             Color itemBgColor;
             if (isDark) {
               itemBgColor = isSelected
-                  ? activeColor.withOpacity(0.15)
+                  ? activeColor.withValues(alpha: 0.15)
                   : const Color(0xFF1E1E20);
             } else {
-              itemBgColor =
-                  isSelected ? activeColor.withOpacity(0.1) : Colors.white;
+              itemBgColor = isSelected
+                  ? activeColor.withValues(alpha: 0.1)
+                  : Colors.white;
             }
 
             return Expanded(
@@ -169,16 +176,16 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected
-                            ? activeColor.withOpacity(isDark ? 0.5 : 0.3)
+                            ? activeColor.withValues(alpha: isDark ? 0.5 : 0.3)
                             : (isDark
                                 ? Colors.white10
-                                : Colors.black.withOpacity(0.04)),
+                                : Colors.black.withValues(alpha: 0.04)),
                         width: isSelected ? 1.5 : 1.0,
                       ),
                       boxShadow: [
                         if (!isDark) // Sadece aydınlık modda belirgin ve tatlı bir gölge
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           )

@@ -10,6 +10,8 @@ import '../settings/theme_selector_page.dart';
 import '../zikirmatik/zikirmatik_page.dart';
 import '../dini_gunler/dini_gunler_page.dart';
 import '../hutbe/hutbe_page.dart';
+import '../camiler/cami_page.dart';
+import '../dualar/dualar_page.dart';
 
 bool _isDark(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;
@@ -214,6 +216,14 @@ class MenuPage extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                             builder: (context) => const HaftaninHutbesiPage()));
+                  } else if (item['t'] == 'Yakın Camiler') {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const CamiPage()));
+                  } else if (item['t'] == 'Dualar') {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => DualarPage()));
                   } else {
                     _showSnack(context,
                         "${authService.translate(item['t'])} yakında eklenecek...");

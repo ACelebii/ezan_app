@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'auth_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../auth/auth_service.dart';
 
 // ============================================================================
 // ORTAK BUTON TASARIMI (Glassmorphism)
@@ -67,8 +68,7 @@ class HutbeServisi {
 
       var snapshot = await FirebaseFirestore.instanceFor(
         app: Firebase.app(),
-        databaseId:
-            'default', // <--- BURAYA Firebase panelinde gördüğün ID'yi yaz!
+        databaseId: dotenv.env['FIREBASE_DB_ID'] ?? 'default',
       ).collection('hutbeler').get(const GetOptions(source: Source.server));
 
       if (snapshot.docs.isEmpty) {
