@@ -1,4 +1,4 @@
-import '../../data/api_client.dart';
+import '../../core/api_client.dart';
 import 'cami_model.dart';
 
 class CamiService {

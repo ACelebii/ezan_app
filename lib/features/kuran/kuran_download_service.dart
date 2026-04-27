@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import '../../data/local_db.dart';
+import 'package:ezan_vakti_uygulamasi/core/local_db.dart';
 
 class KuranDownloadService {
   static Future<void> downloadPage(int pageNumber, String url) async {

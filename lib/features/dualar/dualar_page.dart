@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import 'dualar_model.dart';
 import 'dua_detail_page.dart';
 
