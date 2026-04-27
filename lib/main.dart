@@ -3,16 +3,32 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:workmanager/workmanager.dart';
 
 import 'firebase_options.dart';
 import 'features/auth/auth_service.dart';
-import 'theme/app_theme.dart';
+import 'core/theme/app_theme.dart';
+import 'features/sync/sync_manager.dart';
+import 'features/sync/sync_notifier.dart';
+import 'features/kutuphane/data/kutuphane_repository.dart';
+import 'features/kuran/kuran_download_service.dart';
 
 import 'features/vakitler/vakitler_page.dart';
 import 'features/kuran/kuran_page.dart';
 import 'features/pusula/pusula_page.dart';
 import 'features/imsakiye/imsakiye_page.dart';
 import 'features/menu/menu_page.dart';
+import 'locator.dart';
+
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    final repo = KutuphaneRepository();
+    await repo.refresh();
+    await KuranDownloadService.refresh();
+    return Future.value(true);
+  });
+}
 
 // --- GLOBAL HAFIZA VE TEMA MOTORU ---
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
@@ -22,6 +38,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env_production");
   await initializeDateFormatting('tr_TR', null);
+  setupLocator();
+  Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
 
   debugPrint("Firebase initializing...");
   try {
@@ -41,6 +59,7 @@ void main() async {
           auth.setApiKey(dotenv.env['OWM_API_KEY'] ?? '');
           return auth;
         }),
+        ChangeNotifierProvider(create: (_) => SyncNotifier()),
       ],
       child: ValueListenableBuilder<ThemeMode>(
         valueListenable: themeNotifier,
@@ -67,6 +86,32 @@ class MainNavigationPage extends StatefulWidget {
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int _currentIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final syncNotifier = Provider.of<SyncNotifier>(context, listen: false);
+      getIt<SyncManager>().init(syncNotifier);
+      Workmanager().registerPeriodicTask("1", "syncTask",
+          frequency: const Duration(hours: 1));
+
+      syncNotifier.addListener(() {
+        if (syncNotifier.state == SyncState.error) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content:
+                Text("Senkronizasyon hatası: ${syncNotifier.errorMessage}"),
+            backgroundColor: Colors.red,
+          ));
+        } else if (syncNotifier.state == SyncState.success) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text("Senkronizasyon başarılı!"),
+            backgroundColor: Colors.green,
+          ));
+        }
+      });
+    });
+  }
+
   // Sayfa Listesi
   List<Widget> get _pages => [
         const EzanVaktiPage(),
@@ -90,7 +135,22 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     return Scaffold(
       // extendBody: true sayesinde alt menü kaybolduğunda siyah boşluk kalmaz, sayfa tam ekran olur.
       extendBody: true,
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      body: Stack(
+        children: [
+          IndexedStack(index: _currentIndex, children: _pages),
+          Consumer<SyncNotifier>(
+            builder: (context, syncNotifier, child) {
+              if (syncNotifier.state == SyncState.syncing) {
+                return Container(
+                  color: Colors.black26,
+                  child: const Center(child: CircularProgressIndicator()),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
+      ),
 
       // Sadece Vakitler (index 0) ekranındayken görünür. Diğer sayfalarda aşağı doğru kayarak gizlenir.
       bottomNavigationBar: IgnorePointer(

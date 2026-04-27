@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import '../../data/repositories/kutuphane_repository.dart';
 import '../../utils/assets_constants.dart';
 import 'kutuphane_model.dart';
@@ -9,92 +10,98 @@ class KutuphanePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isDark = Theme.of(context).brightness == Brightness.dark;
-    Color textColor = isDark ? Colors.white : Colors.black87;
+    Color textColor = AppTheme.getTextColor(context);
 
     final repository = KutuphaneRepository();
-    final List<LibraryNode> kitaplar = repository.getLibraryItems();
 
     return Scaffold(
-      backgroundColor: isDark ? Colors.black : const Color(0xFFF2F2F7),
+      backgroundColor: AppTheme.getBgColor(context),
       appBar: AppBar(
         title: Text("Kütüphane",
             style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppTheme.getBgColor(context),
         elevation: 0,
         centerTitle: true,
       ),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // 1. ÜST KISIM: SON OKUNAN (Videodaki 00:02)
-          SliverToBoxAdapter(
-            child: _buildSonOkunanKarti(context, isDark, textColor),
-          ),
-
-          // 2. IZGARA: KİTAP KAPAKLARI (3 Sütun)
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisSpacing: 20,
-                crossAxisSpacing: 15,
-                childAspectRatio: 0.65, // Dikey kitap formu
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final kitap = kitaplar[index];
-                  return InkWell(
-                    onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => KutuphaneIcerikPage(node: kitap))),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4))
-                              ],
-                              image: DecorationImage(
-                                  image: AssetImage(kitap.imagePath),
-                                  fit: BoxFit.cover),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(kitap.title,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                                color: textColor,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600)),
-                      ],
+      body: FutureBuilder<List<LibraryNode>>(
+          future: repository.getLibraryItems(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final kitaplar = snapshot.data!;
+            return CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: _buildSonOkunanKarti(context, textColor),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.all(16),
+                  sliver: SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 20,
+                      crossAxisSpacing: 15,
+                      childAspectRatio: 0.65,
                     ),
-                  );
-                },
-                childCount: kitaplar.length,
-              ),
-            ),
-          ),
-        ],
-      ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final kitap = kitaplar[index];
+                        return InkWell(
+                          onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) =>
+                                      KutuphaneIcerikPage(node: kitap))),
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                          color: Colors.black.withOpacity(0.2),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 4))
+                                    ],
+                                    image: DecorationImage(
+                                        image: AssetImage(kitap.imagePath),
+                                        fit: BoxFit.cover),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(kitap.title,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      color: textColor,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        );
+                      },
+                      childCount: kitaplar.length,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
     );
   }
 
-  Widget _buildSonOkunanKarti(
-      BuildContext context, bool isDark, Color textColor) {
+  Widget _buildSonOkunanKarti(BuildContext context, Color textColor) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -122,8 +129,8 @@ class KutuphanePage extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildIconBtn(Icons.menu_book, "Sureler", isDark),
-                    _buildIconBtn(Icons.bookmark, "Yer İmleri", isDark),
+                    _buildIconBtn(context, Icons.menu_book, "Sureler"),
+                    _buildIconBtn(context, Icons.bookmark, "Yer İmleri"),
                   ],
                 )
               ],
@@ -134,14 +141,14 @@ class KutuphanePage extends StatelessWidget {
     );
   }
 
-  Widget _buildIconBtn(IconData icon, String label, bool isDark) {
+  Widget _buildIconBtn(BuildContext context, IconData icon, String label) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: Colors.teal),
+        Icon(icon, size: 14, color: AppTheme.primaryColor),
         const SizedBox(width: 4),
         Text(label,
             style: TextStyle(
-                fontSize: 12, color: isDark ? Colors.white70 : Colors.black54)),
+                fontSize: 12, color: AppTheme.getSubTextColor(context))),
       ],
     );
   }
