@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../auth/auth_service.dart';
 
 class AnalogSaatLayout extends StatefulWidget {

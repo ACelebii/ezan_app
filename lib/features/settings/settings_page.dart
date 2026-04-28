@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../main.dart';
-import '../../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import '../auth/auth_service.dart';
 import 'theme_selector_page.dart';
 

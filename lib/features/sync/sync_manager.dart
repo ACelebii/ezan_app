@@ -1,9 +1,9 @@
-import '../data/repositories/kutuphane_repository.dart';
-import '../features/kuran/kuran_download_service.dart';
-import 'network_service.dart';
-import '../providers/sync_notifier.dart';
+import '../kutuphane/data/kutuphane_repository.dart';
+import '../kuran/kuran_download_service.dart';
+import '../../core/utils/network_service.dart';
+import 'sync_notifier.dart';
 import 'package:flutter/foundation.dart';
-import '../locator.dart';
+import '../../locator.dart';
 
 class SyncManager {
   static final SyncManager _instance = SyncManager._internal();

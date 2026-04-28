@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
-import '../../../data/repositories/kutuphane_repository.dart';
-import '../../utils/assets_constants.dart';
-import 'kutuphane_model.dart';
-import 'kutuphane_icerik_page.dart';
+import 'package:ezan_vakti_uygulamasi/core/theme/app_theme.dart';
+import 'package:ezan_vakti_uygulamasi/features/kutuphane/data/kutuphane_repository.dart';
+import 'package:ezan_vakti_uygulamasi/core/utils/assets_constants.dart';
+import 'package:ezan_vakti_uygulamasi/features/kutuphane/kutuphane_model.dart';
+import 'package:ezan_vakti_uygulamasi/features/kutuphane/kutuphane_icerik_page.dart';
 
 class KutuphanePage extends StatelessWidget {
   const KutuphanePage({super.key});

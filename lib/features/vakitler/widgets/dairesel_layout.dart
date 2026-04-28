@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_theme.dart';
-import '../../../utils/assets_constants.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/assets_constants.dart';
 
 class DaireselLayout extends StatelessWidget {
   final double timeProgress;
