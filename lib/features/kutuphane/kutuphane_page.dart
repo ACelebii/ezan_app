@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
-import '../../data/repositories/kutuphane_repository.dart';
+import '../../../data/repositories/kutuphane_repository.dart';
 import '../../utils/assets_constants.dart';
 import 'kutuphane_model.dart';
 import 'kutuphane_icerik_page.dart';

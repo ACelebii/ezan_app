@@ -1,7 +1,7 @@
-import 'base_repository.dart';
-import '../../features/kutuphane/kutuphane_model.dart';
-import '../../utils/assets_constants.dart';
-import '../local_db.dart';
+import 'package:ezan_vakti_uygulamasi/core/repositories/base_repository.dart';
+import 'package:ezan_vakti_uygulamasi/features/kutuphane/kutuphane_model.dart';
+import 'package:ezan_vakti_uygulamasi/core/utils/assets_constants.dart';
+import 'package:ezan_vakti_uygulamasi/core/local_db.dart';
 
 class KutuphaneRepository extends BaseRepository<List<LibraryNode>> {
   final dbHelper = LocalDatabase.instance;
