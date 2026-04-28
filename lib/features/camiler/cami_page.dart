@@ -13,7 +13,6 @@ class CamiPage extends StatefulWidget {
 }
 
 class _CamiPageState extends State<CamiPage> {
-  late GoogleMapController _mapController;
   final CamiService _camiService = CamiService();
   Set<Marker> _markers = {};
   List<Cami> _mosques = [];
@@ -77,37 +76,43 @@ class _CamiPageState extends State<CamiPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_currentPosition == null) {
+      return const Scaffold(
+          body: Center(child: Text('Konum bilgisi alınamadı')));
+    }
+
     return Scaffold(
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                GoogleMap(
-                  initialCameraPosition: CameraPosition(
-                    target: LatLng(_currentPosition!.latitude,
-                        _currentPosition!.longitude),
-                    zoom: 15,
-                  ),
-                  onMapCreated: (controller) => _mapController = controller,
-                  markers: _markers,
-                  myLocationEnabled: true,
-                  mapType: _currentMapType,
-                ),
-                SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildGlassButton(Icons.arrow_back_ios_new_rounded,
-                            () => Navigator.pop(context)),
-                        _buildMapMenu(),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+      body: Stack(
+        children: [
+          GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: LatLng(
+                  _currentPosition!.latitude, _currentPosition!.longitude),
+              zoom: 15,
             ),
+            onMapCreated: (controller) {},
+            markers: _markers,
+            myLocationEnabled: true,
+            mapType: _currentMapType,
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildGlassButton(Icons.arrow_back_ios_new_rounded,
+                      () => Navigator.pop(context)),
+                  _buildMapMenu(),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -130,7 +135,8 @@ class _CamiPageState extends State<CamiPage> {
 
   Widget _buildMapMenu() {
     return Container(
-      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+      decoration:
+          const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
       child: PopupMenuButton<String>(
         icon: const Icon(Icons.menu_rounded, color: Colors.black),
         onSelected: (value) {
@@ -154,3 +160,5 @@ class _CamiPageState extends State<CamiPage> {
     );
   }
 }
+
+

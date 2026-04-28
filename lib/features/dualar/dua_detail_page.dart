@@ -188,3 +188,5 @@ class DuaDetailPage extends StatelessWidget {
     );
   }
 }
+
+

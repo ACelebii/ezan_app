@@ -214,3 +214,5 @@ class FotografliLayout extends StatelessWidget {
     );
   }
 }
+
+

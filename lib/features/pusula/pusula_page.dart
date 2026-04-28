@@ -251,10 +251,9 @@ class _PusulaView extends StatelessWidget {
               ),
             ),
           ),
-          Opacity(
+          const Opacity(
             opacity: 0.05,
-            child: const Icon(Icons.explore_outlined,
-                size: 140, color: Colors.white),
+            child: Icon(Icons.explore_outlined, size: 140, color: Colors.white),
           ),
         ],
       ),

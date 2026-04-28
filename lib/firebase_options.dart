@@ -4,8 +4,6 @@ import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
-// TODO: Consider setting up Firebase App Check for added security.
-
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
 /// Example:

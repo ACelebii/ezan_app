@@ -22,7 +22,7 @@ class KutuphaneRepository extends BaseRepository<List<LibraryNode>> {
 
   @override
   Future<List<LibraryNode>> fetchFromRemote() async {
-    // TODO: Implement API call
+    // TODO: Replace hardcoded items with real API fetch.
     return _getHardcodedItems();
   }
 

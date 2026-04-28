@@ -733,15 +733,21 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16)),
                               onSelected: (value) {
-                                if (value == 'v1')
+                                if (value == 'v1') {
                                   setState(() => _currentView = 1);
-                                if (value == 'v2')
+                                }
+                                if (value == 'v2') {
                                   setState(() => _currentView = 2);
-                                if (value == 'v3')
+                                }
+                                if (value == 'v3') {
                                   setState(() => _currentView = 3);
-                                if (value == 'tesbih')
+                                }
+                                if (value == 'tesbih') {
                                   _showBeadColorPicker(); // Tesbih Renk Seçici
-                                if (value == 'reset') _reset();
+                                }
+                                if (value == 'reset') {
+                                  _reset();
+                                }
                               },
                               itemBuilder: (context) => [
                                 PopupMenuItem(
@@ -1125,3 +1131,5 @@ class _ZikirEkleDuzenlePageState extends State<ZikirEkleDuzenlePage> {
     );
   }
 }
+
+

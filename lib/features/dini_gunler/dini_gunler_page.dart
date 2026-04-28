@@ -15,7 +15,7 @@ Widget _buildGlassButton(BuildContext context,
     child: Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context).withOpacity(0.1),
+        color: AppTheme.getCardColor(context).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: isDark ? Colors.white24 : Colors.black12),
       ),
@@ -214,8 +214,8 @@ class _DiniGunlerPageState extends State<DiniGunlerPage> {
                   Container(
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.white.withOpacity(0.1)
-                          : Colors.black.withOpacity(0.05),
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                           color: isDark ? Colors.white24 : Colors.black12),
@@ -316,7 +316,7 @@ class _DiniGunlerPageState extends State<DiniGunlerPage> {
                                       : [
                                           BoxShadow(
                                               color: Colors.black
-                                                  .withOpacity(0.03),
+                                                  .withValues(alpha: 0.03),
                                               blurRadius: 10,
                                               offset: const Offset(0, 4))
                                         ]),
@@ -504,7 +504,7 @@ class DiniGunDetayPage extends StatelessWidget {
                         ? []
                         : [
                             BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 10,
                                 offset: const Offset(0, -2))
                           ]),

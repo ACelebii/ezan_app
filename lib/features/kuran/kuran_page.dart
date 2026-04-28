@@ -76,6 +76,7 @@ class _KuranPageState extends State<KuranPage> {
               // Örnek URL (gerçek API ile değiştirilmeli)
               await KuranDownloadService.downloadPage(
                   _currentPage, "https://example.com/page_$_currentPage.png");
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                 content: Text("İndirme tamamlandı!"),
                 behavior: SnackBarBehavior.floating,

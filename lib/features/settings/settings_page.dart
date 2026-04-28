@@ -36,8 +36,8 @@ Color getTextColor(BuildContext context) =>
 Color getSubTextColor(BuildContext context) =>
     isDark(context) ? Colors.white54 : Colors.black54;
 Color getDividerColor(BuildContext context) => isDark(context)
-    ? Colors.white.withOpacity(0.05)
-    : Colors.black.withOpacity(0.08);
+    ? Colors.white.withValues(alpha: 0.05)
+    : Colors.black.withValues(alpha: 0.08);
 Color getAccentColor(BuildContext context) =>
     isDark(context) ? Colors.yellow : Colors.orange.shade700;
 Color getTextFieldColor(BuildContext context) =>
@@ -54,8 +54,8 @@ Widget buildBeautifulBackButton(BuildContext context,
       child: Container(
         decoration: BoxDecoration(
           color: isDark(context)
-              ? Colors.white.withOpacity(0.1)
-              : Colors.black.withOpacity(0.05),
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.black.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
               color: isDark(context) ? Colors.white24 : Colors.black12),
@@ -331,8 +331,9 @@ class _SettingsPageState extends State<SettingsPage> {
           Navigator.push(context,
                   MaterialPageRoute(builder: (context) => const TarihSecPage()))
               .then((selectedDate) {
-            if (selectedDate != null)
+            if (selectedDate != null) {
               setState(() => _erteleDurumu = selectedDate);
+            }
           });
         } else {
           setState(() => _erteleDurumu = value);
@@ -378,7 +379,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
+                      color: Colors.black.withValues(alpha: 0.06),
                       blurRadius: 20,
                       offset: const Offset(0, 8))
                 ],
@@ -393,7 +394,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         child: Icon(Icons.style_rounded,
                             size: 150,
                             color: AppTheme.getAccentColor(context)
-                                .withOpacity(0.05))),
+                                .withValues(alpha: 0.05))),
                     Padding(
                       padding: const EdgeInsets.all(24),
                       child: Row(
@@ -406,7 +407,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 boxShadow: [
                                   BoxShadow(
                                       color: AppTheme.getAccentColor(context)
-                                          .withOpacity(0.3),
+                                          .withValues(alpha: 0.3),
                                       blurRadius: 15,
                                       offset: const Offset(0, 5))
                                 ]),
@@ -829,7 +830,6 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildVakitAlarmSection(BuildContext context, String vakitAdi,
       String saat, IconData icon, Color iconColor,
       {bool isSabahEzani = false}) {
-    final authService = context.watch<AuthService>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -961,12 +961,14 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
   String kapaliGunlerText(AuthService authService) {
     List<String> kapaliOlanlar = [];
     for (int i = 0; i < gunler.length; i++) {
-      if (!gunler[i])
+      if (!gunler[i]) {
         kapaliOlanlar.add(authService.translate(gunIsimleriUzun[i]));
+      }
     }
     if (kapaliOlanlar.isEmpty) return authService.translate("Tüm Günler Açık");
-    if (kapaliOlanlar.length == 7)
+    if (kapaliOlanlar.length == 7) {
       return authService.translate("Tüm Günler Kapalı");
+    }
     return "${kapaliOlanlar.join(", ")} ${authService.translate("Kapalı")}";
   }
 
@@ -1095,8 +1097,9 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
                       MaterialPageRoute(
                           builder: (context) =>
                               SoundSelectionPage(mevcutSes: vakitSesi)));
-                  if (secilenSes != null)
+                  if (secilenSes != null) {
                     setState(() => vakitSesi = secilenSes);
+                  }
                 }),
                 _buildDivider(context),
                 _buildSwitchTile(context, "$safeTitle vaktinde oku",
@@ -1127,7 +1130,9 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
                       MaterialPageRoute(
                           builder: (context) =>
                               SoundSelectionPage(mevcutSes: onceSesi)));
-                  if (secilenSes != null) setState(() => onceSesi = secilenSes);
+                  if (secilenSes != null) {
+                    setState(() => onceSesi = secilenSes);
+                  }
                 }),
                 _buildDivider(context),
                 _buildTile(context,
@@ -1331,7 +1336,8 @@ class _VaktindeKilPageState extends State<VaktindeKilPage> {
                                 style: const TextStyle(
                                     color: Colors.redAccent, fontSize: 16))),
                         Icon(Icons.error_outline_rounded,
-                            color: Colors.redAccent.withOpacity(0.7), size: 20),
+                            color: Colors.redAccent.withValues(alpha: 0.7),
+                            size: 20),
                       ],
                     ),
                   ),
@@ -1780,12 +1786,15 @@ class _SoundSelectionPageState extends State<SoundSelectionPage> {
   }
 
   String _getAudioUrl(String sesAdi) {
-    if (sesAdi.contains("Melodi"))
+    if (sesAdi.contains("Melodi")) {
       return "https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3";
-    if (sesAdi.contains("Sela"))
+    }
+    if (sesAdi.contains("Sela")) {
       return "https://cdn.islamic.network/quran/audio/128/ar.husary/2.mp3";
-    if (sesAdi.contains("Ezan"))
+    }
+    if (sesAdi.contains("Ezan")) {
       return "https://cdn.islamic.network/quran/audio/128/ar.husary/1.mp3";
+    }
     return "https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3";
   }
 
@@ -2017,7 +2026,7 @@ class _HesabimLoginPageState extends State<HesabimLoginPage> {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.greenAccent.withOpacity(0.1)),
+                color: Colors.greenAccent.withValues(alpha: 0.1)),
             child: const Icon(Icons.check_circle_rounded,
                 color: Colors.greenAccent, size: 80)),
         const SizedBox(height: 24),
@@ -2036,7 +2045,7 @@ class _HesabimLoginPageState extends State<HesabimLoginPage> {
             height: 55,
             child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent.withOpacity(0.1),
+                    backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
                     foregroundColor: Colors.redAccent,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -2062,7 +2071,7 @@ class _HesabimLoginPageState extends State<HesabimLoginPage> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 10,
                     offset: const Offset(0, 4))
               ]),
@@ -2134,7 +2143,7 @@ class _HesabimLoginPageState extends State<HesabimLoginPage> {
                               ]),
                     boxShadow: [
                       BoxShadow(
-                          color: getAccentColor(context).withOpacity(0.3),
+                          color: getAccentColor(context).withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4))
                     ]),
@@ -3005,7 +3014,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         colors: [Colors.cyan.shade400, Colors.blue.shade600]),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.cyan.withOpacity(0.3),
+                          color: Colors.cyan.withValues(alpha: 0.3),
                           blurRadius: 15,
                           offset: const Offset(0, 5))
                     ]),
@@ -3035,7 +3044,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
+                          color: Colors.black.withValues(alpha: 0.03),
                           blurRadius: 10,
                           offset: const Offset(0, 4))
                     ]),
@@ -3106,7 +3115,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ]),
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.cyan.withOpacity(0.3),
+                                color: Colors.cyan.withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4))
                           ]),
@@ -3234,7 +3243,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     ]),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.purple.withOpacity(0.3),
+                          color: Colors.purple.withValues(alpha: 0.3),
                           blurRadius: 15,
                           offset: const Offset(0, 5))
                     ]),
@@ -3264,7 +3273,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
+                          color: Colors.black.withValues(alpha: 0.03),
                           blurRadius: 10,
                           offset: const Offset(0, 4))
                     ]),
@@ -3305,7 +3314,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           ]),
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.purple.withOpacity(0.3),
+                                color: Colors.purple.withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4))
                           ]),

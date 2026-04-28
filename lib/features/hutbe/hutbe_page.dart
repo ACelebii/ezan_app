@@ -19,8 +19,8 @@ Widget _buildGlassButton(BuildContext context,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.1)
-            : Colors.black.withOpacity(0.05),
+            ? Colors.white.withValues(alpha: 0.1)
+            : Colors.black.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: isDark ? Colors.white24 : Colors.black12),
       ),
@@ -171,7 +171,8 @@ class _HaftaninHutbesiPageState extends State<HaftaninHutbesiPage> {
                           SizedBox(
                               height: MediaQuery.of(context).size.height * 0.2),
                           Icon(Icons.wifi_off_rounded,
-                              size: 64, color: Colors.grey.withOpacity(0.5)),
+                              size: 64,
+                              color: Colors.grey.withValues(alpha: 0.5)),
                           const SizedBox(height: 16),
                           Padding(
                             padding:
@@ -180,7 +181,7 @@ class _HaftaninHutbesiPageState extends State<HaftaninHutbesiPage> {
                               "Sunucuya bağlanılamadı.\nLütfen internet bağlantınızı kontrol edip sayfayı aşağı çekerek yenileyin.",
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                  color: textColor.withOpacity(0.6),
+                                  color: textColor.withValues(alpha: 0.6),
                                   height: 1.5),
                             ),
                           ),
@@ -195,13 +196,14 @@ class _HaftaninHutbesiPageState extends State<HaftaninHutbesiPage> {
                           SizedBox(
                               height: MediaQuery.of(context).size.height * 0.2),
                           Icon(Icons.article_outlined,
-                              size: 64, color: Colors.grey.withOpacity(0.5)),
+                              size: 64,
+                              color: Colors.grey.withValues(alpha: 0.5)),
                           const SizedBox(height: 16),
                           Text(
                             "Henüz hutbe eklenmemiş.",
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                                color: textColor.withOpacity(0.6),
+                                color: textColor.withValues(alpha: 0.6),
                                 fontSize: 16),
                           ),
                         ],
@@ -251,13 +253,14 @@ class _HaftaninHutbesiPageState extends State<HaftaninHutbesiPage> {
                                             image: NetworkImage(hutbe.resimUrl),
                                             fit: BoxFit.cover,
                                             colorFilter: ColorFilter.mode(
-                                                Colors.black.withOpacity(0.4),
+                                                Colors.black
+                                                    .withValues(alpha: 0.4),
                                                 BlendMode.darken),
                                           ),
                                           boxShadow: [
                                             BoxShadow(
                                                 color: Colors.black
-                                                    .withOpacity(0.1),
+                                                    .withValues(alpha: 0.1),
                                                 blurRadius: 10,
                                                 offset: const Offset(0, 5))
                                           ]),
@@ -279,7 +282,7 @@ class _HaftaninHutbesiPageState extends State<HaftaninHutbesiPage> {
                                             Text(hutbe.tarih,
                                                 style: TextStyle(
                                                     color: Colors.white
-                                                        .withOpacity(0.8),
+                                                        .withValues(alpha: 0.8),
                                                     fontSize: 14)),
                                           ],
                                         ),
@@ -307,7 +310,7 @@ class _HaftaninHutbesiPageState extends State<HaftaninHutbesiPage> {
                                       : [
                                           BoxShadow(
                                               color: Colors.black
-                                                  .withOpacity(0.03),
+                                                  .withValues(alpha: 0.03),
                                               blurRadius: 10,
                                               offset: const Offset(0, 4))
                                         ]),
@@ -418,7 +421,7 @@ class _HutbePdfPageState extends State<HutbePdfPage> {
                       onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: const Text("Bu PDF resmi yayındır."),
-                      backgroundColor: Colors.teal.withOpacity(0.9),
+                      backgroundColor: Colors.teal.withValues(alpha: 0.9),
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
@@ -436,7 +439,7 @@ class _HutbePdfPageState extends State<HutbePdfPage> {
                         const BorderRadius.vertical(top: Radius.circular(24)),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 10,
                           offset: const Offset(0, -5))
                     ]),
