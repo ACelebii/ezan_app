@@ -1,9 +1,8 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:ezan_vakti_uygulamasi/locator.dart';
+import 'package:ezan_vakti_uygulamasi/features/hutbe/data/hutbe_repository.dart';
 import '../auth/auth_service.dart';
 
 // ============================================================================
@@ -57,37 +56,6 @@ class HutbeItem {
 }
 
 // ============================================================================
-// FIREBASE VERİ ÇEKME SERVİSİ (PROFESYONEL VE TEMİZ)
-// ============================================================================
-class HutbeServisi {
-  Future<List<HutbeItem>> fetchHutbeler() async {
-    try {
-      // DİKKAT: Veritabanın ismi büyük ihtimalle 'ezan-app' veya benzeri bir isim.
-      // Firebase Panelinde (Firestore sayfasında) sol üstte yazan ismi tırnak içine yaz.
-      // Eğer isminden emin değilsen, bu satırı 'ezan-app' olarak deneyebilirsin.
-
-      var snapshot = await FirebaseFirestore.instanceFor(
-        app: Firebase.app(),
-        databaseId: dotenv.env['FIREBASE_DB_ID'] ?? 'default',
-      ).collection('hutbeler').get(const GetOptions(source: Source.server));
-
-      if (snapshot.docs.isEmpty) {
-        print("Bağlantı başarılı ama koleksiyon boş.");
-        return [];
-      }
-
-      return snapshot.docs
-          .map((doc) => HutbeItem.fromFirestore(doc.data()))
-          .toList();
-    } catch (e) {
-      print("Firestore Detaylı Hata: $e");
-      // Hata hala devam ederse, terminaldeki yeni hata mesajını bana at.
-      throw Exception("Bağlantı Hatası: $e");
-    }
-  }
-}
-
-// ============================================================================
 // 1. ANA LİSTE SAYFASI
 // ============================================================================
 class HaftaninHutbesiPage extends StatefulWidget {
@@ -98,19 +66,19 @@ class HaftaninHutbesiPage extends StatefulWidget {
 }
 
 class _HaftaninHutbesiPageState extends State<HaftaninHutbesiPage> {
-  final HutbeServisi _servis = HutbeServisi();
+  final HutbeRepository _repo = getIt<HutbeRepository>();
   late Future<List<HutbeItem>> _hutbeFuture;
 
   @override
   void initState() {
     super.initState();
-    _hutbeFuture = _servis.fetchHutbeler();
+    _hutbeFuture = _repo.getData();
   }
 
   // Sayfayı aşağı çekip yenilemek için metod
   Future<void> _refreshData() async {
     setState(() {
-      _hutbeFuture = _servis.fetchHutbeler();
+      _hutbeFuture = _repo.getData();
     });
   }
 

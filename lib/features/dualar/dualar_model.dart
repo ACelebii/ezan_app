@@ -10,6 +10,13 @@ class DuaCategory {
       items: (json['items'] as List).map((i) => DuaItem.fromJson(i)).toList(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'category': title,
+      'items': items.map((i) => i.toJson()).toList(),
+    };
+  }
 }
 
 class DuaItem {
@@ -38,5 +45,16 @@ class DuaItem {
       meaning: json['meaning'] ?? '',
       reference: json['reference'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'arabic': arabic,
+      'pronunciation': pronunciation,
+      'meaning': meaning,
+      'reference': reference,
+    };
   }
 }

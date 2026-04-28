@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:ezan_vakti_uygulamasi/locator.dart';
+import 'package:ezan_vakti_uygulamasi/features/dualar/data/dualar_repository.dart';
 import '../../core/theme/app_theme.dart';
 import 'dualar_model.dart';
 import 'dua_detail_page.dart';
@@ -64,15 +66,14 @@ class _DualarPageState extends State<DualarPage> {
 
   Future<void> _loadDualar() async {
     try {
-      final String response = await rootBundle.loadString('assets/dualar.json');
-      final data = await json.decode(response);
+      final repo = getIt<DualarRepository>();
+      final data = await repo.getData();
       setState(() {
-        categories =
-            (data as List).map((i) => DuaCategory.fromJson(i)).toList();
+        categories = data;
         isLoading = false;
       });
     } catch (e) {
-      debugPrint("JSON Yükleme Hatası: $e");
+      debugPrint("Dualar Yükleme Hatası: $e");
       setState(() => isLoading = false);
     }
   }
@@ -303,5 +304,3 @@ class DuaListPage extends StatelessWidget {
     );
   }
 }
-
-

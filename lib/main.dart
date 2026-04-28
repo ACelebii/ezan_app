@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:workmanager/workmanager.dart';
+import 'package:go_router/go_router.dart';
 
 import 'firebase_options.dart';
 import 'features/auth/auth_service.dart';
@@ -19,6 +20,7 @@ import 'features/pusula/pusula_page.dart';
 import 'features/imsakiye/imsakiye_page.dart';
 import 'features/menu/menu_page.dart';
 import 'locator.dart';
+import 'routes.dart';
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -64,12 +66,12 @@ void main() async {
       child: ValueListenableBuilder<ThemeMode>(
         valueListenable: themeNotifier,
         builder: (_, ThemeMode currentMode, __) {
-          return MaterialApp(
+          return MaterialApp.router(
+            routerConfig: appRouter,
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: currentMode,
-            home: const MainNavigationPage(),
           );
         },
       ),
