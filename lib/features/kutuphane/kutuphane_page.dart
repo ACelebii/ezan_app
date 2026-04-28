@@ -1,18 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ezan_vakti_uygulamasi/core/theme/app_theme.dart';
-import 'package:ezan_vakti_uygulamasi/features/kutuphane/data/kutuphane_repository.dart';
 import 'package:ezan_vakti_uygulamasi/core/utils/assets_constants.dart';
 import 'package:ezan_vakti_uygulamasi/features/kutuphane/kutuphane_model.dart';
 import 'package:ezan_vakti_uygulamasi/features/kutuphane/kutuphane_icerik_page.dart';
+import 'package:ezan_vakti_uygulamasi/features/kutuphane/providers/kutuphane_provider.dart';
 
 class KutuphanePage extends StatelessWidget {
   const KutuphanePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    Color textColor = AppTheme.getTextColor(context);
+    return ChangeNotifierProvider(
+      create: (_) => KutuphaneProvider(),
+      child: const _KutuphanePageContent(),
+    );
+  }
+}
 
-    final repository = KutuphaneRepository();
+class _KutuphanePageContent extends StatelessWidget {
+  const _KutuphanePageContent();
+
+  @override
+  Widget build(BuildContext context) {
+    Color textColor = AppTheme.getTextColor(context);
+    final provider = context.watch<KutuphaneProvider>();
+
+    if (provider.isLoading) {
+      return Scaffold(
+          backgroundColor: AppTheme.getBgColor(context),
+          body: const Center(child: CircularProgressIndicator()));
+    }
+
+    final kitaplar = provider.items;
 
     return Scaffold(
       backgroundColor: AppTheme.getBgColor(context),
@@ -23,80 +43,68 @@ class KutuphanePage extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
       ),
-      body: FutureBuilder<List<LibraryNode>>(
-          future: repository.getLibraryItems(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final kitaplar = snapshot.data!;
-            return CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                SliverToBoxAdapter(
-                  child: _buildSonOkunanKarti(context, textColor),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.all(16),
-                  sliver: SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 20,
-                      crossAxisSpacing: 15,
-                      childAspectRatio: 0.65,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final kitap = kitaplar[index];
-                        return InkWell(
-                          onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) =>
-                                      KutuphaneIcerikPage(node: kitap))),
-                          child: Column(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                          color: Colors.black.withOpacity(0.2),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 4))
-                                    ],
-                                    image: DecorationImage(
-                                        image: AssetImage(kitap.imagePath),
-                                        fit: BoxFit.cover),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(kitap.title,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                      color: textColor,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600)),
-                            ],
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: _buildSonOkunanKarti(context, textColor),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: 20,
+                crossAxisSpacing: 15,
+                childAspectRatio: 0.65,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final kitap = kitaplar[index];
+                  return InkWell(
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => KutuphaneIcerikPage(node: kitap))),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4))
+                              ],
+                              image: DecorationImage(
+                                  image: AssetImage(kitap.imagePath),
+                                  fit: BoxFit.cover),
+                            ),
                           ),
-                        );
-                      },
-                      childCount: kitaplar.length,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(kitap.title,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: textColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600)),
+                      ],
                     ),
-                  ),
-                ),
-              ],
-            );
-          }),
+                  );
+                },
+                childCount: kitaplar.length,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildSonOkunanKarti(BuildContext context, Color textColor) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -153,5 +161,3 @@ class KutuphanePage extends StatelessWidget {
     );
   }
 }
-
-

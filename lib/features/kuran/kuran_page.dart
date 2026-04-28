@@ -1,25 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import 'kuran_download_service.dart';
 import 'dart:io';
+import 'providers/kuran_provider.dart';
 
-class KuranPage extends StatefulWidget {
+class KuranPage extends StatelessWidget {
   const KuranPage({super.key});
 
   @override
-  State<KuranPage> createState() => _KuranPageState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => KuranProvider(),
+      child: const _KuranPageContent(),
+    );
+  }
 }
 
-class _KuranPageState extends State<KuranPage> {
-  int _currentPage = 1;
-  final int _totalPages = 604; // Kuran-ı Kerim toplam sayfa sayısı
+class _KuranPageContent extends StatefulWidget {
+  const _KuranPageContent();
+
+  @override
+  State<_KuranPageContent> createState() => _KuranPageState();
+}
+
+class _KuranPageState extends State<_KuranPageContent> {
   late PageController _pageController;
 
   @override
   void initState() {
     super.initState();
-    _currentPage = 435;
-    _pageController = PageController(initialPage: _currentPage - 1);
+    final provider = Provider.of<KuranProvider>(context, listen: false);
+    _pageController = PageController(initialPage: provider.currentPage - 1);
   }
 
   @override
@@ -28,14 +40,9 @@ class _KuranPageState extends State<KuranPage> {
     super.dispose();
   }
 
-  int _hesaplaCuz(int sayfa) {
-    if (sayfa <= 0) return 1;
-    if (sayfa > 604) return 30;
-    return ((sayfa - 1) ~/ 20) + 1;
-  }
-
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<KuranProvider>();
     Color bgColor = AppTheme.getBgColor(context);
     Color cardColor = AppTheme.getCardColor(context);
     Color textColor = AppTheme.getTextColor(context);
@@ -52,12 +59,12 @@ class _KuranPageState extends State<KuranPage> {
         ),
         title: Column(
           children: [
-            Text("Sayfa $_currentPage",
+            Text("Sayfa ${provider.currentPage}",
                 style: TextStyle(
                     color: textColor,
                     fontSize: 16,
                     fontWeight: FontWeight.bold)),
-            Text("Cüz ${_hesaplaCuz(_currentPage)}",
+            Text("Cüz ${provider.getCuz(provider.currentPage)}",
                 style: const TextStyle(
                     color: Colors.teal,
                     fontSize: 12,
@@ -73,15 +80,14 @@ class _KuranPageState extends State<KuranPage> {
                 content: Text("Sayfa indiriliyor..."),
                 behavior: SnackBarBehavior.floating,
               ));
-              // Örnek URL (gerçek API ile değiştirilmeli)
-              await KuranDownloadService.downloadPage(
-                  _currentPage, "https://example.com/page_$_currentPage.png");
+
+              await provider.downloadPage(provider.currentPage);
+
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                 content: Text("İndirme tamamlandı!"),
                 behavior: SnackBarBehavior.floating,
               ));
-              setState(() {}); // Rebuild to show the image
             },
           ),
           const SizedBox(width: 8),
@@ -92,12 +98,10 @@ class _KuranPageState extends State<KuranPage> {
           Expanded(
             child: PageView.builder(
               controller: _pageController,
-              itemCount: _totalPages,
+              itemCount: provider.totalPages,
               reverse: true,
               onPageChanged: (index) {
-                setState(() {
-                  _currentPage = index + 1;
-                });
+                provider.setPage(index + 1);
               },
               itemBuilder: (context, index) {
                 int gercekSayfa = index + 1;
@@ -185,13 +189,11 @@ class _KuranPageState extends State<KuranPage> {
                           const RoundSliderOverlayShape(overlayRadius: 20.0),
                     ),
                     child: Slider(
-                      value: _currentPage.toDouble(),
+                      value: provider.currentPage.toDouble(),
                       min: 1,
-                      max: _totalPages.toDouble(),
+                      max: provider.totalPages.toDouble(),
                       onChanged: (value) {
-                        setState(() {
-                          _currentPage = value.toInt();
-                        });
+                        provider.setPage(value.toInt());
                       },
                       onChangeEnd: (value) {
                         _pageController.jumpToPage(value.toInt() - 1);
@@ -199,7 +201,7 @@ class _KuranPageState extends State<KuranPage> {
                     ),
                   ),
                 ),
-                Text("$_totalPages",
+                Text("${provider.totalPages}",
                     style: TextStyle(
                         color: textColor.withOpacity(0.5),
                         fontWeight: FontWeight.bold)),

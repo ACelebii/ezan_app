@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../data/dini_gunler_repository.dart';
+import '../dini_gunler_model.dart';
 
 class DiniGunlerProvider extends ChangeNotifier {
   final DiniGunlerRepository _repository = DiniGunlerRepository();
-  List<Map<String, dynamic>> _allData = [];
+  List<DiniGunlerModel> _allData = [];
   int _seciliYil = 2026;
   bool _isLoading = true;
 
@@ -27,13 +28,13 @@ class DiniGunlerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<Map<String, dynamic>> get yillikVeri =>
-      _allData.where((e) => e['yil'] == _seciliYil).toList();
+  List<DiniGunlerModel> get yillikVeri =>
+      _allData.where((e) => e.yil == _seciliYil).toList();
 
-  Map<String, List<Map<String, dynamic>>> get gruplanmisVeri {
-    Map<String, List<Map<String, dynamic>>> gruplanmis = {};
+  Map<String, List<DiniGunlerModel>> get gruplanmisVeri {
+    Map<String, List<DiniGunlerModel>> gruplanmis = {};
     for (var item in yillikVeri) {
-      gruplanmis.putIfAbsent(item['ay'], () => []).add(item);
+      gruplanmis.putIfAbsent(item.ay, () => []).add(item);
     }
     return gruplanmis;
   }

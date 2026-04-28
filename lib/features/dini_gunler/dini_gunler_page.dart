@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/glass_button.dart';
 import '../auth/auth_service.dart';
 import 'providers/dini_gunler_provider.dart';
+import 'dini_gunler_model.dart';
 
 // ============================================================================
 // 1. ANA LİSTE SAYFASI
@@ -13,12 +14,10 @@ class DiniGunlerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Wrap with provider listener if needed, but the provider is available
-    // for all children of this page if it's already in the widget tree.
-    // However, I should make sure it's accessible.
-    // It's already in MultiProvider in main.dart, so it's accessible via context.watch<DiniGunlerProvider>()
-
-    return const _DiniGunlerPageContent();
+    return ChangeNotifierProvider(
+      create: (_) => DiniGunlerProvider(),
+      child: const _DiniGunlerPageContent(),
+    );
   }
 }
 
@@ -131,7 +130,7 @@ class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
                       itemCount: gruplanmisVeri.keys.length,
                       itemBuilder: (context, index) {
                         String ayAdi = gruplanmisVeri.keys.elementAt(index);
-                        List<Map<String, dynamic>> oAyinGunleri =
+                        List<DiniGunlerModel> oAyinGunleri =
                             gruplanmisVeri[ayAdi]!;
 
                         return Column(
@@ -172,7 +171,7 @@ class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
                                 children:
                                     oAyinGunleri.asMap().entries.map((entry) {
                                   int i = entry.key;
-                                  var gun = entry.value;
+                                  DiniGunlerModel gun = entry.value;
                                   bool isLast = i == oAyinGunleri.length - 1;
 
                                   return Column(
@@ -196,7 +195,7 @@ class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
                                                 width: 80,
                                                 child: Column(
                                                   children: [
-                                                    Text(gun['gunNo'],
+                                                    Text(gun.gunNo,
                                                         style: TextStyle(
                                                             color: textColor,
                                                             fontSize: 26,
@@ -206,7 +205,7 @@ class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
                                                     const SizedBox(height: 4),
                                                     Text(
                                                         authService.translate(
-                                                            gun['gunAd']),
+                                                            gun.gunAd),
                                                         textAlign:
                                                             TextAlign.center,
                                                         style: TextStyle(
@@ -239,7 +238,7 @@ class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
                                                   children: [
                                                     Text(
                                                         authService.translate(
-                                                            gun['baslik']),
+                                                            gun.baslik),
                                                         style: const TextStyle(
                                                             color: Color(
                                                                 0xFF6B4C7A),
@@ -248,7 +247,7 @@ class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
                                                                 FontWeight
                                                                     .w600)),
                                                     const SizedBox(height: 4),
-                                                    Text(gun['hicri'],
+                                                    Text(gun.hicri,
                                                         style: TextStyle(
                                                             color: isDark
                                                                 ? Colors.white54
@@ -298,7 +297,7 @@ class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
 // 2. DETAY SAYFASI
 // ============================================================================
 class DiniGunDetayPage extends StatelessWidget {
-  final Map<String, dynamic> gunData;
+  final DiniGunlerModel gunData;
   const DiniGunDetayPage({super.key, required this.gunData});
 
   @override
@@ -325,7 +324,7 @@ class DiniGunDetayPage extends StatelessWidget {
                   Expanded(
                     child: Center(
                       child: Text(
-                        authService.translate(gunData['baslik']),
+                        authService.translate(gunData.baslik),
                         style: TextStyle(
                             color: textColor,
                             fontSize: 18,
@@ -363,7 +362,7 @@ class DiniGunDetayPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        authService.translate(gunData['detay']),
+                        authService.translate(gunData.detay),
                         style: TextStyle(
                           color: isDark ? Colors.white70 : Colors.grey.shade800,
                           fontSize: 16,
