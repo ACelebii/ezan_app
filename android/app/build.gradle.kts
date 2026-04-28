@@ -9,6 +9,7 @@ plugins {
 
 android {
     namespace = "com.example.ezan_app"
+    ndkVersion = "28.2.13676358"
     compileSdk = 36  // <--- BURAYI TEKRAR 36 YAPIYORUZ
 
     defaultConfig {

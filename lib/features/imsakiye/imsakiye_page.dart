@@ -5,7 +5,7 @@ import 'package:intl/intl.dart'
     hide TextDirection; // intl çakışma hatası çözüldü
 import 'package:provider/provider.dart';
 import '../auth/auth_service.dart';
-import '../../main.dart';
+import '../main/main_navigation_page.dart';
 
 class ImsakiyePage extends StatefulWidget {
   const ImsakiyePage({super.key});
@@ -236,5 +236,3 @@ class _ImsakiyePageState extends State<ImsakiyePage> {
     return months[month];
   }
 }
-
-

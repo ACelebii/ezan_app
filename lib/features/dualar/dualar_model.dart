@@ -1,60 +1,58 @@
-class DuaCategory {
-  final String title;
-  final List<DuaItem> items;
+class DuaModel {
+  final String baslik;
+  final String arapca;
+  final String okunus;
+  final String anlam;
 
-  DuaCategory({required this.title, required this.items});
+  DuaModel({
+    required this.baslik,
+    required this.arapca,
+    required this.okunus,
+    required this.anlam,
+  });
 
-  factory DuaCategory.fromJson(Map<String, dynamic> json) {
-    return DuaCategory(
-      title: json['category'] ?? '',
-      items: (json['items'] as List).map((i) => DuaItem.fromJson(i)).toList(),
+  factory DuaModel.fromJson(Map<String, dynamic> json) {
+    return DuaModel(
+      baslik: json['baslik']?.toString() ?? '',
+      arapca: json['arapca']?.toString() ?? '',
+      okunus: json['okunus']?.toString() ?? '',
+      anlam: json['anlam']?.toString() ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'category': title,
-      'items': items.map((i) => i.toJson()).toList(),
+      'baslik': baslik,
+      'arapca': arapca,
+      'okunus': okunus,
+      'anlam': anlam,
     };
   }
 }
 
-class DuaItem {
-  final String id;
-  final String title;
-  final String arabic;
-  final String pronunciation;
-  final String meaning;
-  final String reference;
+class DuaCategory {
+  final String kategori;
+  final List<DuaModel> dualar;
 
-  DuaItem({
-    required this.id,
-    required this.title,
-    required this.arabic,
-    required this.pronunciation,
-    required this.meaning,
-    required this.reference,
+  DuaCategory({
+    required this.kategori,
+    required this.dualar,
   });
 
-  factory DuaItem.fromJson(Map<String, dynamic> json) {
-    return DuaItem(
-      id: json['id'] ?? '',
-      title: json['title'] ?? '',
-      arabic: json['arabic'] ?? '',
-      pronunciation: json['pronunciation'] ?? '',
-      meaning: json['meaning'] ?? '',
-      reference: json['reference'] ?? '',
+  factory DuaCategory.fromJson(Map<String, dynamic> json) {
+    return DuaCategory(
+      kategori: json['kategori']?.toString() ?? '',
+      dualar: (json['dualar'] as List<dynamic>?)
+              ?.map((e) => DuaModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'title': title,
-      'arabic': arabic,
-      'pronunciation': pronunciation,
-      'meaning': meaning,
-      'reference': reference,
+      'kategori': kategori,
+      'dualar': dualar.map((e) => e.toJson()).toList(),
     };
   }
 }

@@ -1,20 +1,42 @@
 import 'package:go_router/go_router.dart';
-import 'package:flutter/material.dart';
-import 'features/vakitler/vakitler_page.dart';
-import 'features/kuran/kuran_page.dart';
-import 'features/pusula/pusula_page.dart';
-import 'features/imsakiye/imsakiye_page.dart';
+import 'features/main/main_navigation_page.dart';
+import 'features/settings/theme_selector_page.dart';
 import 'features/menu/menu_page.dart';
-import 'main.dart'; // Import MainNavigationPage
+import 'features/kutuphane/kutuphane_page.dart';
+import 'features/dini_gunler/dini_gunler_page.dart';
+import 'features/dualar/dualar_page.dart';
+import 'features/dualar/dua_detail_page.dart';
+import 'features/dualar/dualar_model.dart'; // DuaModel importu eklendi
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
   routes: [
+    GoRoute(path: '/', builder: (context, state) => const MainNavigationPage()),
     GoRoute(
-      path: '/',
-      builder: (context, state) => const MainNavigationPage(),
+        path: '/settings/theme',
+        builder: (context, state) => const ThemeSelectorPage()),
+
+    // MenuPage'in onClose parametresi eklendi
+    GoRoute(
+        path: '/menu',
+        builder: (context, state) => MenuPage(onClose: () => context.pop())),
+
+    GoRoute(
+        path: '/kutuphane', builder: (context, state) => const KutuphanePage()),
+    GoRoute(
+        path: '/dini-gunler',
+        builder: (context, state) => const DiniGunlerPage()),
+    GoRoute(
+      path: '/dualar',
+      builder: (context, state) => const DualarPage(),
       routes: [
-        // Define sub-routes if needed
+        GoRoute(
+          path: 'detail',
+          builder: (context, state) {
+            final dua = state.extra as DuaModel;
+            return DuaDetailPage(dua: dua);
+          },
+        ),
       ],
     ),
   ],

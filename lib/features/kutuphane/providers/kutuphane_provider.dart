@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import '../data/kutuphane_repository.dart';
 import '../kutuphane_model.dart';
 import '../../../locator.dart';
 
 class KutuphaneProvider extends ChangeNotifier {
-  final KutuphaneRepository _repository = getIt<KutuphaneRepository>();
+  final KutuphaneRepository _repository = GetIt.instance<KutuphaneRepository>();
   List<LibraryNode> _items = [];
   bool _isLoading = true;
 

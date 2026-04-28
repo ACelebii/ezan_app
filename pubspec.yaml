@@ -33,9 +33,9 @@ dependencies:
   url_launcher: ^6.3.0
   dio: ^5.7.0
   connectivity_plus: ^6.0.3
-  workmanager: ^0.5.2
+  workmanager: ^0.9.0
   get_it: ^8.0.3
-  go_router: ^17.2.2
+  go_router: ^14.2.0
 
 # 2. GELİŞTİRİCİ ARAÇLARI (İkon paketi buraya gelir)
 dev_dependencies:
