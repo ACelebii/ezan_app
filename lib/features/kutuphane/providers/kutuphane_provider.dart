@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../data/kutuphane_repository.dart';
 import '../kutuphane_model.dart';
+import '../../../locator.dart';
 
 class KutuphaneProvider extends ChangeNotifier {
-  final KutuphaneRepository _repository = KutuphaneRepository();
+  final KutuphaneRepository _repository = getIt<KutuphaneRepository>();
   List<LibraryNode> _items = [];
   bool _isLoading = true;
 
@@ -15,7 +16,13 @@ class KutuphaneProvider extends ChangeNotifier {
   }
 
   Future<void> _loadItems() async {
-    _items = await _repository.getLibraryItems();
+    final result = await _repository.getLibraryItems();
+    if (result.isSuccess) {
+      _items = result.data!;
+    } else {
+      // Hata yönetimi (loglama veya snackbar gösterimi)
+      debugPrint("Hata: ${result.errorMessage}");
+    }
     _isLoading = false;
     notifyListeners();
   }

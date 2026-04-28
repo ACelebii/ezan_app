@@ -1,0 +1,11 @@
+class Result<T> {
+  final T? data;
+  final String? errorMessage;
+  final bool isSuccess;
+
+  Result._({this.data, this.errorMessage, required this.isSuccess});
+
+  factory Result.success(T data) => Result._(data: data, isSuccess: true);
+  factory Result.failure(String message) =>
+      Result._(errorMessage: message, isSuccess: false);
+}

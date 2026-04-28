@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../data/dini_gunler_repository.dart';
 import '../dini_gunler_model.dart';
+import '../../../locator.dart';
 
 class DiniGunlerProvider extends ChangeNotifier {
-  final DiniGunlerRepository _repository = DiniGunlerRepository();
+  final DiniGunlerRepository _repository = getIt<DiniGunlerRepository>();
   List<DiniGunlerModel> _allData = [];
   int _seciliYil = 2026;
   bool _isLoading = true;

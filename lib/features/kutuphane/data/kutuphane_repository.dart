@@ -2,6 +2,7 @@ import 'package:ezan_vakti_uygulamasi/core/repositories/base_repository.dart';
 import 'package:ezan_vakti_uygulamasi/features/kutuphane/kutuphane_model.dart';
 import 'package:ezan_vakti_uygulamasi/core/utils/assets_constants.dart';
 import 'package:ezan_vakti_uygulamasi/core/local_db.dart';
+import '../../../core/utils/result.dart';
 
 class KutuphaneRepository extends BaseRepository<List<LibraryNode>> {
   final dbHelper = LocalDatabase.instance;
@@ -35,13 +36,17 @@ class KutuphaneRepository extends BaseRepository<List<LibraryNode>> {
     }
   }
 
-  Future<List<LibraryNode>> getLibraryItems() async {
-    final cached = await fetchFromCache();
-    if (cached.isNotEmpty) return cached;
+  Future<Result<List<LibraryNode>>> getLibraryItems() async {
+    try {
+      final cached = await fetchFromCache();
+      if (cached.isNotEmpty) return Result.success(cached);
 
-    final remote = await fetchFromRemote();
-    await saveToCache(remote);
-    return remote;
+      final remote = await fetchFromRemote();
+      await saveToCache(remote);
+      return Result.success(remote);
+    } catch (e) {
+      return Result.failure(e.toString());
+    }
   }
 
   Future<void> _insertItem(LibraryNode item, {int? parentId}) async {
