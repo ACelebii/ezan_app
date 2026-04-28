@@ -1,197 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/glass_button.dart';
 import '../auth/auth_service.dart';
-
-// ============================================================================
-// ORTAK ŞEFFAF BUTON TASARIMI
-// ============================================================================
-Widget _buildGlassButton(BuildContext context,
-    {required IconData icon, required VoidCallback onTap}) {
-  bool isDark = Theme.of(context).brightness == Brightness.dark;
-  return InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(12),
-    child: Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context).withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? Colors.white24 : Colors.black12),
-      ),
-      child:
-          Icon(icon, color: isDark ? Colors.white : Colors.black87, size: 20),
-    ),
-  );
-}
-
-// ============================================================================
-// DİNİ GÜNLER VERİTABANI (Eksiksiz 2026 Verisi Eklenmiş Halidir)
-// ============================================================================
-final List<Map<String, dynamic>> _diniGunlerVerisi = [
-  // 2024 Örnekleri
-  {
-    "yil": 2024,
-    "ay": "Ocak",
-    "gunNo": "11",
-    "gunAd": "Ocak\nPerşembe",
-    "baslik": "Regaib Kandili",
-    "hicri": "29 Cemaziyelahir 1445",
-    "detay": "Regaib Kandili detayları..."
-  },
-  {
-    "yil": 2024,
-    "ay": "Şubat",
-    "gunNo": "06",
-    "gunAd": "Şubat\nSalı",
-    "baslik": "Miraç Kandili",
-    "hicri": "26 Recep 1445",
-    "detay": "Miraç Kandili detayları..."
-  },
-
-  // 2025 Örnekleri
-  {
-    "yil": 2025,
-    "ay": "Şubat",
-    "gunNo": "13",
-    "gunAd": "Şubat\nPerşembe",
-    "baslik": "Berat Kandili",
-    "hicri": "14 Şaban 1446",
-    "detay": "Berat Kandili detayları..."
-  },
-  {
-    "yil": 2025,
-    "ay": "Mart",
-    "gunNo": "01",
-    "gunAd": "Mart\nCumartesi",
-    "baslik": "Ramazan'ın İlk Günü",
-    "hicri": "1 Ramazan 1446",
-    "detay": "On bir ayın sultanı Ramazan..."
-  },
-
-  // 2026 (TÜM YIL EKSİKSİZ VERİ)
-  {
-    "yil": 2026,
-    "ay": "Ocak",
-    "gunNo": "15",
-    "gunAd": "Ocak\nPerşembe",
-    "baslik": "Miraç Kandili",
-    "hicri": "26 Recep 1447",
-    "detay":
-        "Kandiller; ışıklarıyla sadece karanlık gecelerimizi değil, aynı zamanda manevi feyziyle de daralan gönüllerimizi aydınlatan, zihinlerimizi berraklaştıran gecelerdir...\n\nÖze dönüşün, Yüce Yaratanımıza yürekten yakarış ve yönelişin kutlu zaman dilimleridir."
-  },
-  {
-    "yil": 2026,
-    "ay": "Şubat",
-    "gunNo": "02",
-    "gunAd": "Şubat\nPazartesi",
-    "baslik": "Berat Kandili",
-    "hicri": "14 Şaban 1447",
-    "detay":
-        "Berat Kandili, günahlardan arınma ve temize çıkma gecesidir. Allah'ın rahmetinin yeryüzüne tecelli ettiği, bağışlanma kapılarının ardına kadar açıldığı mübarek bir gecedir."
-  },
-  {
-    "yil": 2026,
-    "ay": "Şubat",
-    "gunNo": "18",
-    "gunAd": "Şubat\nÇarşamba",
-    "baslik": "Ramazan'ın İlk Günü",
-    "hicri": "1 Ramazan 1447",
-    "detay":
-        "Rahmet, bereket ve mağfiret ayı olan Ramazan ayının başlangıcı. Kur'an-ı Kerim'in indirilmeye başlandığı, oruç ibadetinin yerine getirildiği mübarek ay."
-  },
-  {
-    "yil": 2026,
-    "ay": "Mart",
-    "gunNo": "16",
-    "gunAd": "Mart\nPazartesi",
-    "baslik": "Kadir Gecesi",
-    "hicri": "26 Ramazan 1447",
-    "detay":
-        "Bin aydan daha hayırlı olan Kadir Gecesi. Yüce kitabımız Kur'an-ı Kerim'in Peygamber Efendimize (s.a.v) indirilmeye başlandığı, meleklerin yeryüzüne indiği eşsiz bir gecedir."
-  },
-  {
-    "yil": 2026,
-    "ay": "Mart",
-    "gunNo": "20",
-    "gunAd": "Mart\nCuma",
-    "baslik": "Ramazan Bayramı",
-    "hicri": "1 Şevval 1447",
-    "detay":
-        "Başı rahmet, ortası mağfiret, sonu cehennem azabından kurtuluş olan Ramazan ayını geride bırakarak kavuştuğumuz mübarek Ramazan Bayramı."
-  },
-  {
-    "yil": 2026,
-    "ay": "Mayıs",
-    "gunNo": "27",
-    "gunAd": "Mayıs\nÇarşamba",
-    "baslik": "Kurban Bayramı",
-    "hicri": "10 Zilhicce 1447",
-    "detay":
-        "Hz. İbrahim'in itaatini ve Hz. İsmail'in teslimiyetini hatırlatan, paylaşmanın ve yardımlaşmanın zirveye ulaştığı mübarek Kurban Bayramı."
-  },
-  {
-    "yil": 2026,
-    "ay": "Haziran",
-    "gunNo": "16",
-    "gunAd": "Haziran\nSalı",
-    "baslik": "Hicri Yılbaşı",
-    "hicri": "1 Muharrem 1448",
-    "detay":
-        "Peygamber Efendimiz Hz. Muhammed'in (s.a.v) Mekke'den Medine'ye hicretini esas alan Hicri takvimin ilk günü ve yeni yılın başlangıcı."
-  },
-  {
-    "yil": 2026,
-    "ay": "Haziran",
-    "gunNo": "25",
-    "gunAd": "Haziran\nPerşembe",
-    "baslik": "Aşure Günü",
-    "hicri": "10 Muharrem 1448",
-    "detay":
-        "Muharrem ayının onuncu günü olan Aşure Günü, tarihte birçok önemli hadisenin yaşandığı, paylaşmanın, dayanışmanın ve birlikteliğin simgesidir."
-  },
-  {
-    "yil": 2026,
-    "ay": "Ağustos",
-    "gunNo": "24",
-    "gunAd": "Ağustos\nPazartesi",
-    "baslik": "Mevlid Kandili",
-    "hicri": "12 Rebiülevvel 1448",
-    "detay":
-        "İnsanlığı karanlıktan aydınlığa çıkaran, rahmet elçisi Peygamber Efendimiz Hz. Muhammed'in (s.a.v) yeryüzünü şereflendirdiği veladet gecesidir."
-  }
-];
+import 'providers/dini_gunler_provider.dart';
 
 // ============================================================================
 // 1. ANA LİSTE SAYFASI
 // ============================================================================
-class DiniGunlerPage extends StatefulWidget {
+class DiniGunlerPage extends StatelessWidget {
   const DiniGunlerPage({super.key});
 
   @override
-  State<DiniGunlerPage> createState() => _DiniGunlerPageState();
+  Widget build(BuildContext context) {
+    // Wrap with provider listener if needed, but the provider is available
+    // for all children of this page if it's already in the widget tree.
+    // However, I should make sure it's accessible.
+    // It's already in MultiProvider in main.dart, so it's accessible via context.watch<DiniGunlerProvider>()
+
+    return const _DiniGunlerPageContent();
+  }
 }
 
-class _DiniGunlerPageState extends State<DiniGunlerPage> {
-  int _seciliYil = 2026; // Varsayılan açılış yılı
-  final List<int> _yillar = [2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027];
+class _DiniGunlerPageContent extends StatefulWidget {
+  const _DiniGunlerPageContent();
 
+  @override
+  State<_DiniGunlerPageContent> createState() => _DiniGunlerPageState();
+}
+
+class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
   @override
   Widget build(BuildContext context) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     final authService = context.watch<AuthService>();
+    final provider = context.watch<DiniGunlerProvider>();
     Color bgColor = AppTheme.getBgColor(context);
     Color textColor = AppTheme.getTextColor(context);
 
     // Seçili yıla göre veriyi filtrele ve aylara göre grupla
-    var yillikVeri =
-        _diniGunlerVerisi.where((e) => e['yil'] == _seciliYil).toList();
-
-    // Aynı ayda olan günleri bir araya toplayan mantık
-    Map<String, List<Map<String, dynamic>>> gruplanmisVeri = {};
-    for (var item in yillikVeri) {
-      gruplanmisVeri.putIfAbsent(item['ay'], () => []).add(item);
-    }
+    var gruplanmisVeri = provider.gruplanmisVeri;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -206,7 +54,7 @@ class _DiniGunlerPageState extends State<DiniGunlerPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildGlassButton(context,
+                  GlassButton(
                       icon: Icons.arrow_back_ios_new_rounded,
                       onTap: () => Navigator.pop(context)),
 
@@ -227,13 +75,13 @@ class _DiniGunlerPageState extends State<DiniGunlerPage> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16)),
                       color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
-                      onSelected: (yil) => setState(() => _seciliYil = yil),
-                      itemBuilder: (context) => _yillar.map((yil) {
+                      onSelected: (yil) => provider.setYil(yil),
+                      itemBuilder: (context) => provider.yillar.map((yil) {
                         return PopupMenuItem<int>(
                           value: yil,
                           child: Row(
                             children: [
-                              if (_seciliYil == yil)
+                              if (provider.seciliYil == yil)
                                 const Icon(Icons.check,
                                     size: 18, color: Colors.blue)
                               else
@@ -242,7 +90,7 @@ class _DiniGunlerPageState extends State<DiniGunlerPage> {
                               Text(yil.toString(),
                                   style: TextStyle(
                                       color: textColor,
-                                      fontWeight: _seciliYil == yil
+                                      fontWeight: provider.seciliYil == yil
                                           ? FontWeight.bold
                                           : FontWeight.normal)),
                             ],
@@ -260,7 +108,7 @@ class _DiniGunlerPageState extends State<DiniGunlerPage> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
               child: Text(
-                "${authService.translate("Dini Günler")} $_seciliYil",
+                "${authService.translate("Dini Günler")} ${provider.seciliYil}",
                 style: TextStyle(
                     color: textColor,
                     fontSize: 32,
@@ -471,7 +319,7 @@ class DiniGunDetayPage extends StatelessWidget {
                   const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
               child: Row(
                 children: [
-                  _buildGlassButton(context,
+                  GlassButton(
                       icon: Icons.arrow_back_ios_new_rounded,
                       onTap: () => Navigator.pop(context)),
                   Expanded(

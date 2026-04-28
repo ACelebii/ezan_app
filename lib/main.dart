@@ -12,6 +12,7 @@ import 'features/sync/sync_manager.dart';
 import 'features/sync/sync_notifier.dart';
 import 'features/kutuphane/data/kutuphane_repository.dart';
 import 'features/kuran/kuran_download_service.dart';
+import 'features/dini_gunler/providers/dini_gunler_provider.dart';
 
 import 'features/vakitler/vakitler_page.dart';
 import 'features/kuran/kuran_page.dart';
@@ -60,6 +61,7 @@ void main() async {
           return auth;
         }),
         ChangeNotifierProvider(create: (_) => SyncNotifier()),
+        ChangeNotifierProvider(create: (_) => DiniGunlerProvider()),
       ],
       child: ValueListenableBuilder<ThemeMode>(
         valueListenable: themeNotifier,

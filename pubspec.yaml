@@ -61,3 +61,4 @@ flutter:
     - .env
     - .env_production
     - assets/dualar.json
+    - assets/json/dini_gunler.json
