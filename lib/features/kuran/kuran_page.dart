@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/theme/app_theme.dart';
-import 'kuran_download_service.dart';
-import 'dart:io';
 import 'providers/kuran_provider.dart';
+import 'surah_detail_page.dart';
+import '../vakitler/vakitler_page.dart';
+import '../main/main_navigation_page.dart';
 
+// PROVIDER SARMALAYICISI: ProviderNotFound hatasını çözer
 class KuranPage extends StatelessWidget {
   const KuranPage({super.key});
 
@@ -12,203 +13,338 @@ class KuranPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => KuranProvider(),
-      child: const _KuranPageContent(),
+      child: const KuranView(),
     );
   }
 }
 
-class _KuranPageContent extends StatefulWidget {
-  const _KuranPageContent();
+class KuranView extends StatelessWidget {
+  const KuranView({super.key});
 
-  @override
-  State<_KuranPageContent> createState() => _KuranPageState();
-}
-
-class _KuranPageState extends State<_KuranPageContent> {
-  late PageController _pageController;
-
-  @override
-  void initState() {
-    super.initState();
-    final provider = Provider.of<KuranProvider>(context, listen: false);
-    _pageController = PageController(initialPage: provider.currentPage - 1);
+  void _showMainMenu(BuildContext context, KuranProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF202020),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return ListView(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          children: [
+            ListTile(
+              leading: const Icon(Icons.arrow_back, color: Colors.white),
+              title: const Center(
+                  child: Text("Menü",
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18))),
+              trailing: const SizedBox(width: 24),
+              onTap: () => Navigator.pop(context),
+            ),
+            const Divider(color: Colors.white12, height: 1),
+            _buildMenuTile(Icons.menu_book, "Sureler", context,
+                onTap: () => Navigator.pop(context)),
+            _buildMenuTile(Icons.library_books, "Cüzler", context,
+                onTap: () => Navigator.pop(context)),
+            _buildMenuTile(Icons.list, "Fihrist", context),
+            const Divider(color: Colors.white12, height: 24),
+            _buildMenuTile(
+                Icons.bookmark_border,
+                provider.savedBookmarkTitle != null
+                    ? "Yer İmi (${provider.savedBookmarkTitle})"
+                    : "Yer İmi",
+                context, onTap: () async {
+              Navigator.pop(context);
+              bool success = await provider.goToBookmark();
+              if (success) {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => ChangeNotifierProvider.value(
+                            value: provider, child: const SurahDetailPage())));
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Kaydedilmiş bir yer imi bulunamadı.",
+                        style: TextStyle(color: Colors.white)),
+                    backgroundColor: Color(0xFF2C2C2C),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              }
+            }),
+            _buildMenuTile(Icons.favorite_border, "Favori", context),
+            _buildMenuTile(Icons.edit_outlined, "Not", context),
+            const Divider(color: Colors.white12, height: 24),
+            _buildMenuTile(Icons.playlist_play, "Okuma Listesi", context),
+          ],
+        );
+      },
+    );
   }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
+  Widget _buildMenuTile(IconData icon, String title, BuildContext context,
+      {VoidCallback? onTap}) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white70),
+      title: Text(title, style: const TextStyle(color: Colors.white)),
+      trailing: const Icon(Icons.chevron_right, color: Colors.white24),
+      onTap: onTap ?? () => Navigator.pop(context),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<KuranProvider>();
-    Color bgColor = AppTheme.getBgColor(context);
-    Color cardColor = AppTheme.getCardColor(context);
-    Color textColor = AppTheme.getTextColor(context);
-    bool isDark = Theme.of(context).brightness == Brightness.dark;
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F6F8),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF0F4C3A),
+          elevation: 0,
+          leading: IconButton(
+            icon:
+                const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+            onPressed: () {
+              // Alt menülerin olduğu EN ANA SAYFAYA yönlendiriyoruz.
+              // DİKKAT: Aşağıdaki "MainPage()" kısmını, uygulamanın alt butonlarını (BottomNavigationBar)
+              // içeren sınıfın adı neyse (Örn: AnaEkran, Dashboard, Home vb.) onunla değiştir!
 
-    return Scaffold(
-      backgroundColor: bgColor,
-      appBar: AppBar(
-        backgroundColor: cardColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Column(
-          children: [
-            Text("Sayfa ${provider.currentPage}",
-                style: TextStyle(
-                    color: textColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold)),
-            Text("Cüz ${provider.getCuz(provider.currentPage)}",
-                style: const TextStyle(
-                    color: Colors.teal,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500)),
-          ],
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.download_rounded, color: textColor),
-            onPressed: () async {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text("Sayfa indiriliyor..."),
-                behavior: SnackBarBehavior.floating,
-              ));
-
-              await provider.downloadPage(provider.currentPage);
-
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text("İndirme tamamlandı!"),
-                behavior: SnackBarBehavior.floating,
-              ));
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        const MainNavigationPage()), // Burayı kendi ana sayfanla değiştir
+                (route) => false,
+              );
             },
           ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: provider.totalPages,
-              reverse: true,
-              onPageChanged: (index) {
-                provider.setPage(index + 1);
-              },
-              itemBuilder: (context, index) {
-                int gercekSayfa = index + 1;
-
-                return FutureBuilder<String?>(
-                  future: KuranDownloadService.getPagePath(gercekSayfa),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData && snapshot.data != null) {
-                      return Image.file(File(snapshot.data!));
-                    }
-
-                    return Center(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 20),
-                        decoration: BoxDecoration(
-                            color: cardColor,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 5))
-                            ]),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.menu_book_rounded,
-                                  size: 80,
-                                  color: Colors.teal.withOpacity(0.2)),
-                              const SizedBox(height: 20),
-                              Text(
-                                "Kuran-ı Kerim\nSayfa $gercekSayfa",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    color: textColor.withOpacity(0.6),
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                "(Henüz indirilmedi)",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    color: textColor.withOpacity(0.3),
-                                    fontSize: 12),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
+          title: const Text("Kuran-ı Kerim",
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18)),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.search, color: Colors.white),
+              onPressed: () {
+                final provider =
+                    Provider.of<KuranProvider>(context, listen: false);
+                showModalBottomSheet(
+                    context: context,
+                    backgroundColor: const Color(0xFF2C2C2C),
+                    isScrollControlled: true,
+                    shape: const RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(20))),
+                    builder: (context) => SearchBottomSheet(
+                        provider: provider, isFromMainPage: true));
               },
             ),
+            IconButton(
+              icon: const Icon(Icons.menu, color: Colors.white),
+              onPressed: () => _showMainMenu(
+                  context, Provider.of<KuranProvider>(context, listen: false)),
+            ),
+          ],
+          bottom: const TabBar(
+            indicatorColor: Colors.amber,
+            indicatorWeight: 3,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white60,
+            labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            tabs: [
+              Tab(icon: Icon(Icons.menu_book), text: "SURELER"),
+              Tab(icon: Icon(Icons.library_books), text: "CÜZLER"),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            decoration: BoxDecoration(color: cardColor, boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, -5))
-            ]),
-            child: Row(
+        ),
+        body: Consumer<KuranProvider>(
+          builder: (context, provider, child) {
+            if (provider.isSurahListLoading || provider.isJuzListLoading) {
+              return const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF0F4C3A)));
+            }
+
+            return Column(
               children: [
-                Text("1",
-                    style: TextStyle(
-                        color: textColor.withOpacity(0.5),
-                        fontWeight: FontWeight.bold)),
-                Expanded(
-                  child: SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: Colors.teal,
-                      inactiveTrackColor:
-                          isDark ? Colors.white10 : Colors.black12,
-                      thumbColor: Colors.teal,
-                      overlayColor: Colors.teal.withOpacity(0.2),
-                      trackHeight: 4.0,
-                      thumbShape:
-                          const RoundSliderThumbShape(enabledThumbRadius: 8.0),
-                      overlayShape:
-                          const RoundSliderOverlayShape(overlayRadius: 20.0),
-                    ),
-                    child: Slider(
-                      value: provider.currentPage.toDouble(),
-                      min: 1,
-                      max: provider.totalPages.toDouble(),
-                      onChanged: (value) {
-                        provider.setPage(value.toInt());
-                      },
-                      onChangeEnd: (value) {
-                        _pageController.jumpToPage(value.toInt() - 1);
-                      },
+                // KALDIGIM YER (YER İMİ) KARTI
+                if (provider.savedBookmarkTitle != null)
+                  GestureDetector(
+                    onTap: () async {
+                      bool success = await provider.goToBookmark();
+                      if (success) {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => ChangeNotifierProvider.value(
+                                    value: provider,
+                                    child: const SurahDetailPage())));
+                      }
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF1B3B24), Color(0xFF2A5936)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4)),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.menu_book_rounded,
+                              color: Colors.white70, size: 36),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text("Kaldığım Yer",
+                                    style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500)),
+                                const SizedBox(height: 4),
+                                Text(provider.savedBookmarkTitle!,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.play_circle_fill_rounded,
+                              color: Colors.amber, size: 36),
+                        ],
+                      ),
                     ),
                   ),
+
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      // SURELER LİSTESİ
+                      ListView.separated(
+                        itemCount: provider.surahs.length,
+                        separatorBuilder: (context, index) =>
+                            const Divider(height: 1, color: Colors.black12),
+                        itemBuilder: (context, index) {
+                          final surah = provider.surahs[index];
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 4),
+                            leading: Container(
+                              width: 44,
+                              height: 44,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: const Color(0xFF8BA59B), width: 1),
+                              ),
+                              child: Text("${surah.id}",
+                                  style: const TextStyle(
+                                      color: Color(0xFF0F4C3A),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13)),
+                            ),
+                            title: Text(surah.nameSimple,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: Colors.black87)),
+                            subtitle: Text("${surah.versesCount} Ayet",
+                                style: const TextStyle(
+                                    color: Colors.grey, fontSize: 12)),
+                            trailing: const Icon(Icons.chevron_right,
+                                color: Colors.grey, size: 20),
+                            onTap: () {
+                              // ANİMASYON KURTARICISI: Arayüz kasmasın diye gecikmeli yükleme
+                              Future.delayed(const Duration(milliseconds: 150),
+                                  () {
+                                provider.loadSurahDetails(surah);
+                              });
+
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          ChangeNotifierProvider.value(
+                                              value: provider,
+                                              child: const SurahDetailPage())));
+                            },
+                          );
+                        },
+                      ),
+
+                      // CÜZLER LİSTESİ
+                      ListView.separated(
+                        itemCount: provider.juzs.length,
+                        separatorBuilder: (context, index) =>
+                            const Divider(height: 1, color: Colors.black12),
+                        itemBuilder: (context, index) {
+                          final juz = provider.juzs[index];
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 4),
+                            leading: Container(
+                              width: 44,
+                              height: 44,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: const Color(0xFF8BA59B), width: 1),
+                              ),
+                              child: Text("$juz",
+                                  style: const TextStyle(
+                                      color: Color(0xFF0F4C3A),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13)),
+                            ),
+                            title: Text("$juz. Cüz",
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: Colors.black87)),
+                            trailing: const Icon(Icons.chevron_right,
+                                color: Colors.grey, size: 20),
+                            onTap: () {
+                              Future.delayed(const Duration(milliseconds: 150),
+                                  () {
+                                provider.loadJuzDetails(juz);
+                              });
+
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          ChangeNotifierProvider.value(
+                                              value: provider,
+                                              child: const SurahDetailPage())));
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-                Text("${provider.totalPages}",
-                    style: TextStyle(
-                        color: textColor.withOpacity(0.5),
-                        fontWeight: FontWeight.bold)),
               ],
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
     );
   }

@@ -216,26 +216,45 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
     DateTime? nextVakitTime;
     String nextVakitName = "";
 
+    if (vakitler.isEmpty) return; // Liste boşsa işlem yapma
+
     for (var v in vakitler) {
-      if (!v['saat']!.contains(':')) continue;
+      if (v['saat'] == null || !v['saat']!.contains(':')) continue;
+
       final parts = v['saat']!.split(':');
-      final vTime = DateTime(now.year, now.month, now.day, int.parse(parts[0]),
-          int.parse(parts[1]));
+
+      // GÜVENLİ DÖNÜŞTÜRME: Hata olursa çökmez, '0' kabul eder ve boşlukları siler
+      int saat = int.tryParse(parts[0].trim()) ?? 0;
+      int dakika = int.tryParse(parts[1].trim()) ?? 0;
+
+      final vTime = DateTime(now.year, now.month, now.day, saat, dakika);
+
       if (vTime.isAfter(now)) {
         nextVakitTime = vTime;
-        nextVakitName = v['vakit']!;
+        nextVakitName = v['vakit'] ?? "";
         break;
       }
     }
 
+    // Eğer bugünün tüm vakitleri geçtiyse, yarına (ertesi güne) ait ilk vakti (İmsak/Sabah) al
     if (nextVakitTime == null) {
-      final parts = vakitler[0]['saat']!.split(':');
-      nextVakitTime = DateTime(now.year, now.month, now.day + 1,
-          int.parse(parts[0]), int.parse(parts[1]));
-      nextVakitName = vakitler[0]['vakit']!;
+      if (vakitler[0]['saat'] != null && vakitler[0]['saat']!.contains(':')) {
+        final parts = vakitler[0]['saat']!.split(':');
+
+        int saat = int.tryParse(parts[0].trim()) ?? 0;
+        int dakika = int.tryParse(parts[1].trim()) ?? 0;
+
+        nextVakitTime =
+            DateTime(now.year, now.month, now.day + 1, saat, dakika);
+        nextVakitName = vakitler[0]['vakit'] ?? "";
+      } else {
+        // En kötü senaryoda bile çökmesini engellemek için yedek (Fail-safe)
+        nextVakitTime = now.add(const Duration(hours: 1));
+        nextVakitName = "Yükleniyor...";
+      }
     }
 
-    if (mounted) {
+    if (mounted && nextVakitTime != null) {
       setState(() {
         _remainingTime = nextVakitTime!.difference(now);
         _siradakiVakit = nextVakitName;
@@ -688,5 +707,3 @@ class _CitySearchPageState extends State<CitySearchPage> {
     );
   }
 }
-
-

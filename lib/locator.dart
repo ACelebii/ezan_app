@@ -7,6 +7,7 @@ import 'features/hutbe/data/hutbe_repository.dart';
 import 'features/dualar/data/dualar_repository.dart';
 import 'features/sync/sync_manager.dart';
 import 'core/utils/network_service.dart';
+import 'features/kuran/data/kuran_repository.dart';
 
 final locator = GetIt.instance;
 final getIt = locator; // Eski kodların uyumluluğu için
@@ -15,6 +16,7 @@ void setupLocator() {
   // 1. Çekirdek Servisler (Core Services) - BUNLAR EKSİKTİ!
   locator.registerLazySingleton<NetworkService>(() => NetworkService());
   locator.registerLazySingleton<SyncManager>(() => SyncManager());
+  locator.registerLazySingleton<KuranRepository>(() => KuranRepository());
 
   // 2. Repository Katmanları (Veri Çekiciler)
   locator.registerLazySingleton<DiniGunlerRepository>(
