@@ -13,19 +13,20 @@ class DuaModel {
 
   factory DuaModel.fromJson(Map<String, dynamic> json) {
     return DuaModel(
-      baslik: json['baslik']?.toString() ?? '',
-      arapca: json['arapca']?.toString() ?? '',
-      okunus: json['okunus']?.toString() ?? '',
-      anlam: json['anlam']?.toString() ?? '',
+      // JSON'daki İngilizce key'leri modeldeki değişkenlerle eşleştiriyoruz
+      baslik: json['title']?.toString() ?? '',
+      arapca: json['arabic']?.toString() ?? '',
+      okunus: json['pronunciation']?.toString() ?? '',
+      anlam: json['meaning']?.toString() ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'baslik': baslik,
-      'arapca': arapca,
-      'okunus': okunus,
-      'anlam': anlam,
+      'title': baslik,
+      'arabic': arapca,
+      'pronunciation': okunus,
+      'meaning': anlam,
     };
   }
 }
@@ -41,8 +42,9 @@ class DuaCategory {
 
   factory DuaCategory.fromJson(Map<String, dynamic> json) {
     return DuaCategory(
-      kategori: json['kategori']?.toString() ?? '',
-      dualar: (json['dualar'] as List<dynamic>?)
+      // JSON'daki 'category' ve 'items' key'lerini eşleştiriyoruz
+      kategori: json['category']?.toString() ?? '',
+      dualar: (json['items'] as List<dynamic>?)
               ?.map((e) => DuaModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
@@ -51,8 +53,8 @@ class DuaCategory {
 
   Map<String, dynamic> toJson() {
     return {
-      'kategori': kategori,
-      'dualar': dualar.map((e) => e.toJson()).toList(),
+      'category': kategori,
+      'items': dualar.map((e) => e.toJson()).toList(),
     };
   }
 }

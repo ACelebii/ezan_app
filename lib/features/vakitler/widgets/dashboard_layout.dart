@@ -7,6 +7,7 @@ import '../../pusula/pusula_page.dart';
 import '../../imsakiye/imsakiye_page.dart';
 import '../../settings/settings_page.dart';
 import '../../zikirmatik/zikirmatik_page.dart';
+import '../../dualar/dualar_page.dart';
 
 class DashboardLayout extends StatelessWidget {
   final String siradakiVakit;
@@ -46,7 +47,7 @@ class DashboardLayout extends StatelessWidget {
         "page": ZikirmatikPage()
       },
       {"i": Icons.mosque_rounded, "t": "Camiler", "page": null},
-      {"i": Icons.favorite_rounded, "t": "Dualar", "page": null},
+      {"i": Icons.favorite_rounded, "t": "Dualar", "page": const DualarPage()},
       {
         "i": Icons.settings_rounded,
         "t": "Ayarlar",
@@ -136,5 +137,3 @@ class DashboardLayout extends StatelessWidget {
     );
   }
 }
-
-

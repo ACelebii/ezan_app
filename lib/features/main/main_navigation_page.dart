@@ -97,7 +97,10 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
 
   Widget _buildCustomBottomBar(
       BuildContext context, AuthService authService, bool isDark) {
-    Color activeColor = isDark ? Colors.yellow : Colors.orange.shade700;
+    // --- YENİ EKLENEN KISIM: AKTİF RENK UYUMU ---
+    // Turuncu yerine, uygulamanın ana yeşil/teal rengini kullanıyoruz.
+    Color activeColor =
+        isDark ? Colors.yellow : const Color(0xFF009688); // Teal rengi eklendi
     Color inactiveIconColor = isDark ? Colors.white54 : Colors.black45;
 
     final items = [
@@ -124,7 +127,8 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                   : const Color(0xFF1E1E20);
             } else {
               itemBgColor = isSelected
-                  ? activeColor.withValues(alpha: 0.1)
+                  ? activeColor.withValues(
+                      alpha: 0.1) // Aktif sekmenin arkası çok açık yeşil
                   : Colors.white;
             }
 

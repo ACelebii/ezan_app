@@ -422,23 +422,35 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
   Widget _buildCountdown(Color titleColor) {
     final authService = context.read<AuthService>();
     final now = DateTime.now();
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Açık temada sayacın rengi: Dümdüz siyah yerine modern, koyu bir antrasit
+    Color timerColor = isDark ? Colors.white : const Color(0xFF2C3E50);
+
     return Column(children: [
       Text(authService.translate("Vaktin Çıkmasına"),
           style: TextStyle(color: titleColor, fontSize: 14)),
+      const SizedBox(height: 4), // Ufak bir boşluk
       Text(format(_remainingTime),
           style: TextStyle(
-              color: AppTheme.getTextColor(context),
+              color: timerColor,
               fontSize: 60,
-              fontWeight: FontWeight.w300)),
+              fontWeight:
+                  FontWeight.w400)), // w300 çok ince kalıyordu, w400 yaptık
+      const SizedBox(height: 8), // Tarih ile saat arası ufak boşluk
       Text(
           "${now.day} ${authService.translate(_getMonthName(now.month))} ${now.year}",
           style: TextStyle(
-              color: AppTheme.getSubTextColor(context), fontSize: 12)),
+              color: AppTheme.getSubTextColor(context),
+              fontSize: 13)), // 12'den 13'e çıkarttık
     ]);
   }
 
   Widget _buildBoxGrid(Color accentColor, bool isGlass) {
     final authService = context.read<AuthService>();
+    // Tema kontrolünü buraya ekliyoruz:
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -461,14 +473,29 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
                         : AppTheme.getCardColor(context)),
                 borderRadius: BorderRadius.circular(16),
                 border: isGlass ? Border.all(color: Colors.white24) : null,
+                // --- YENİ EKLENEN KISIM: AÇIK TEMADA KARTLARA GÖLGE ---
+                boxShadow: (!isDark && !isGlass && !isNext)
+                    ? [
+                        BoxShadow(
+                          color:
+                              Colors.black.withOpacity(0.04), // Yumuşak gölge
+                          blurRadius: 15,
+                          spreadRadius: 2,
+                          offset: const Offset(0, 5),
+                        ),
+                      ]
+                    : [],
+                // -------------------------------------------------------
               ),
               child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(authService.translate(item['vakit']!),
                         style: TextStyle(
+                            // --- YENİ EKLENEN KISIM: KONTRAST DÜZELTMESİ ---
                             color: isNext
-                                ? Colors.black
+                                ? Colors.white
+                                    .withOpacity(0.9) // Aktif kart yazısı beyaz
                                 : AppTheme.getSubTextColor(context),
                             fontSize: 13,
                             fontWeight:
@@ -476,8 +503,9 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
                     const SizedBox(height: 2),
                     Text(item['saat']!,
                         style: TextStyle(
+                            // --- YENİ EKLENEN KISIM: KONTRAST DÜZELTMESİ ---
                             color: isNext
-                                ? Colors.black
+                                ? Colors.white // Aktif kart saati tam beyaz
                                 : AppTheme.getTextColor(context),
                             fontSize: 20,
                             fontWeight: FontWeight.bold)),
