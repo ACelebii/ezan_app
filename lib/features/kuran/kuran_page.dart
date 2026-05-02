@@ -107,16 +107,11 @@ class KuranView extends StatelessWidget {
             icon:
                 const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
             onPressed: () {
-              // Alt menülerin olduğu EN ANA SAYFAYA yönlendiriyoruz.
-              // DİKKAT: Aşağıdaki "MainPage()" kısmını, uygulamanın alt butonlarını (BottomNavigationBar)
-              // içeren sınıfın adı neyse (Örn: AnaEkran, Dashboard, Home vb.) onunla değiştir!
-
-              Navigator.pushAndRemoveUntil(
+              // Mevcut Kuran sayfasını ekrandan yavaşça kaldırır ve yerine Ana Sayfayı (Alt menülü olanı) koyar.
+              // DİKKAT: "MainPage()" kısmını uygulamanın asıl ana sayfasının adıyla değiştir! (Örn: AnaEkran, BottomNavPage vb.)
+              Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        const MainNavigationPage()), // Burayı kendi ana sayfanla değiştir
-                (route) => false,
+                MaterialPageRoute(builder: (context) => const MainPage()),
               );
             },
           ),
