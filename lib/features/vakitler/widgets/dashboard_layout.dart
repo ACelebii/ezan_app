@@ -27,7 +27,11 @@ class DashboardLayout extends StatelessWidget {
 
     final icons = [
       {"k": GradientFeatureIconKey.kuran, "t": "Kuran", "path": "/kuran"},
-      {"k": GradientFeatureIconKey.kutuphane, "t": "Kütüphane", "path": null},
+      {
+        "k": GradientFeatureIconKey.kutuphane,
+        "t": "Kütüphane",
+        "path": "/kutuphane"
+      },
       {"k": GradientFeatureIconKey.pusula, "t": "Pusula", "path": "/pusula"},
       {
         "k": GradientFeatureIconKey.imsakiye,
@@ -39,7 +43,7 @@ class DashboardLayout extends StatelessWidget {
         "t": "Zikirmatik",
         "path": "/zikirmatik"
       },
-      {"k": GradientFeatureIconKey.camiler, "t": "Camiler", "path": null},
+      {"k": GradientFeatureIconKey.camiler, "t": "Camiler", "path": "/camiler"},
       {"k": GradientFeatureIconKey.dualar, "t": "Dualar", "path": "/dualar"},
       {
         "k": GradientFeatureIconKey.ayarlar,

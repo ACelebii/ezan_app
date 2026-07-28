@@ -29,7 +29,10 @@ class _CamiPageState extends State<CamiPage> {
 
   Future<void> _determinePosition() async {
     try {
-      Position position = await Geolocator.getCurrentPosition();
+      Position position = await Geolocator.getCurrentPosition(
+        locationSettings:
+            const LocationSettings(timeLimit: Duration(seconds: 15)),
+      );
       setState(() {
         _currentPosition = position;
       });
@@ -78,11 +81,36 @@ class _CamiPageState extends State<CamiPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: SafeArea(
+          child: Stack(
+            children: [
+              const Center(child: CircularProgressIndicator()),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: _buildGlassButton(Icons.arrow_back_ios_new_rounded,
+                    () => context.pop()),
+              ),
+            ],
+          ),
+        ),
+      );
     }
     if (_currentPosition == null) {
-      return const Scaffold(
-          body: Center(child: Text('Konum bilgisi alınamadı')));
+      return Scaffold(
+        body: SafeArea(
+          child: Stack(
+            children: [
+              const Center(child: Text('Konum bilgisi alınamadı')),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: _buildGlassButton(Icons.arrow_back_ios_new_rounded,
+                    () => context.pop()),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return Scaffold(
