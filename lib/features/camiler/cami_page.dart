@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -105,7 +106,7 @@ class _CamiPageState extends State<CamiPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildGlassButton(Icons.arrow_back_ios_new_rounded,
-                      () => Navigator.pop(context)),
+                      () => context.pop()),
                   _buildMapMenu(),
                 ],
               ),
@@ -125,7 +126,7 @@ class _CamiPageState extends State<CamiPage> {
           color: Colors.white,
           shape: BoxShape.circle,
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8)
+            BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 8)
           ],
         ),
         child: Icon(icon, color: Colors.black, size: 20),
