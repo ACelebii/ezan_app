@@ -65,9 +65,16 @@ class PusulaController extends ChangeNotifier {
       }
 
       Position? pos = await Geolocator.getLastKnownPosition();
-      pos ??= await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      ).catchError((_) => null);
+      if (pos == null) {
+        try {
+          pos = await Geolocator.getCurrentPosition(
+            locationSettings:
+                const LocationSettings(accuracy: LocationAccuracy.high),
+          );
+        } catch (_) {
+          // Konum alınamadı, pos null kalır.
+        }
+      }
 
       if (pos != null) {
         _currentPosition = pos;

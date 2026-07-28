@@ -1,25 +1,25 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
-import '../main/main_navigation_page.dart';
 import 'pusula_controller.dart';
 
 class PusulaPage extends StatelessWidget {
-  const PusulaPage({super.key});
+  final VoidCallback? onBack;
+  const PusulaPage({super.key, this.onBack});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => PusulaController(),
-      child: const _PusulaView(),
+      child: _PusulaView(onBack: onBack),
     );
   }
 }
 
 class _PusulaView extends StatelessWidget {
-  const _PusulaView();
+  final VoidCallback? onBack;
+  const _PusulaView({this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -51,8 +51,9 @@ class _PusulaView extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildBeautifulBackButton(context),
-                    _buildMapButton(context, controller),
+                    _buildBeautifulBackButton(context, onBack),
+                    _buildMapButton(
+                        context, controller), // YENİ HARİTA BUTONU BURADA
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -82,28 +83,26 @@ class _PusulaView extends StatelessWidget {
     );
   }
 
-  // --- UI Methods (No logic here) ---
-  Widget _buildBeautifulBackButton(BuildContext context) {
+  // --- UI Methods ---
+  Widget _buildBeautifulBackButton(
+      BuildContext context, VoidCallback? onBack) {
     return Padding(
       padding: const EdgeInsets.only(left: 16.0, top: 8.0),
       child: InkWell(
         onTap: () {
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context);
+          if (onBack != null) {
+            onBack();
+          } else if (context.canPop()) {
+            context.pop();
           } else {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const MainNavigationPage()),
-              (route) => false,
-            );
+            context.go('/');
           }
         },
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.white24),
           ),
@@ -114,19 +113,15 @@ class _PusulaView extends StatelessWidget {
     );
   }
 
+  // --- YENİ EKLENEN: HARİTA BUTONU ---
   Widget _buildMapButton(BuildContext context, PusulaController controller) {
     return Padding(
       padding: const EdgeInsets.only(right: 16.0, top: 8.0),
       child: InkWell(
+        borderRadius: BorderRadius.circular(20),
         onTap: () {
           if (controller.currentPosition != null) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    QiblaMapPage(userPosition: controller.currentPosition!),
-              ),
-            );
+            context.push('/pusula/qibla-map');
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -135,21 +130,15 @@ class _PusulaView extends StatelessWidget {
             );
           }
         },
-        borderRadius: BorderRadius.circular(24),
         child: Container(
-          padding: const EdgeInsets.all(10),
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Colors.white.withValues(alpha: 0.1),
             shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              )
-            ],
+            border: Border.all(color: Colors.white24, width: 1),
           ),
-          child: const Icon(Icons.map_rounded, color: Colors.black87, size: 20),
+          child: const Icon(Icons.map_outlined, color: Colors.white, size: 20),
         ),
       ),
     );
@@ -165,7 +154,7 @@ class _PusulaView extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color:
-                isAligned ? Colors.amber.withOpacity(0.2) : Colors.transparent,
+                isAligned ? Colors.amber.withValues(alpha: 0.2) : Colors.transparent,
             blurRadius: 50,
             spreadRadius: 15,
           )
@@ -187,11 +176,11 @@ class _PusulaView extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.9),
+              color: Colors.black.withValues(alpha: 0.9),
               blurRadius: 40,
               offset: const Offset(15, 15)),
           BoxShadow(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               blurRadius: 15,
               offset: const Offset(-8, -8)),
         ],
@@ -240,7 +229,7 @@ class _PusulaView extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.amber.withOpacity(0.8),
+                          Colors.amber.withValues(alpha: 0.8),
                           Colors.transparent
                         ],
                       ),
@@ -286,7 +275,7 @@ class _PusulaView extends StatelessWidget {
         borderRadius: BorderRadius.circular(2),
         boxShadow: [
           BoxShadow(
-              color: (isAligned ? Colors.amber : Colors.white).withOpacity(0.6),
+              color: (isAligned ? Colors.amber : Colors.white).withValues(alpha: 0.6),
               blurRadius: 15)
         ],
       ),
@@ -305,9 +294,9 @@ class _PusulaView extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.white.withOpacity(0.08),
+              Colors.white.withValues(alpha: 0.08),
               Colors.transparent,
-              Colors.black.withOpacity(0.15)
+              Colors.black.withValues(alpha: 0.15)
             ],
             stops: const [0.0, 0.5, 1.0],
           ),
@@ -321,7 +310,7 @@ class _PusulaView extends StatelessWidget {
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
       decoration: BoxDecoration(
-        color: isAligned ? Colors.amber.withOpacity(0.15) : Colors.black26,
+        color: isAligned ? Colors.amber.withValues(alpha: 0.15) : Colors.black26,
         borderRadius: BorderRadius.circular(30),
         border: Border.all(color: isAligned ? Colors.amber : Colors.white10),
       ),
@@ -410,191 +399,4 @@ class RichCompassPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(oldDelegate) => false;
-}
-
-// NOTE: QiblaMapPage remains as it is or can be moved to a separate file later.
-// For now, it stays here as per the original file structure, just adapted.
-class QiblaMapPage extends StatefulWidget {
-  final Position userPosition;
-  const QiblaMapPage({super.key, required this.userPosition});
-
-  @override
-  State<QiblaMapPage> createState() => _QiblaMapPageState();
-}
-
-class _QiblaMapPageState extends State<QiblaMapPage> {
-  late GoogleMapController _mapController;
-  MapType _currentMapType = MapType.satellite;
-
-  final LatLng _kabeLocation = const LatLng(21.422487, 39.826206);
-  late LatLng _userLocation;
-
-  @override
-  void initState() {
-    super.initState();
-    _userLocation =
-        LatLng(widget.userPosition.latitude, widget.userPosition.longitude);
-  }
-
-  void _goToMyLocation() {
-    _mapController.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(target: _userLocation, zoom: 16.0),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _userLocation,
-              zoom: 16.0,
-            ),
-            mapType: _currentMapType,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
-            compassEnabled: false,
-            onMapCreated: (controller) => _mapController = controller,
-            markers: {
-              Marker(
-                markerId: const MarkerId('kabe'),
-                position: _kabeLocation,
-                icon: BitmapDescriptor.defaultMarkerWithHue(
-                    BitmapDescriptor.hueOrange),
-                infoWindow: const InfoWindow(title: 'Kâbe-i Muazzama'),
-              ),
-            },
-            polylines: {
-              Polyline(
-                polylineId: const PolylineId('qibla_line'),
-                points: [_userLocation, _kabeLocation],
-                color: Colors.orangeAccent,
-                width: 4,
-                patterns: [PatternItem.dash(30), PatternItem.gap(20)],
-              ),
-            },
-          ),
-          SafeArea(
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  InkWell(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          )
-                        ],
-                      ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded,
-                          color: Colors.black, size: 20),
-                    ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        )
-                      ],
-                    ),
-                    child: PopupMenuButton<String>(
-                      icon: const Icon(Icons.menu_rounded,
-                          color: Colors.black, size: 24),
-                      offset: const Offset(0, 50),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                      onSelected: (value) {
-                        setState(() {
-                          if (value == 'Uydu')
-                            _currentMapType = MapType.satellite;
-                          if (value == 'Standart')
-                            _currentMapType = MapType.normal;
-                          if (value == 'Konumum') _goToMyLocation();
-                        });
-                      },
-                      itemBuilder: (BuildContext context) => [
-                        PopupMenuItem(
-                          value: 'Uydu',
-                          child: Row(
-                            children: [
-                              Icon(Icons.satellite_alt_rounded,
-                                  color: _currentMapType == MapType.satellite
-                                      ? Colors.blue
-                                      : Colors.black87),
-                              const SizedBox(width: 12),
-                              Text('Uydu',
-                                  style: TextStyle(
-                                      color:
-                                          _currentMapType == MapType.satellite
-                                              ? Colors.blue
-                                              : Colors.black87,
-                                      fontWeight: FontWeight.w600)),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'Standart',
-                          child: Row(
-                            children: [
-                              Icon(Icons.map_outlined,
-                                  color: _currentMapType == MapType.normal
-                                      ? Colors.blue
-                                      : Colors.black87),
-                              const SizedBox(width: 12),
-                              Text('Standart',
-                                  style: TextStyle(
-                                      color: _currentMapType == MapType.normal
-                                          ? Colors.blue
-                                          : Colors.black87,
-                                      fontWeight: FontWeight.w600)),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuDivider(),
-                        const PopupMenuItem(
-                          value: 'Konumum',
-                          child: Row(
-                            children: [
-                              Icon(Icons.near_me_rounded,
-                                  color: Colors.black87),
-                              SizedBox(width: 12),
-                              Text('Konumum',
-                                  style: TextStyle(
-                                      color: Colors.black87,
-                                      fontWeight: FontWeight.w600)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

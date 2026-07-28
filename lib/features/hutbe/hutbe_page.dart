@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:ezan_vakti_uygulamasi/locator.dart';
@@ -102,7 +103,7 @@ class _HaftaninHutbesiPageState extends State<HaftaninHutbesiPage> {
                 children: [
                   _buildGlassButton(context,
                       icon: Icons.arrow_back_ios_new_rounded,
-                      onTap: () => Navigator.pop(context)),
+                      onTap: () => context.pop()),
                 ],
               ),
             ),
@@ -205,11 +206,8 @@ class _HaftaninHutbesiPageState extends State<HaftaninHutbesiPage> {
                                 itemBuilder: (context, index) {
                                   final hutbe = oneCikanHutbeler[index];
                                   return GestureDetector(
-                                    onTap: () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                HutbePdfPage(hutbe: hutbe))),
+                                    onTap: () => context.push('/hutbe/pdf',
+                                        extra: hutbe),
                                     child: Container(
                                       width: MediaQuery.of(context).size.width *
                                           0.85,
@@ -317,12 +315,9 @@ class _HaftaninHutbesiPageState extends State<HaftaninHutbesiPage> {
                                                 ? Colors.white24
                                                 : Colors.grey.shade300,
                                             size: 14),
-                                        onTap: () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    HutbePdfPage(
-                                                        hutbe: hutbe))),
+                                        onTap: () => context.push(
+                                            '/hutbe/pdf',
+                                            extra: hutbe),
                                       ),
                                       if (!isLast)
                                         Divider(
@@ -384,7 +379,7 @@ class _HutbePdfPageState extends State<HutbePdfPage> {
                 children: [
                   _buildGlassButton(context,
                       icon: Icons.arrow_back_ios_new_rounded,
-                      onTap: () => Navigator.pop(context)),
+                      onTap: () => context.pop()),
                   _buildGlassButton(context, icon: Icons.info_outline_rounded,
                       onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(

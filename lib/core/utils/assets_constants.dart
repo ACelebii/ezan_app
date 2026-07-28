@@ -29,5 +29,5 @@ class Assets {
   // Other assets
   static const String dualarJson = '$basePath/dualar.json';
   static const String ezanMp3 = '$basePath/ezan.mp3';
-  static const String uyariMp3 = '$basePath/uyari.mp3.mp3';
+  static const String uyariMp3 = '$basePath/uyari.mp3';
 }

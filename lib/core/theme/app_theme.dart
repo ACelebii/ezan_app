@@ -31,8 +31,8 @@ class AppTheme {
           : Colors.black54;
   static Color getDividerColor(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? Colors.white.withOpacity(0.05)
-          : Colors.black.withOpacity(0.08);
+          ? Colors.white.withValues(alpha: 0.05)
+          : Colors.black.withValues(alpha: 0.08);
   static Color getAccentColor(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
           ? Colors.yellow

@@ -8,7 +8,7 @@ import '../kuran_models.dart';
 class KuranRepository {
   Future<Result<List<SurahModel>>> getSurahs() async {
     try {
-      final url = 'https://api.quran.com/api/v4/chapters?language=tr';
+      const url = 'https://api.quran.com/api/v4/chapters?language=tr';
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {

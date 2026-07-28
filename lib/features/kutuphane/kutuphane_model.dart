@@ -1,16 +1,13 @@
 class LibraryNode {
+  final int id;
   final String title;
-  final String imagePath; // UI'daki o gerçek görseller için
-  final String? content; // Sadece en son makale aşamasında dolu olur
-  final List<LibraryNode>? children; // Alt kategoriler varsa dolu olur
+  final String imagePath;
+  final bool isArticle;
 
   LibraryNode({
+    required this.id,
     required this.title,
     required this.imagePath,
-    this.content,
-    this.children,
+    required this.isArticle,
   });
-
-  // Bu düğüm bir makale mi yoksa alt kategorisi olan bir liste mi?
-  bool get isArticle => content != null;
 }

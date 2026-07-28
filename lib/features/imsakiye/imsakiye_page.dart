@@ -1,14 +1,15 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart'
     hide TextDirection; // intl çakışma hatası çözüldü
 import 'package:provider/provider.dart';
 import '../auth/auth_service.dart';
-import '../main/main_navigation_page.dart';
 
 class ImsakiyePage extends StatefulWidget {
-  const ImsakiyePage({super.key});
+  final VoidCallback? onBack;
+  const ImsakiyePage({super.key, this.onBack});
   @override
   State<ImsakiyePage> createState() => _ImsakiyePageState();
 }
@@ -102,23 +103,20 @@ class _ImsakiyePageState extends State<ImsakiyePage> {
           padding: const EdgeInsets.all(8.0),
           child: InkWell(
             onTap: () {
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context); // Menüden geldiyse menüye dön
+              if (widget.onBack != null) {
+                widget.onBack!();
+              } else if (context.canPop()) {
+                context.pop(); // Menüden geldiyse menüye dön
               } else {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const MainNavigationPage()),
-                  (route) => false, // Alt menüden tıklandıysa ana sayfaya git
-                );
+                context.go('/'); // Alt menüden tıklandıysa ana sayfaya git
               }
             },
             borderRadius: BorderRadius.circular(12),
             child: Container(
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.black.withOpacity(0.05),
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
                 border:
                     Border.all(color: isDark ? Colors.white24 : Colors.black12),
@@ -158,7 +156,7 @@ class _ImsakiyePageState extends State<ImsakiyePage> {
                           : null,
                       boxShadow: [
                         BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4))
                       ]),

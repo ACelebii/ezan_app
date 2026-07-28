@@ -4,21 +4,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:go_router/go_router.dart';
 
 import 'firebase_options.dart';
 import 'features/auth/auth_service.dart';
 import 'core/theme/app_theme.dart';
-import 'features/sync/sync_manager.dart';
 import 'features/sync/sync_notifier.dart';
 import 'features/kutuphane/data/kutuphane_repository.dart';
 import 'features/kuran/kuran_download_service.dart';
 
-import 'features/vakitler/vakitler_page.dart';
-import 'features/kuran/kuran_page.dart';
-import 'features/pusula/pusula_page.dart';
-import 'features/imsakiye/imsakiye_page.dart';
-import 'features/main/main_navigation_page.dart';
 import 'locator.dart';
 import 'routes.dart';
 
@@ -41,7 +34,7 @@ void main() async {
   await dotenv.load(fileName: ".env_production");
   await initializeDateFormatting('tr_TR', null);
   setupLocator();
-  Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+  Workmanager().initialize(callbackDispatcher);
 
   debugPrint("Firebase initializing...");
   try {

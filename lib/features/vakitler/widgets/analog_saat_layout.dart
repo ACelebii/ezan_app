@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../auth/auth_service.dart';
 
 class AnalogSaatLayout extends StatefulWidget {
   final String siradakiVakit;
@@ -79,7 +77,7 @@ class _AnalogSaatLayoutState extends State<AnalogSaatLayout> {
                       color: AppTheme.getCardColor(context),
                       boxShadow: [
                         BoxShadow(
-                            color: accentColor.withOpacity(0.1),
+                            color: accentColor.withValues(alpha: 0.1),
                             blurRadius: 20,
                             spreadRadius: 5)
                       ],
@@ -124,7 +122,7 @@ class _AnalogSaatLayoutState extends State<AnalogSaatLayout> {
                                     child: Text(romaRakamlari[index],
                                         style: TextStyle(
                                             color: index % 3 == 0
-                                                ? accentColor.withOpacity(0.8)
+                                                ? accentColor.withValues(alpha: 0.8)
                                                 : Colors.white54,
                                             fontSize: index % 3 == 0 ? 16 : 12,
                                             fontWeight: FontWeight.bold,
@@ -167,7 +165,7 @@ class _AnalogSaatLayoutState extends State<AnalogSaatLayout> {
                                       width: 5,
                                       height: 100,
                                       decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.7),
+                                          color: Colors.white.withValues(alpha: 0.7),
                                           borderRadius:
                                               BorderRadius.circular(2))))),
                         ),

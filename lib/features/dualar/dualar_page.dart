@@ -113,7 +113,7 @@ class DualarView extends StatelessWidget {
               ? []
               : [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4))
                 ]),
@@ -132,10 +132,8 @@ class DualarView extends StatelessWidget {
               ),
             ),
           ),
-          ...category.dualar
-              .map((dua) => _buildDuaItem(
-                  context, dua, isDark, dua == category.dualar.last))
-              .toList(),
+          ...category.dualar.map((dua) => _buildDuaItem(
+              context, dua, isDark, dua == category.dualar.last)),
         ],
       ),
     );

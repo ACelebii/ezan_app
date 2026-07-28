@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/glass_button.dart';
@@ -55,7 +56,7 @@ class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
                 children: [
                   GlassButton(
                       icon: Icons.arrow_back_ios_new_rounded,
-                      onTap: () => Navigator.pop(context)),
+                      onTap: () => context.pop()),
 
                   // Yıl Seçici Popup Menü
                   Container(
@@ -179,12 +180,9 @@ class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
                                       InkWell(
                                         borderRadius: BorderRadius.circular(
                                             isLast ? 20 : 0),
-                                        onTap: () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    DiniGunDetayPage(
-                                                        gunData: gun))),
+                                        onTap: () => context.push(
+                                            '/dini-gunler/detay',
+                                            extra: gun),
                                         child: Padding(
                                           padding: const EdgeInsets.symmetric(
                                               vertical: 16.0, horizontal: 16.0),
@@ -320,7 +318,7 @@ class DiniGunDetayPage extends StatelessWidget {
                 children: [
                   GlassButton(
                       icon: Icons.arrow_back_ios_new_rounded,
-                      onTap: () => Navigator.pop(context)),
+                      onTap: () => context.pop()),
                   Expanded(
                     child: Center(
                       child: Text(

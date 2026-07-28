@@ -212,14 +212,11 @@ class KuranProvider extends ChangeNotifier {
   Future<void> _setupPlaylist() async {
     if (currentAyahs.isEmpty) return;
     try {
-      final playlist = ConcatenatingAudioSource(
-        useLazyPreparation: true,
-        children: currentAyahs
-            .where((ayah) => ayah.audioUrl.isNotEmpty)
-            .map((ayah) => AudioSource.uri(Uri.parse(ayah.audioUrl)))
-            .toList(),
-      );
-      await audioPlayer.setAudioSource(playlist,
+      final sources = currentAyahs
+          .where((ayah) => ayah.audioUrl.isNotEmpty)
+          .map((ayah) => AudioSource.uri(Uri.parse(ayah.audioUrl)))
+          .toList();
+      await audioPlayer.setAudioSources(sources,
           initialIndex: 0, initialPosition: Duration.zero);
       // Eğer repeat açıksa yeni listede de aktif et
       await audioPlayer.setLoopMode(isRepeatOne ? LoopMode.one : LoopMode.off);
@@ -229,10 +226,11 @@ class KuranProvider extends ChangeNotifier {
   }
 
   Future<void> togglePlay() async {
-    if (isPlaying)
+    if (isPlaying) {
       await audioPlayer.pause();
-    else
+    } else {
       await audioPlayer.play();
+    }
   }
 
   // YENİ: Stop Tuşu İşlevi
@@ -312,14 +310,15 @@ class KuranProvider extends ChangeNotifier {
   }
 
   void changeSpeed() {
-    if (speed == 1.0)
+    if (speed == 1.0) {
       speed = 1.25;
-    else if (speed == 1.25)
+    } else if (speed == 1.25) {
       speed = 1.5;
-    else if (speed == 1.5)
+    } else if (speed == 1.5) {
       speed = 2.0;
-    else
+    } else {
       speed = 1.0;
+    }
     audioPlayer.setSpeed(speed);
     notifyListeners();
   }
@@ -342,11 +341,13 @@ class KuranProvider extends ChangeNotifier {
   void changeHafiz(String name) {
     selectedHafizName = name;
     notifyListeners();
-    if (activeSurah != null)
+    if (activeSurah != null) {
       loadSurahDetails(activeSurah!);
-    else if (activeJuz != null)
+    } else if (activeJuz != null) {
       loadJuzDetails(activeJuz!);
-    else if (activePage != null) loadPageDetails(activePage!);
+    } else if (activePage != null) {
+      loadPageDetails(activePage!);
+    }
   }
 
   void setVolume(double val) {

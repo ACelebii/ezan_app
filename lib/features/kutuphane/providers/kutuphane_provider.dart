@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../data/kutuphane_repository.dart';
 import '../kutuphane_model.dart';
-import '../../../locator.dart';
 
 class KutuphaneProvider extends ChangeNotifier {
   final KutuphaneRepository _repository = GetIt.instance<KutuphaneRepository>();
+
   List<LibraryNode> _items = [];
   bool _isLoading = true;
 
@@ -17,12 +17,10 @@ class KutuphaneProvider extends ChangeNotifier {
   }
 
   Future<void> _loadItems() async {
-    final result = await _repository.getLibraryItems();
-    if (result.isSuccess) {
-      _items = result.data!;
-    } else {
-      // Hata yönetimi (loglama veya snackbar gösterimi)
-      debugPrint("Hata: ${result.errorMessage}");
+    try {
+      _items = await _repository.getAnaKategoriler();
+    } catch (e) {
+      debugPrint("Kütüphane Veritabanı Yükleme Hatası: $e");
     }
     _isLoading = false;
     notifyListeners();

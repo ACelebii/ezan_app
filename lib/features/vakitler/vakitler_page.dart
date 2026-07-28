@@ -1,17 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:geolocator/geolocator.dart';
-import '../../main.dart';
 import '../auth/auth_service.dart';
-import '../kuran/kuran_page.dart';
-import '../pusula/pusula_page.dart';
-import '../imsakiye/imsakiye_page.dart';
-import '../settings/settings_page.dart';
-import '../zikirmatik/zikirmatik_page.dart';
 import '../../core/utils/assets_constants.dart';
 import '../../core/models/city_list.dart';
 import '../../core/theme/app_theme.dart';
@@ -40,10 +33,7 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
   String _lastCity = "";
   int _lastMethod = -1;
   String? _temporaryCity;
-  StreamSubscription<Position>? _positionSubscription;
-  Position? _lastPosition;
 
-  late DateTime _currentTime;
   double _timeProgress = 0.0;
 
   List<Map<String, String>> vakitler = [
@@ -58,9 +48,7 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
   @override
   void initState() {
     super.initState();
-    _currentTime = DateTime.now();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _currentTime = DateTime.now();
       _calculateNextVakit();
       _calculateTimeProgress();
     });
@@ -83,28 +71,42 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
 
   Future<void> _fetchData(String city, int method) async {
     if (!mounted) return;
-    if (vakitler[0]['saat'] == "--:--") setState(() => _isLoading = true);
+    if (vakitler[0]['saat'] == "--:--") {
+      setState(() => _isLoading = true);
+    }
 
     try {
       final authService = context.read<AuthService>();
       final apiKey = authService.apiKey;
-      final weatherUrl =
-          "https://api.openweathermap.org/data/2.5/weather?q=$city,TR&units=metric&appid=$apiKey&lang=tr";
-      final weatherRes = await http.get(Uri.parse(weatherUrl));
-      if (weatherRes.statusCode == 200) {
-        final wData = json.decode(weatherRes.body);
-        if (mounted) {
-          setState(() {
-            _derece = "${wData['main']['temp'].toInt()}°C";
-            _sehir = city;
-            _havaDurumuIcon = wData['weather'][0]['icon'];
-          });
+
+      // 1. Hava Durumu İsteği (8 Saniye sınır korumalı)
+      try {
+        final weatherUrl =
+            "https://api.openweathermap.org/data/2.5/weather?q=$city,TR&units=metric&appid=$apiKey&lang=tr";
+        final weatherRes = await http
+            .get(Uri.parse(weatherUrl))
+            .timeout(const Duration(seconds: 8));
+        if (weatherRes.statusCode == 200) {
+          final wData = json.decode(weatherRes.body);
+          if (mounted) {
+            setState(() {
+              _derece = "${wData['main']['temp'].toInt()}°C";
+              _sehir = city;
+              _havaDurumuIcon = wData['weather'][0]['icon'];
+            });
+          }
         }
+      } catch (_) {
+        // Hava durumu geç yanıt verirse akışı bozmadan devam et
       }
 
+      // 2. Vakitler İsteği (8 Saniye sınır korumalı)
       final timingsUrl =
           "https://api.aladhan.com/v1/timingsByCity?city=$city&country=Turkey&method=$method";
-      final timingsRes = await http.get(Uri.parse(timingsUrl));
+      final timingsRes = await http
+          .get(Uri.parse(timingsUrl))
+          .timeout(const Duration(seconds: 8));
+
       if (timingsRes.statusCode == 200) {
         final tData = json.decode(timingsRes.body)['data']['timings'];
         authService.cachePrayerTimes(city, tData);
@@ -125,6 +127,7 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
         throw Exception("API Error: ${timingsRes.statusCode}");
       }
     } catch (e) {
+      if (!mounted) return;
       final cached =
           await context.read<AuthService>().getCachedPrayerTimes(city);
       if (cached != null && mounted) {
@@ -141,6 +144,7 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
         _calculateTimeProgress();
         _showSnackBar("Bağlantı hatası: Önbellekten gösteriliyor.");
       } else if (mounted) {
+        // Hata durumunda sonsuz yüklemede kilitlenmeyi kesin olarak kesiyoruz
         setState(() => _isLoading = false);
         _showSnackBar("Veri alınamadı. İnternet bağlantınızı kontrol edin.");
       }
@@ -216,14 +220,13 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
     DateTime? nextVakitTime;
     String nextVakitName = "";
 
-    if (vakitler.isEmpty) return; // Liste boşsa işlem yapma
+    if (vakitler.isEmpty) return;
 
     for (var v in vakitler) {
       if (v['saat'] == null || !v['saat']!.contains(':')) continue;
 
       final parts = v['saat']!.split(':');
 
-      // GÜVENLİ DÖNÜŞTÜRME: Hata olursa çökmez, '0' kabul eder ve boşlukları siler
       int saat = int.tryParse(parts[0].trim()) ?? 0;
       int dakika = int.tryParse(parts[1].trim()) ?? 0;
 
@@ -236,7 +239,6 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
       }
     }
 
-    // Eğer bugünün tüm vakitleri geçtiyse, yarına (ertesi güne) ait ilk vakti (İmsak/Sabah) al
     if (nextVakitTime == null) {
       if (vakitler[0]['saat'] != null && vakitler[0]['saat']!.contains(':')) {
         final parts = vakitler[0]['saat']!.split(':');
@@ -248,13 +250,12 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
             DateTime(now.year, now.month, now.day + 1, saat, dakika);
         nextVakitName = vakitler[0]['vakit'] ?? "";
       } else {
-        // En kötü senaryoda bile çökmesini engellemek için yedek (Fail-safe)
         nextVakitTime = now.add(const Duration(hours: 1));
         nextVakitName = "Yükleniyor...";
       }
     }
 
-    if (mounted && nextVakitTime != null) {
+    if (mounted) {
       setState(() {
         _remainingTime = nextVakitTime!.difference(now);
         _siradakiVakit = nextVakitName;
@@ -417,38 +418,30 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
     );
   }
 
-  // --- ORTAK BİLEŞENLER ---
-
   Widget _buildCountdown(Color titleColor) {
     final authService = context.read<AuthService>();
     final now = DateTime.now();
     bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Açık temada sayacın rengi: Dümdüz siyah yerine modern, koyu bir antrasit
     Color timerColor = isDark ? Colors.white : const Color(0xFF2C3E50);
 
     return Column(children: [
       Text(authService.translate("Vaktin Çıkmasına"),
           style: TextStyle(color: titleColor, fontSize: 14)),
-      const SizedBox(height: 4), // Ufak bir boşluk
+      const SizedBox(height: 4),
       Text(format(_remainingTime),
           style: TextStyle(
-              color: timerColor,
-              fontSize: 60,
-              fontWeight:
-                  FontWeight.w400)), // w300 çok ince kalıyordu, w400 yaptık
-      const SizedBox(height: 8), // Tarih ile saat arası ufak boşluk
+              color: timerColor, fontSize: 60, fontWeight: FontWeight.w400)),
+      const SizedBox(height: 8),
       Text(
           "${now.day} ${authService.translate(_getMonthName(now.month))} ${now.year}",
           style: TextStyle(
-              color: AppTheme.getSubTextColor(context),
-              fontSize: 13)), // 12'den 13'e çıkarttık
+              color: AppTheme.getSubTextColor(context), fontSize: 13)),
     ]);
   }
 
   Widget _buildBoxGrid(Color accentColor, bool isGlass) {
     final authService = context.read<AuthService>();
-    // Tema kontrolünü buraya ekliyoruz:
     bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GridView.builder(
@@ -473,29 +466,24 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
                         : AppTheme.getCardColor(context)),
                 borderRadius: BorderRadius.circular(16),
                 border: isGlass ? Border.all(color: Colors.white24) : null,
-                // --- YENİ EKLENEN KISIM: AÇIK TEMADA KARTLARA GÖLGE ---
                 boxShadow: (!isDark && !isGlass && !isNext)
                     ? [
                         BoxShadow(
-                          color:
-                              Colors.black.withOpacity(0.04), // Yumuşak gölge
+                          color: Colors.black.withValues(alpha: 0.04),
                           blurRadius: 15,
                           spreadRadius: 2,
                           offset: const Offset(0, 5),
                         ),
                       ]
                     : [],
-                // -------------------------------------------------------
               ),
               child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(authService.translate(item['vakit']!),
                         style: TextStyle(
-                            // --- YENİ EKLENEN KISIM: KONTRAST DÜZELTMESİ ---
                             color: isNext
-                                ? Colors.white
-                                    .withOpacity(0.9) // Aktif kart yazısı beyaz
+                                ? Colors.white.withValues(alpha: 0.9)
                                 : AppTheme.getSubTextColor(context),
                             fontSize: 13,
                             fontWeight:
@@ -503,9 +491,8 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
                     const SizedBox(height: 2),
                     Text(item['saat']!,
                         style: TextStyle(
-                            // --- YENİ EKLENEN KISIM: KONTRAST DÜZELTMESİ ---
                             color: isNext
-                                ? Colors.white // Aktif kart saati tam beyaz
+                                ? Colors.white
                                 : AppTheme.getTextColor(context),
                             fontSize: 20,
                             fontWeight: FontWeight.bold)),
@@ -552,10 +539,10 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
           IconButton(
             icon: Icon(Icons.search, color: accentColor, size: 28),
             onPressed: () async {
-              final cityName = await Navigator.push<String?>(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => CitySearchPage(isDark: isDark)));
+              final cityName = await context.push<String?>(
+                  '/vakitler/city-search',
+                  extra: isDark);
+              if (!context.mounted) return;
               if (cityName != null && cityName.isNotEmpty) {
                 setState(() {
                   _temporaryCity = cityName;
@@ -586,8 +573,8 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
                       isDark ? const Color(0xFF031F1F) : Colors.grey.shade300)),
           Container(
               color: isNext
-                  ? Colors.black.withOpacity(0.3)
-                  : Colors.black.withOpacity(0.6)),
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.6)),
           if (isNext)
             Container(
                 decoration: BoxDecoration(
@@ -623,14 +610,15 @@ Color getSubTextColor(BuildContext context) =>
         ? Colors.white54
         : Colors.black54;
 
-class CitySearchPage extends StatefulWidget {
+class VakitlerCitySearchPage extends StatefulWidget {
   final bool isDark;
-  const CitySearchPage({super.key, required this.isDark});
+  const VakitlerCitySearchPage({super.key, required this.isDark});
   @override
-  State<CitySearchPage> createState() => _CitySearchPageState();
+  State<VakitlerCitySearchPage> createState() =>
+      _VakitlerCitySearchPageState();
 }
 
-class _CitySearchPageState extends State<CitySearchPage> {
+class _VakitlerCitySearchPageState extends State<VakitlerCitySearchPage> {
   final TextEditingController _searchController = TextEditingController();
   String query = "";
 
@@ -664,7 +652,7 @@ class _CitySearchPageState extends State<CitySearchPage> {
           leading: IconButton(
               icon: Icon(Icons.arrow_back_ios,
                   color: AppTheme.getTextColor(context), size: 20),
-              onPressed: () => Navigator.pop(context, null)),
+              onPressed: () => context.pop()),
           title: TextField(
             controller: _searchController,
             autofocus: false,
@@ -701,7 +689,7 @@ class _CitySearchPageState extends State<CitySearchPage> {
               leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.15),
+                      color: accentColor.withValues(alpha: 0.15),
                       shape: BoxShape.circle),
                   child: Icon(Icons.location_on_outlined,
                       color: accentColor, size: 18)),
@@ -727,7 +715,7 @@ class _CitySearchPageState extends State<CitySearchPage> {
                           color: AppTheme.getTextColor(context), fontSize: 17)),
                 ]
               ])),
-              onTap: () => Navigator.pop(context, city),
+              onTap: () => context.pop(city),
             );
           },
         ),

@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../auth/auth_service.dart';
 
@@ -19,8 +20,8 @@ Widget _buildGlassButton(BuildContext context,
           horizontal: text != null ? 16 : 10, vertical: 10),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.1)
-            : Colors.black.withOpacity(0.05),
+            ? Colors.white.withValues(alpha: 0.1)
+            : Colors.black.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: isDark ? Colors.white24 : Colors.black12),
       ),
@@ -150,7 +151,7 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
                 children: [
                   _buildGlassButton(context,
                       icon: Icons.arrow_back_ios_new_rounded,
-                      onTap: () => Navigator.pop(context)),
+                      onTap: () => context.pop()),
                   Row(
                     children: [
                       _buildGlassButton(context,
@@ -183,7 +184,7 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
                             ? []
                             : [
                                 BoxShadow(
-                                    color: Colors.black.withOpacity(0.03),
+                                    color: Colors.black.withValues(alpha: 0.03),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4))
                               ]),
@@ -202,7 +203,7 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
                               ? Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                      color: Colors.blue.withOpacity(0.15),
+                                      color: Colors.blue.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(10)),
                                   child: const Icon(Icons.touch_app_rounded,
                                       color: Colors.blue, size: 20),
@@ -320,14 +321,12 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
                                 ),
                           onTap: () async {
                             if (isEditing) {
-                              if (!isDefault)
+                              if (!isDefault) {
                                 _showAddPopup(context, initialData: z);
+                              }
                             } else {
-                              await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          ZikirmatikSayacPage(zikirData: z)));
+                              await context.push('/zikirmatik/sayac',
+                                  extra: z);
                               setState(() {});
                             }
                           },
@@ -384,7 +383,7 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
                               ? []
                               : [
                                   BoxShadow(
-                                      color: Colors.black.withOpacity(0.03),
+                                      color: Colors.black.withValues(alpha: 0.03),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4))
                                 ]),
@@ -471,7 +470,7 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
     ], // Ahşap / Kahverengi
     [Colors.white, const Color(0xFFA0A0A0), const Color(0xFF404040)], // Gri
     [
-      Colors.white.withOpacity(0.9),
+      Colors.white.withValues(alpha: 0.9),
       Colors.redAccent.shade200,
       Colors.red.shade900
     ], // Kırmızı (Varsayılan)
@@ -543,7 +542,7 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                           setModalState(() {
                             _selectedBeadColorIndex = index;
                           });
-                          this.setState(
+                          setState(
                               () {}); // Arkadaki ana sayfayı da yenile
                         },
                         child: AnimatedContainer(
@@ -560,13 +559,13 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                             ),
                             border: _selectedBeadColorIndex == index
                                 ? Border.all(
-                                    color: Colors.blue.withOpacity(0.8),
+                                    color: Colors.blue.withValues(alpha: 0.8),
                                     width: 3)
                                 : Border.all(
                                     color: Colors.transparent, width: 3),
                             boxShadow: [
                               BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 6,
                                   offset: const Offset(0, 3))
                             ],
@@ -629,7 +628,7 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
     List<Widget> children = [];
     List<Color> currentPalette = _beadColorPalettes[_selectedBeadColorIndex];
     Color separatorColor = currentPalette[1]
-        .withOpacity(0.6); // Ara noktalar için paletin orta rengi
+        .withValues(alpha: 0.6); // Ara noktalar için paletin orta rengi
 
     for (int i = 0; i < sizes.length; i++) {
       children.add(Container(
@@ -645,7 +644,7 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
           ),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 5,
                 offset: const Offset(2, 4))
           ],
@@ -691,12 +690,12 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                   children: [
                     _buildGlassButton(context,
                         icon: Icons.arrow_back_ios_new_rounded,
-                        onTap: () => Navigator.pop(context)),
+                        onTap: () => context.pop()),
                     Container(
                       decoration: BoxDecoration(
                         color: isDark
-                            ? Colors.white.withOpacity(0.1)
-                            : Colors.black.withOpacity(0.05),
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.black.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                             color: isDark ? Colors.white24 : Colors.black12),
@@ -825,7 +824,7 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                                     ? [
                                         BoxShadow(
                                             color: Colors.redAccent
-                                                .withOpacity(0.6),
+                                                .withValues(alpha: 0.6),
                                             blurRadius: 50,
                                             spreadRadius: 15)
                                       ]
@@ -941,7 +940,7 @@ class ZikirRingPainter extends CustomPainter {
     final radius = size.width / 2;
 
     final dotPaint = Paint()
-      ..color = isDark ? Colors.white24 : Colors.blue.withOpacity(0.3)
+      ..color = isDark ? Colors.white24 : Colors.blue.withValues(alpha: 0.3)
       ..style = PaintingStyle.fill;
     for (int i = 0; i < 72; i++) {
       final angle = (i * 5) * pi / 180;
@@ -1119,7 +1118,7 @@ class _ZikirEkleDuzenlePageState extends State<ZikirEkleDuzenlePage> {
       style: TextStyle(color: textC),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: textC.withOpacity(0.3)),
+        hintStyle: TextStyle(color: textC.withValues(alpha: 0.3)),
         filled: true,
         fillColor: bg,
         border: OutlineInputBorder(

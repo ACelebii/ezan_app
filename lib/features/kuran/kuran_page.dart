@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'providers/kuran_provider.dart';
-import 'surah_detail_page.dart';
-import '../vakitler/vakitler_page.dart';
-import '../main/main_navigation_page.dart';
+import 'surah_detail_page.dart' show SearchBottomSheet;
 
-// PROVIDER SARMALAYICISI: ProviderNotFound hatasını çözer
 class KuranPage extends StatelessWidget {
-  const KuranPage({super.key});
+  final VoidCallback? onBack;
+  const KuranPage({super.key, this.onBack});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => KuranProvider(),
-      child: const KuranView(),
+      child: KuranView(onBack: onBack),
     );
   }
 }
 
 class KuranView extends StatelessWidget {
-  const KuranView({super.key});
+  final VoidCallback? onBack;
+  const KuranView({super.key, this.onBack});
 
   void _showMainMenu(BuildContext context, KuranProvider provider) {
     showModalBottomSheet(
@@ -57,12 +57,9 @@ class KuranView extends StatelessWidget {
                 context, onTap: () async {
               Navigator.pop(context);
               bool success = await provider.goToBookmark();
+              if (!context.mounted) return;
               if (success) {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => ChangeNotifierProvider.value(
-                            value: provider, child: const SurahDetailPage())));
+                context.push('/kuran/surah-detail', extra: provider);
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -104,15 +101,29 @@ class KuranView extends StatelessWidget {
           backgroundColor: const Color(0xFF0F4C3A),
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+            icon:
+                const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
             onPressed: () {
-              // Mevcut Kuran sayfasını ekrandan yavaşça kaldırır ve yerine Ana Sayfayı (Alt menülü olanı) koyar.
-              // DİKKAT: "MainPage()" kısmını uygulamanın asıl ana sayfasının adıyla değiştir! (Örn: AnaEkran, BottomNavPage vb.)
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const MainNavigationPage()),
-              );
+              // GÜVENLİ ÇIKIŞ MANTIĞI (Crash Engelleyici)
+              try {
+                final provider = context.read<KuranProvider>();
+                if (provider.isPlaying) {
+                  provider.audioPlayer
+                      .pause(); // Hata fırlatırsa yoksay (catch'e düşer)
+                }
+              } catch (_) {
+                // Ses motoru kapanırken oluşabilecek her türlü ANR/Crash burada engellenir.
+              }
+
+              if (onBack != null) {
+                onBack!(); // Alt menüdeysek ana menüye dön
+              } else {
+                if (context.canPop()) {
+                  context.pop(); // Harici açılmışsa temizce kapat
+                } else {
+                  context.go('/');
+                }
+              }
             },
           ),
           title: const Text("Kuran-ı Kerim",
@@ -165,18 +176,13 @@ class KuranView extends StatelessWidget {
 
             return Column(
               children: [
-                // KALDIGIM YER (YER İMİ) KARTI
                 if (provider.savedBookmarkTitle != null)
                   GestureDetector(
                     onTap: () async {
                       bool success = await provider.goToBookmark();
+                      if (!context.mounted) return;
                       if (success) {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => ChangeNotifierProvider.value(
-                                    value: provider,
-                                    child: const SurahDetailPage())));
+                        context.push('/kuran/surah-detail', extra: provider);
                       }
                     },
                     child: Container(
@@ -192,7 +198,7 @@ class KuranView extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withValues(alpha: 0.15),
                               blurRadius: 8,
                               offset: const Offset(0, 4)),
                         ],
@@ -226,11 +232,9 @@ class KuranView extends StatelessWidget {
                       ),
                     ),
                   ),
-
                 Expanded(
                   child: TabBarView(
                     children: [
-                      // SURELER LİSTESİ
                       ListView.separated(
                         itemCount: provider.surahs.length,
                         separatorBuilder: (context, index) =>
@@ -266,25 +270,17 @@ class KuranView extends StatelessWidget {
                             trailing: const Icon(Icons.chevron_right,
                                 color: Colors.grey, size: 20),
                             onTap: () {
-                              // ANİMASYON KURTARICISI: Arayüz kasmasın diye gecikmeli yükleme
                               Future.delayed(const Duration(milliseconds: 150),
                                   () {
                                 provider.loadSurahDetails(surah);
                               });
 
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) =>
-                                          ChangeNotifierProvider.value(
-                                              value: provider,
-                                              child: const SurahDetailPage())));
+                              context.push('/kuran/surah-detail',
+                                  extra: provider);
                             },
                           );
                         },
                       ),
-
-                      // CÜZLER LİSTESİ
                       ListView.separated(
                         itemCount: provider.juzs.length,
                         separatorBuilder: (context, index) =>
@@ -322,13 +318,8 @@ class KuranView extends StatelessWidget {
                                 provider.loadJuzDetails(juz);
                               });
 
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) =>
-                                          ChangeNotifierProvider.value(
-                                              value: provider,
-                                              child: const SurahDetailPage())));
+                              context.push('/kuran/surah-detail',
+                                  extra: provider);
                             },
                           );
                         },

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:ezan_vakti_uygulamasi/core/theme/app_theme.dart';
 import 'package:ezan_vakti_uygulamasi/core/utils/assets_constants.dart';
-import 'package:ezan_vakti_uygulamasi/features/kutuphane/kutuphane_model.dart';
-import 'package:ezan_vakti_uygulamasi/features/kutuphane/kutuphane_icerik_page.dart';
 import 'package:ezan_vakti_uygulamasi/features/kutuphane/providers/kutuphane_provider.dart';
 
 class KutuphanePage extends StatelessWidget {
@@ -62,10 +61,8 @@ class _KutuphanePageContent extends StatelessWidget {
                 (context, index) {
                   final kitap = kitaplar[index];
                   return InkWell(
-                    onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => KutuphaneIcerikPage(node: kitap))),
+                    onTap: () =>
+                        context.push('/kutuphane/icerik', extra: kitap),
                     child: Column(
                       children: [
                         Expanded(
@@ -74,7 +71,7 @@ class _KutuphanePageContent extends StatelessWidget {
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
+                                    color: Colors.black.withValues(alpha: 0.2),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4))
                               ],
@@ -126,7 +123,7 @@ class _KutuphanePageContent extends StatelessWidget {
               children: [
                 Text("Son Okunan",
                     style: TextStyle(
-                        color: textColor.withOpacity(0.5), fontSize: 12)),
+                        color: textColor.withValues(alpha: 0.5), fontSize: 12)),
                 const SizedBox(height: 4),
                 Text("Bakara Suresi\n17. Ayet",
                     style: TextStyle(

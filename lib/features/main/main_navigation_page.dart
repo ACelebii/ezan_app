@@ -19,46 +19,64 @@ class MainNavigationPage extends StatefulWidget {
 
 class _MainNavigationPageState extends State<MainNavigationPage> {
   int _currentIndex = 0;
+  late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+
+    _pages = [
+      const EzanVaktiPage(),
+      KuranPage(
+        onBack: () {
+          setState(() {
+            _currentIndex = 0;
+          });
+        },
+      ),
+      PusulaPage(
+        onBack: () {
+          setState(() {
+            _currentIndex = 0;
+          });
+        },
+      ),
+      ImsakiyePage(
+        onBack: () {
+          setState(() {
+            _currentIndex = 0;
+          });
+        },
+      ),
+      MenuPage(
+        onClose: () {
+          setState(() {
+            _currentIndex = 0;
+          });
+        },
+      ),
+    ];
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final syncNotifier = Provider.of<SyncNotifier>(context, listen: false);
       getIt<SyncManager>().init(syncNotifier);
       Workmanager().registerPeriodicTask("1", "syncTask",
           frequency: const Duration(hours: 1));
 
+      // SnackBar bildirimleri sadece hata olursa gösterilsin ki kullanıcı rahatsız olmasın
       syncNotifier.addListener(() {
         if (syncNotifier.state == SyncState.error) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content:
-                Text("Senkronizasyon hatası: ${syncNotifier.errorMessage}"),
-            backgroundColor: Colors.red,
-          ));
-        } else if (syncNotifier.state == SyncState.success) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Senkronizasyon başarılı!"),
-            backgroundColor: Colors.green,
-          ));
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content:
+                  Text("Senkronizasyon hatası: ${syncNotifier.errorMessage}"),
+              backgroundColor: Colors.red,
+            ));
+          }
         }
       });
     });
   }
-
-  List<Widget> get _pages => [
-        const EzanVaktiPage(),
-        const KuranPage(),
-        const PusulaPage(),
-        const ImsakiyePage(),
-        MenuPage(
-          onClose: () {
-            setState(() {
-              _currentIndex = 0;
-            });
-          },
-        ),
-      ];
 
   @override
   Widget build(BuildContext context) {
@@ -67,22 +85,8 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
 
     return Scaffold(
       extendBody: true,
-      body: Stack(
-        children: [
-          IndexedStack(index: _currentIndex, children: _pages),
-          Consumer<SyncNotifier>(
-            builder: (context, syncNotifier, child) {
-              if (syncNotifier.state == SyncState.syncing) {
-                return Container(
-                  color: Colors.black26,
-                  child: const Center(child: CircularProgressIndicator()),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        ],
-      ),
+      // Stack ve Consumer KALDIRILDI! Artık uygulama açılırken kilitlenmeyecek!
+      body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: IgnorePointer(
         ignoring: _currentIndex != 0,
         child: AnimatedSlide(
@@ -97,10 +101,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
 
   Widget _buildCustomBottomBar(
       BuildContext context, AuthService authService, bool isDark) {
-    // --- YENİ EKLENEN KISIM: AKTİF RENK UYUMU ---
-    // Turuncu yerine, uygulamanın ana yeşil/teal rengini kullanıyoruz.
-    Color activeColor =
-        isDark ? Colors.yellow : const Color(0xFF009688); // Teal rengi eklendi
+    Color activeColor = isDark ? Colors.yellow : const Color(0xFF009688);
     Color inactiveIconColor = isDark ? Colors.white54 : Colors.black45;
 
     final items = [
@@ -127,8 +128,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                   : const Color(0xFF1E1E20);
             } else {
               itemBgColor = isSelected
-                  ? activeColor.withValues(
-                      alpha: 0.1) // Aktif sekmenin arkası çok açık yeşil
+                  ? activeColor.withValues(alpha: 0.1)
                   : Colors.white;
             }
 

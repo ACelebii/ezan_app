@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'providers/kuran_provider.dart';
 import 'kuran_models.dart';
@@ -10,7 +11,7 @@ class SearchBottomSheet extends StatefulWidget {
       {super.key, required this.provider, this.isFromMainPage = false});
 
   @override
-  _SearchBottomSheetState createState() => _SearchBottomSheetState();
+  State<SearchBottomSheet> createState() => _SearchBottomSheetState();
 }
 
 class _SearchBottomSheetState extends State<SearchBottomSheet> {
@@ -39,8 +40,6 @@ class _SearchBottomSheetState extends State<SearchBottomSheet> {
   }
 
   void _onItemTapped(dynamic item) {
-    final nav = Navigator.of(context);
-
     if (selectedTab == 2) {
       widget.provider.loadSurahDetails(item as SurahModel);
     } else if (selectedTab == 1) {
@@ -49,12 +48,10 @@ class _SearchBottomSheetState extends State<SearchBottomSheet> {
       widget.provider.loadPageDetails(item as int);
     }
 
-    nav.pop();
+    Navigator.of(context).pop();
 
     if (widget.isFromMainPage) {
-      nav.push(MaterialPageRoute(
-          builder: (_) => ChangeNotifierProvider.value(
-              value: widget.provider, child: const SurahDetailPage())));
+      context.push('/kuran/surah-detail', extra: widget.provider);
     }
   }
 
@@ -115,11 +112,13 @@ class _SearchBottomSheetState extends State<SearchBottomSheet> {
                   itemBuilder: (context, index) {
                     final item = items[index];
                     String title = "";
-                    if (selectedTab == 2)
+                    if (selectedTab == 2) {
                       title = "${(item as SurahModel).id}. ${item.nameSimple}";
-                    else if (selectedTab == 1)
+                    } else if (selectedTab == 1) {
                       title = "$item. Cüz";
-                    else if (selectedTab == 0) title = "$item. Sayfa";
+                    } else if (selectedTab == 0) {
+                      title = "$item. Sayfa";
+                    }
 
                     return ListTile(
                       title: Text(title,
@@ -212,6 +211,7 @@ class SurahDetailPage extends StatelessWidget {
                 context, onTap: () async {
               Navigator.pop(context);
               bool success = await provider.goToBookmark();
+              if (!context.mounted) return;
               if (!success) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -464,7 +464,7 @@ class SurahDetailPage extends StatelessWidget {
     final provider = context.watch<KuranProvider>();
     final Color bgColor = provider.backgroundColor;
     final Color txtColor = provider.textColor;
-    final Color bottomPanelColor = const Color(0xFF1E1E1E);
+    const Color bottomPanelColor = Color(0xFF1E1E1E);
 
     return Opacity(
       opacity: 0.5 + (provider.brightness * 0.5),
@@ -482,8 +482,7 @@ class SurahDetailPage extends StatelessWidget {
                 onPressed: () {
                   provider
                       .stopAudio(); // Çıkarken sesi kapat ki arka planda çalmasın
-                  Navigator.pop(
-                      context); // Tertemiz, standart geri çıkış işlemi!
+                  context.pop(); // Tertemiz, standart geri çıkış işlemi!
                 },
               ),
               IconButton(
@@ -505,7 +504,7 @@ class SurahDetailPage extends StatelessWidget {
                       fontWeight: FontWeight.bold)),
               Text("${provider.currentAyahs.length} Ayet",
                   style: TextStyle(
-                      color: txtColor.withOpacity(0.7), fontSize: 12)),
+                      color: txtColor.withValues(alpha: 0.7), fontSize: 12)),
             ],
           ),
           centerTitle: true,
@@ -551,9 +550,9 @@ class SurahDetailPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.only(
                   top: 12, bottom: 24, left: 16, right: 16),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                   color: bottomPanelColor,
-                  borderRadius: const BorderRadius.only(
+                  borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(24),
                       topRight: Radius.circular(24))),
               child: SafeArea(
@@ -643,12 +642,12 @@ class SurahDetailPage extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       itemCount: provider.currentAyahs.length,
       separatorBuilder: (context, index) =>
-          Divider(color: txtColor.withOpacity(0.2), height: 32),
+          Divider(color: txtColor.withValues(alpha: 0.2), height: 32),
       itemBuilder: (context, index) {
         final ayah = provider.currentAyahs[index];
         final isActive = ayah.id == provider.activeAyahId;
         Color itemBgColor = (isActive && provider.ayahTrackingStyle == "Vurgu")
-            ? txtColor.withOpacity(0.1)
+            ? txtColor.withValues(alpha: 0.1)
             : Colors.transparent;
 
         return InkWell(
@@ -680,12 +679,12 @@ class SurahDetailPage extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text("Diyanet",
                     style: TextStyle(
-                        color: txtColor.withOpacity(0.4), fontSize: 11)),
+                        color: txtColor.withValues(alpha: 0.4), fontSize: 11)),
                 const SizedBox(height: 4),
                 Text(ayah.translation,
                     textAlign: TextAlign.left,
                     style: TextStyle(
-                        color: txtColor.withOpacity(0.8),
+                        color: txtColor.withValues(alpha: 0.8),
                         fontSize: 15,
                         height: 1.5)),
               ],
@@ -704,9 +703,7 @@ class SurahDetailPage extends StatelessWidget {
         child: RichText(
           textAlign: TextAlign.justify,
           text: TextSpan(
-            children: provider.currentAyahs.asMap().entries.map((entry) {
-              int index = entry.key;
-              var ayah = entry.value;
+            children: provider.currentAyahs.map((ayah) {
               bool isActive = ayah.id == provider.activeAyahId;
 
               return TextSpan(
@@ -719,7 +716,7 @@ class SurahDetailPage extends StatelessWidget {
                       : txtColor,
                   backgroundColor:
                       isActive && provider.ayahTrackingStyle == "Vurgu"
-                          ? txtColor.withOpacity(0.15)
+                          ? txtColor.withValues(alpha: 0.15)
                           : Colors.transparent,
                 ),
               );
@@ -730,7 +727,7 @@ class SurahDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildImageView(KuranProvider provider, [Color? txtColor]) {
+  Widget _buildImageView(KuranProvider provider) {
     final Set<int> pages = provider.currentAyahs
         .map<int>((a) => int.tryParse(a.pageNumber.toString()) ?? 1)
         .toSet();
@@ -761,7 +758,7 @@ class SurahDetailPage extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
             boxShadow: [
               BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 15,
                   offset: const Offset(0, 8)),
             ],
@@ -789,10 +786,10 @@ class SurahDetailPage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.broken_image_rounded,
-                            color: borderColor.withOpacity(0.5), size: 48),
+                            color: borderColor.withValues(alpha: 0.5), size: 48),
                         const SizedBox(height: 12),
                         Text("Sayfa görseli indirilemedi.",
-                            style: TextStyle(color: inkColor.withOpacity(0.5))),
+                            style: TextStyle(color: inkColor.withValues(alpha: 0.5))),
                       ],
                     ),
                   ),

@@ -45,7 +45,7 @@ class FotografliLayout extends StatelessWidget {
                 errorBuilder: (c, e, s) =>
                     Container(color: AppTheme.getBgColor(context))),
           ),
-          Container(color: Colors.black.withOpacity(0.35)),
+          Container(color: Colors.black.withValues(alpha: 0.35)),
           Padding(
             padding: EdgeInsets.only(
               top: MediaQuery.of(context).padding.top + 5,
@@ -108,7 +108,7 @@ class FotografliLayout extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 12),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Column(
@@ -155,7 +155,7 @@ class FotografliLayout extends StatelessWidget {
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 18),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.3),
+                                  color: Colors.black.withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Column(
@@ -186,7 +186,7 @@ class FotografliLayout extends StatelessWidget {
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 10),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.3),
+                                  color: Colors.black.withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Center(
