@@ -5,6 +5,7 @@ import 'features/vakitler/data/vakitler_repository.dart';
 import 'features/zikirmatik/data/zikirmatik_repository.dart';
 import 'features/hutbe/data/hutbe_repository.dart';
 import 'features/dualar/data/dualar_repository.dart';
+import 'features/hatim/data/hatim_repository.dart';
 import 'features/sync/sync_manager.dart';
 import 'core/utils/network_service.dart';
 import 'features/kuran/data/kuran_repository.dart';
@@ -29,4 +30,5 @@ void setupLocator() {
       () => ZikirmatikRepository());
   locator.registerLazySingleton<HutbeRepository>(() => HutbeRepository());
   locator.registerLazySingleton<DualarRepository>(() => DualarRepository());
+  locator.registerLazySingleton<HatimRepository>(() => HatimRepository());
 }

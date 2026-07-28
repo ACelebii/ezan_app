@@ -1,19 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_slidable/flutter_slidable.dart'; // EKLENDİ
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'hatim_provider.dart';
 import 'hatim_model.dart';
+import '../auth/auth_service.dart';
 // Senin mevcut Kuran modülü importların
 import '../kuran/providers/kuran_provider.dart';
 import '../kuran/kuran_models.dart';
+
+String _relativeTimeLabel(DateTime dt) {
+  final diff = DateTime.now().difference(dt);
+  if (diff.inMinutes < 1) return "az önce";
+  if (diff.inMinutes < 60) return "${diff.inMinutes} dakika önce";
+  if (diff.inHours < 24) return "${diff.inHours} saat önce";
+  return "${diff.inDays} gün önce";
+}
 
 class MyTasksPage extends StatelessWidget {
   const MyTasksPage({super.key});
 
   // --- OKUDUM ONAY POP-UP (Fotoğraf 5) ---
   void _showCompleteDialog(
-      BuildContext context, HatimProvider provider, MyTask task) {
+      BuildContext context, HatimProvider provider, MyHatimTask task) {
+    final userId = context.read<AuthService>().user?.uid;
+    if (userId == null) return;
+
     showDialog(
       context: context,
       builder: (ctx) {
@@ -34,9 +46,16 @@ class MyTasksPage extends StatelessWidget {
               const SizedBox(height: 24),
               Divider(color: Colors.white.withValues(alpha: 0.1), height: 1),
               InkWell(
-                onTap: () {
-                  provider.completeTask(task); // Görevi tamamla ve sil
+                onTap: () async {
                   Navigator.pop(ctx);
+                  try {
+                    await provider.completeTask(task, userId);
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text("İşlem başarısız: $e"),
+                        backgroundColor: Colors.redAccent));
+                  }
                 },
                 child: Container(
                   width: double.infinity,
@@ -58,7 +77,10 @@ class MyTasksPage extends StatelessWidget {
 
   // --- VAZGEÇ ONAY POP-UP (Fotoğraf 2) ---
   void _showDropDialog(
-      BuildContext context, HatimProvider provider, MyTask task) {
+      BuildContext context, HatimProvider provider, MyHatimTask task) {
+    final userId = context.read<AuthService>().user?.uid;
+    if (userId == null) return;
+
     showDialog(
       context: context,
       builder: (ctx) {
@@ -79,9 +101,16 @@ class MyTasksPage extends StatelessWidget {
               const SizedBox(height: 24),
               Divider(color: Colors.white.withValues(alpha: 0.1), height: 1),
               InkWell(
-                onTap: () {
-                  provider.dropTask(task); // Görevi havuza geri at ve sil
+                onTap: () async {
                   Navigator.pop(ctx);
+                  try {
+                    await provider.dropTask(task, userId);
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text("İşlem başarısız: $e"),
+                        backgroundColor: Colors.redAccent));
+                  }
                 },
                 child: Container(
                   width: double.infinity,
@@ -109,9 +138,9 @@ class MyTasksPage extends StatelessWidget {
     const Color subTextColor = Colors.white54;
 
     // Görevleri Hatim ID'sine göre grupla
-    Map<String, List<MyTask>> groupedTasks = {};
+    Map<String, List<MyHatimTask>> groupedTasks = {};
     for (var task in provider.myTasks) {
-      groupedTasks.putIfAbsent(task.hatim.id, () => []).add(task);
+      groupedTasks.putIfAbsent(task.hatimId, () => []).add(task);
     }
 
     return Scaffold(
@@ -146,24 +175,23 @@ class MyTasksPage extends StatelessWidget {
                     style: TextStyle(color: subTextColor, fontSize: 12)),
               ),
               ListTile(
-                title: Text("${provider.lastReadTask!.hatim.id}. Hatim",
+                title: Text("${provider.lastReadTask!.hatimId}. Hatim",
                     style: const TextStyle(
                         color: textColor, fontWeight: FontWeight.bold)),
                 subtitle: Text(
-                    "${provider.lastReadTask!.item.title} ${provider.lastReadTask!.item.subtitle}",
+                    "${provider.lastReadTask!.title} ${provider.lastReadTask!.subtitle}",
                     style: const TextStyle(color: subTextColor)),
-                trailing: const Row(
+                trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text("8 May 12:56",
-                        style: TextStyle(color: subTextColor, fontSize: 12)),
-                    SizedBox(width: 8),
-                    Icon(Icons.chevron_right, color: subTextColor),
+                    if (provider.lastReadAt != null)
+                      Text(_relativeTimeLabel(provider.lastReadAt!),
+                          style: const TextStyle(
+                              color: subTextColor, fontSize: 12)),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.chevron_right, color: subTextColor),
                   ],
                 ),
-                onTap: () {
-                  // Son okunan yere hızlı git (Aşağıdaki yönlendirme ile aynı mantık eklenebilir)
-                },
               ),
               const Divider(color: Colors.white10, height: 1),
               const SizedBox(height: 16),
@@ -184,7 +212,7 @@ class MyTasksPage extends StatelessWidget {
                   const Divider(color: Colors.white10, height: 1),
                   ...entry.value.map((myTask) {
                     return Slidable(
-                      key: ValueKey(myTask.item.id),
+                      key: ValueKey(myTask.itemId),
                       // SAĞDAN SOLA KAYDIRMA BUTONLARI (Fotoğraf 1)
                       endActionPane: ActionPane(
                         motion: const ScrollMotion(),
@@ -239,10 +267,11 @@ class MyTasksPage extends StatelessWidget {
                             leading: const Icon(Icons.circle_outlined,
                                 color: Colors.white54, size: 22),
                             title: Text(
-                                "${myTask.item.title} ${myTask.item.subtitle}",
+                                "${myTask.title} ${myTask.subtitle}",
                                 style: const TextStyle(
                                     color: textColor, fontSize: 16)),
-                            subtitle: Text("Kalan Süre ${myTask.timeLeft}",
+                            subtitle: Text(
+                                "Alındı: ${_relativeTimeLabel(myTask.takenAt)}",
                                 style: const TextStyle(
                                     color: subTextColor, fontSize: 12)),
                             trailing: IconButton(
@@ -254,31 +283,41 @@ class MyTasksPage extends StatelessWidget {
                                 child: const Icon(Icons.arrow_forward,
                                     color: Colors.black, size: 14),
                               ),
-                              onPressed: () {
+                              onPressed: () async {
                                 // 1. Son kalınan yer kaydet
                                 provider.setLastReadTask(myTask);
 
-                                // 2. Kuran sayfasına yönlendir (Mevcut entegrasyon)
-                                if (myTask.taskType.title == "Sayfa" ||
-                                    myTask.taskType.title == "Cüz" ||
-                                    myTask.taskType.title == "Sure") {
+                                // 2. Kuran sayfasına yönlendir, dönüşte
+                                // otomatik olarak "Okudum mu?" onayını sor.
+                                if (myTask.taskTitle == "Sayfa" ||
+                                    myTask.taskTitle == "Cüz" ||
+                                    myTask.taskTitle == "Sure") {
                                   final kuranProvider = KuranProvider();
-                                  if (myTask.taskType.title == "Sayfa") {
+                                  if (myTask.taskTitle == "Sayfa") {
                                     kuranProvider
-                                        .loadPageDetails(myTask.item.value);
-                                  } else if (myTask.taskType.title == "Cüz") {
-                                    kuranProvider
-                                        .loadJuzDetails(myTask.item.value);
-                                  } else if (myTask.taskType.title == "Sure") {
+                                        .loadPageDetails(myTask.value);
+                                  } else if (myTask.taskTitle == "Cüz") {
+                                    kuranProvider.loadJuzDetails(myTask.value);
+                                  } else if (myTask.taskTitle == "Sure") {
                                     kuranProvider.loadSurahDetails(SurahModel(
-                                        id: myTask.item.value,
-                                        nameSimple: myTask.item.title,
+                                        id: myTask.value,
+                                        nameSimple: myTask.title,
                                         nameArabic: "",
                                         versesCount: 0));
                                   }
 
-                                  context.push('/kuran/surah-detail',
+                                  await context.push('/kuran/surah-detail',
                                       extra: kuranProvider);
+
+                                  if (!context.mounted) return;
+                                  // Görev hâlâ "myTasks" içindeyse (okundu/
+                                  // vazgeçilmediyse) dönüşte onay dialogunu aç.
+                                  final stillActive = provider.myTasks
+                                      .any((t) => t.itemId == myTask.itemId);
+                                  if (stillActive) {
+                                    _showCompleteDialog(
+                                        context, provider, myTask);
+                                  }
                                 }
                               },
                             ),

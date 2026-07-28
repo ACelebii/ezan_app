@@ -1,36 +1,188 @@
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ezan_vakti_uygulamasi/features/hatim/hatim_provider.dart';
 import 'package:ezan_vakti_uygulamasi/features/hatim/hatim_model.dart';
+import 'package:ezan_vakti_uygulamasi/features/hatim/data/hatim_repository.dart';
 
-HatimModel _buildHatim({required HatimSubItem item}) {
-  return HatimModel(
-    id: "1",
-    date: "01.01.2026",
-    participants: 1,
-    okunmaYuzdesi: 0,
-    paylasilmaYuzdesi: 0,
-    tasks: [
-      HatimTask(title: "Cüz", availableItems: [item]),
-    ],
-  );
+/// Gerçek Firestore'a hiç dokunmayan, bellek-içi sahte repository.
+/// HatimRepository'nin tüm public metotlarını override eder; `_db` hiç
+/// çağrılmaz.
+class _FakeHatimRepository extends HatimRepository {
+  _FakeHatimRepository(this._summaries, this._assignments);
+
+  final List<HatimModel> _summaries;
+  final Map<String, List<HatimSubItem>> _assignments;
+  final Map<String, StreamController<List<HatimSubItem>>>
+      _assignmentControllers = {};
+  final StreamController<List<MyHatimTask>> _myTasksController =
+      StreamController<List<MyHatimTask>>.broadcast();
+  List<MyHatimTask> _myTasks = [];
+
+  void _emitAssignments(String hatimId) {
+    _assignmentControllers[hatimId]
+        ?.add(List.of(_assignments[hatimId] ?? const []));
+  }
+
+  void _emitMyTasks() => _myTasksController.add(List.of(_myTasks));
+
+  @override
+  Future<List<HatimModel>> fetchFromRemote() async => _summaries;
+
+  @override
+  Future<List<HatimModel>?> fetchFromCache() async => null;
+
+  @override
+  Future<void> saveToCache(List<HatimModel> data) async {}
+
+  @override
+  Stream<List<HatimSubItem>> watchAssignments(String hatimId) {
+    final controller = _assignmentControllers.putIfAbsent(
+        hatimId, () => StreamController<List<HatimSubItem>>.broadcast());
+    scheduleMicrotask(() => _emitAssignments(hatimId));
+    return controller.stream;
+  }
+
+  @override
+  Stream<List<MyHatimTask>> watchMyTasks(String uid) {
+    scheduleMicrotask(_emitMyTasks);
+    return _myTasksController.stream;
+  }
+
+  @override
+  Future<void> toggleItem({
+    required String hatimId,
+    required HatimSubItem item,
+    required String userId,
+    required String userName,
+  }) async {
+    final items = _assignments[hatimId];
+    if (items == null) return;
+    final idx = items.indexWhere((i) => i.id == item.id);
+    if (idx == -1) return;
+    final current = items[idx];
+
+    if (current.status == 'available') {
+      items[idx] = HatimSubItem(
+        id: current.id,
+        title: current.title,
+        subtitle: current.subtitle,
+        value: current.value,
+        type: current.type,
+        status: 'taken',
+        userId: userId,
+      );
+      _myTasks = [
+        ..._myTasks,
+        MyHatimTask(
+          hatimId: hatimId,
+          taskTitle: current.type,
+          itemId: current.id,
+          title: current.title,
+          subtitle: current.subtitle,
+          value: current.value,
+          takenAt: DateTime.now(),
+        ),
+      ];
+    } else if (current.status == 'taken' && current.userId == userId) {
+      items[idx] = HatimSubItem(
+        id: current.id,
+        title: current.title,
+        subtitle: current.subtitle,
+        value: current.value,
+        type: current.type,
+      );
+      _myTasks = _myTasks.where((t) => t.itemId != current.id).toList();
+    }
+
+    _emitAssignments(hatimId);
+    _emitMyTasks();
+  }
+
+  @override
+  Future<void> completeTask({
+    required String hatimId,
+    required String itemId,
+    required String userId,
+  }) async {
+    final items = _assignments[hatimId];
+    if (items == null) return;
+    final idx = items.indexWhere((i) => i.id == itemId);
+    if (idx == -1 || items[idx].userId != userId) return;
+    final current = items[idx];
+    items[idx] = HatimSubItem(
+      id: current.id,
+      title: current.title,
+      subtitle: current.subtitle,
+      value: current.value,
+      type: current.type,
+      status: 'completed',
+      userId: userId,
+    );
+    _myTasks = _myTasks.where((t) => t.itemId != itemId).toList();
+    _emitAssignments(hatimId);
+    _emitMyTasks();
+  }
+
+  @override
+  Future<void> dropTask({
+    required String hatimId,
+    required String itemId,
+    required String userId,
+  }) async {
+    final items = _assignments[hatimId];
+    if (items == null) return;
+    final idx = items.indexWhere((i) => i.id == itemId);
+    if (idx == -1 || items[idx].userId != userId) return;
+    final current = items[idx];
+    items[idx] = HatimSubItem(
+      id: current.id,
+      title: current.title,
+      subtitle: current.subtitle,
+      value: current.value,
+      type: current.type,
+    );
+    _myTasks = _myTasks.where((t) => t.itemId != itemId).toList();
+    _emitAssignments(hatimId);
+    _emitMyTasks();
+  }
 }
+
+HatimSubItem _item(String id, {String type = "Cüz"}) =>
+    HatimSubItem(id: id, title: "1.", subtitle: type, value: 1, type: type);
+
+Future<void> _settle() => Future.delayed(Duration.zero);
 
 void main() {
   group('HatimProvider', () {
-    test('isLoggedIn starts false and notifies listeners on change', () {
-      final provider = HatimProvider();
-      expect(provider.isLoggedIn, isFalse);
+    late _FakeHatimRepository repo;
 
-      var notified = false;
-      provider.addListener(() => notified = true);
-      provider.isLoggedIn = true;
-
-      expect(provider.isLoggedIn, isTrue);
-      expect(notified, isTrue);
+    setUp(() {
+      final hatim = HatimModel(
+        id: "42010",
+        date: "06.04.2026",
+        participants: 0,
+        okunmaYuzdesi: 0,
+        paylasilmaYuzdesi: 0,
+        tasks: const [],
+      );
+      repo = _FakeHatimRepository([hatim], {
+        "42010": [_item("c1")],
+      });
     });
 
-    test('setActiveTab updates tab and collapses expanded item', () {
-      final provider = HatimProvider();
+    test('loads hatim summaries on construction', () async {
+      final provider = HatimProvider(repository: repo);
+      await _settle();
+
+      expect(provider.isHatimlerLoading, isFalse);
+      expect(provider.kuranHatimleri, hasLength(1));
+      expect(provider.kuranHatimleri.first.id, "42010");
+    });
+
+    test('setActiveTab updates tab and collapses expanded item', () async {
+      final provider = HatimProvider(repository: repo);
+      await _settle();
+
       provider.toggleExpand("42010");
       expect(provider.expandedHatimId, "42010");
 
@@ -40,8 +192,10 @@ void main() {
       expect(provider.expandedHatimId, isNull);
     });
 
-    test('toggleExpand toggles the same id open and closed', () {
-      final provider = HatimProvider();
+    test('toggleExpand toggles the same id open and closed', () async {
+      final provider = HatimProvider(repository: repo);
+      await _settle();
+
       provider.toggleExpand("42010");
       expect(provider.expandedHatimId, "42010");
 
@@ -49,80 +203,150 @@ void main() {
       expect(provider.expandedHatimId, isNull);
     });
 
-    test('currentHatimler returns kuran list on tab 0 and cevsen on tab 1',
-        () {
-      final provider = HatimProvider();
-      expect(provider.currentHatimler, provider.kuranHatimleri);
+    test('toggleExpand starts listening and populates tasks from assignments',
+        () async {
+      final provider = HatimProvider(repository: repo);
+      await _settle();
 
-      provider.setActiveTab(1);
-      expect(provider.currentHatimler, provider.cevsenHatimleri);
+      provider.toggleExpand("42010");
+      await _settle();
+
+      final loaded = provider.findHatim("42010")!;
+      expect(loaded.tasks, hasLength(1));
+      expect(loaded.tasks.first.title, "Cüz");
+      expect(loaded.tasks.first.availableItems.first.id, "c1");
     });
 
-    test('toggleItem adds an item to myTasks and marks it taken', () {
-      final provider = HatimProvider();
-      final item = HatimSubItem(id: "c1", title: "1.", subtitle: "Cüz", value: 1);
-      final task = HatimTask(title: "Cüz", availableItems: [item]);
-      final hatim = _buildHatim(item: item);
+    test('toggleItem takes an item and reflects it in myTasks', () async {
+      final provider = HatimProvider(repository: repo);
+      provider.onAuthChanged("user1");
+      await _settle();
+      provider.toggleExpand("42010");
+      await _settle();
 
-      provider.toggleItem(hatim, task, item);
+      final loaded = provider.findHatim("42010")!;
+      final task = loaded.tasks.first;
+      final item = task.availableItems.first;
 
-      expect(item.isTaken, isTrue);
+      await provider.toggleItem(loaded, task, item,
+          userId: "user1", userName: "Test User");
+      await _settle();
+
       expect(provider.myTasks, hasLength(1));
-      expect(provider.myTasks.first.item, item);
+      expect(provider.myTasks.first.itemId, "c1");
+
+      final updated = provider.findHatim("42010")!;
+      expect(updated.tasks.first.availableItems.first.isTaken, isTrue);
     });
 
-    test('toggleItem removes the item from myTasks when taken again', () {
-      final provider = HatimProvider();
-      final item = HatimSubItem(id: "c1", title: "1.", subtitle: "Cüz", value: 1);
-      final task = HatimTask(title: "Cüz", availableItems: [item]);
-      final hatim = _buildHatim(item: item);
+    test('toggleItem drops an already-taken item', () async {
+      final provider = HatimProvider(repository: repo);
+      provider.onAuthChanged("user1");
+      await _settle();
+      provider.toggleExpand("42010");
+      await _settle();
 
-      provider.toggleItem(hatim, task, item); // al
-      provider.toggleItem(hatim, task, item); // bırak
+      var loaded = provider.findHatim("42010")!;
+      await provider.toggleItem(
+          loaded, loaded.tasks.first, loaded.tasks.first.availableItems.first,
+          userId: "user1", userName: "Test User");
+      await _settle();
 
-      expect(item.isTaken, isFalse);
+      loaded = provider.findHatim("42010")!;
+      await provider.toggleItem(
+          loaded, loaded.tasks.first, loaded.tasks.first.availableItems.first,
+          userId: "user1", userName: "Test User");
+      await _settle();
+
       expect(provider.myTasks, isEmpty);
+      final updated = provider.findHatim("42010")!;
+      expect(updated.tasks.first.availableItems.first.isTaken, isFalse);
     });
 
-    test('toggleItem clears lastReadTask when its item is dropped', () {
-      final provider = HatimProvider();
-      final item = HatimSubItem(id: "c1", title: "1.", subtitle: "Cüz", value: 1);
-      final task = HatimTask(title: "Cüz", availableItems: [item]);
-      final hatim = _buildHatim(item: item);
+    test('completeTask removes the task from myTasks and marks it completed',
+        () async {
+      final provider = HatimProvider(repository: repo);
+      provider.onAuthChanged("user1");
+      await _settle();
+      provider.toggleExpand("42010");
+      await _settle();
 
-      provider.toggleItem(hatim, task, item);
+      final loaded = provider.findHatim("42010")!;
+      await provider.toggleItem(
+          loaded, loaded.tasks.first, loaded.tasks.first.availableItems.first,
+          userId: "user1", userName: "Test User");
+      await _settle();
+
+      final myTask = provider.myTasks.first;
+      await provider.completeTask(myTask, "user1");
+      await _settle();
+
+      expect(provider.myTasks, isEmpty);
+      final updated = provider.findHatim("42010")!;
+      expect(updated.tasks.first.availableItems.first.isCompleted, isTrue);
+    });
+
+    test('dropTask returns the item to available and clears myTasks',
+        () async {
+      final provider = HatimProvider(repository: repo);
+      provider.onAuthChanged("user1");
+      await _settle();
+      provider.toggleExpand("42010");
+      await _settle();
+
+      final loaded = provider.findHatim("42010")!;
+      await provider.toggleItem(
+          loaded, loaded.tasks.first, loaded.tasks.first.availableItems.first,
+          userId: "user1", userName: "Test User");
+      await _settle();
+
+      final myTask = provider.myTasks.first;
+      await provider.dropTask(myTask, "user1");
+      await _settle();
+
+      expect(provider.myTasks, isEmpty);
+      final updated = provider.findHatim("42010")!;
+      expect(updated.tasks.first.availableItems.first.isTaken, isFalse);
+    });
+
+    test('toggleItem clears lastReadTask when its item is dropped', () async {
+      final provider = HatimProvider(repository: repo);
+      provider.onAuthChanged("user1");
+      await _settle();
+      provider.toggleExpand("42010");
+      await _settle();
+
+      final loaded = provider.findHatim("42010")!;
+      await provider.toggleItem(
+          loaded, loaded.tasks.first, loaded.tasks.first.availableItems.first,
+          userId: "user1", userName: "Test User");
+      await _settle();
+
       provider.setLastReadTask(provider.myTasks.first);
       expect(provider.lastReadTask, isNotNull);
 
-      provider.toggleItem(hatim, task, item); // bırak
+      await provider.dropTask(provider.myTasks.first, "user1");
+      await _settle();
+
       expect(provider.lastReadTask, isNull);
     });
 
-    test('completeTask marks item completed and removes it from myTasks', () {
-      final provider = HatimProvider();
-      final item = HatimSubItem(id: "c1", title: "1.", subtitle: "Cüz", value: 1);
-      final task = HatimTask(title: "Cüz", availableItems: [item]);
-      final hatim = _buildHatim(item: item);
-      provider.toggleItem(hatim, task, item);
-      final myTask = provider.myTasks.first;
+    test('onAuthChanged clears myTasks and stops listening on logout',
+        () async {
+      final provider = HatimProvider(repository: repo);
+      provider.onAuthChanged("user1");
+      await _settle();
+      provider.toggleExpand("42010");
+      await _settle();
 
-      provider.completeTask(myTask);
+      final loaded = provider.findHatim("42010")!;
+      await provider.toggleItem(
+          loaded, loaded.tasks.first, loaded.tasks.first.availableItems.first,
+          userId: "user1", userName: "Test User");
+      await _settle();
+      expect(provider.myTasks, hasLength(1));
 
-      expect(item.isCompleted, isTrue);
-      expect(provider.myTasks, isEmpty);
-    });
-
-    test('dropTask marks item not taken and removes it from myTasks', () {
-      final provider = HatimProvider();
-      final item = HatimSubItem(id: "c1", title: "1.", subtitle: "Cüz", value: 1);
-      final task = HatimTask(title: "Cüz", availableItems: [item]);
-      final hatim = _buildHatim(item: item);
-      provider.toggleItem(hatim, task, item);
-      final myTask = provider.myTasks.first;
-
-      provider.dropTask(myTask);
-
-      expect(item.isTaken, isFalse);
+      provider.onAuthChanged(null);
       expect(provider.myTasks, isEmpty);
     });
   });

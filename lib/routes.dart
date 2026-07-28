@@ -33,9 +33,6 @@ import 'features/zikirmatik/zikirmatik_page.dart';
 import 'features/hutbe/hutbe_page.dart';
 
 import 'features/hatim/hatim_page.dart';
-import 'features/hatim/hatim_auth_page.dart';
-import 'features/hatim/hatim_provider.dart';
-import 'features/hatim/hatim_model.dart';
 import 'features/hatim/hatim_selection_page.dart';
 import 'features/hatim/my_tasks_page.dart';
 
@@ -141,28 +138,17 @@ final GoRouter appRouter = GoRouter(
             HutbePdfPage(hutbe: state.extra as HutbeItem)),
 
     // --- Hatim ---
+    // HatimProvider artık root MultiProvider'da (main.dart) yaşıyor, bu
+    // yüzden alt sayfalara `state.extra` ile ayrıca taşınmıyor.
     GoRoute(path: '/hatim', builder: (context, state) => const HatimPage()),
     GoRoute(
-        path: '/hatim/auth',
-        builder: (context, state) => ChangeNotifierProvider.value(
-              value: state.extra as HatimProvider,
-              child: const HatimAuthPage(),
-            )),
-    GoRoute(
         path: '/hatim/my-tasks',
-        builder: (context, state) => ChangeNotifierProvider.value(
-              value: state.extra as HatimProvider,
-              child: const MyTasksPage(),
-            )),
+        builder: (context, state) => const MyTasksPage()),
     GoRoute(
         path: '/hatim/selection',
         builder: (context, state) {
-          final args =
-              state.extra as (HatimProvider provider, HatimModel hatim, HatimTask task);
-          return ChangeNotifierProvider.value(
-            value: args.$1,
-            child: HatimSelectionPage(hatim: args.$2, task: args.$3),
-          );
+          final args = state.extra as (String hatimId, String taskTitle);
+          return HatimSelectionPage(hatimId: args.$1, taskTitle: args.$2);
         }),
 
     // --- Ayarlar ---

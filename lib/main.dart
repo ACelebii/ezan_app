@@ -11,6 +11,7 @@ import 'core/theme/app_theme.dart';
 import 'features/sync/sync_notifier.dart';
 import 'features/kutuphane/data/kutuphane_repository.dart';
 import 'features/kuran/kuran_download_service.dart';
+import 'features/hatim/hatim_provider.dart';
 
 import 'locator.dart';
 import 'routes.dart';
@@ -55,6 +56,14 @@ void main() async {
           return auth;
         }),
         ChangeNotifierProvider(create: (_) => SyncNotifier()),
+        ChangeNotifierProxyProvider<AuthService, HatimProvider>(
+          create: (_) => HatimProvider(),
+          update: (_, auth, hatimProvider) {
+            final provider = hatimProvider ?? HatimProvider();
+            provider.onAuthChanged(auth.user?.uid);
+            return provider;
+          },
+        ),
       ],
       child: ValueListenableBuilder<ThemeMode>(
         valueListenable: themeNotifier,

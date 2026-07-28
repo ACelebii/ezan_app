@@ -4,13 +4,14 @@ import 'package:provider/provider.dart';
 
 import 'hatim_model.dart';
 import 'hatim_provider.dart';
+import '../auth/auth_service.dart';
 
 class HatimSelectionPage extends StatelessWidget {
-  final HatimModel hatim;
-  final HatimTask task;
+  final String hatimId;
+  final String taskTitle;
 
   const HatimSelectionPage(
-      {super.key, required this.hatim, required this.task});
+      {super.key, required this.hatimId, required this.taskTitle});
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +23,36 @@ class HatimSelectionPage extends StatelessWidget {
     Color textColor = isDark ? Colors.white : Colors.black;
     Color subTextColor = isDark ? Colors.white70 : Colors.black87;
 
+    final hatim = provider.findHatim(hatimId);
+    HatimTask? task;
+    if (hatim != null) {
+      try {
+        task = hatim.tasks.firstWhere((t) => t.title == taskTitle);
+      } catch (_) {
+        task = null;
+      }
+    }
+
+    if (hatim == null || task == null) {
+      return Scaffold(
+        backgroundColor: bgColor,
+        appBar: AppBar(
+          backgroundColor: bgColor,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: Center(
+          child: Text("Görev bulunamadı.",
+              style: TextStyle(color: subTextColor)),
+        ),
+      );
+    }
+
+    final resolvedTask = task;
+
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
@@ -31,7 +62,7 @@ class HatimSelectionPage extends StatelessWidget {
           icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor),
           onPressed: () => context.pop(),
         ),
-        title: Text(task.title,
+        title: Text(resolvedTask.title,
             style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
       ),
       body: Column(
@@ -54,23 +85,43 @@ class HatimSelectionPage extends StatelessWidget {
                 mainAxisSpacing: 12,
                 childAspectRatio: 1.5,
               ),
-              itemCount: task.availableItems.length,
+              itemCount: resolvedTask.availableItems.length,
               itemBuilder: (context, index) {
-                final item = task.availableItems[index];
+                final item = resolvedTask.availableItems[index];
                 final isTaken = item.isTaken;
 
                 return InkWell(
-                  onTap: () {
+                  onTap: () async {
                     // 1. GİRİŞ KONTROLÜ
-                    if (!provider.isLoggedIn) {
-                      context.push('/hatim/auth', extra: provider);
+                    final user = context.read<AuthService>().user;
+                    if (user == null) {
+                      context.push('/settings/hesabim');
                       return;
                     }
 
-                    // 2. GÖREVİ AL VEYA BIRAK (Aç/Kapat Mantığı)
-                    provider.toggleItem(hatim, task, item);
+                    // 2. GÖREVİ AL VEYA BIRAK (Aç/Kapat Mantığı) — canlı
+                    // dinleme sonucu yansıyacağı için burada yalnızca
+                    // Firestore'a yazıyoruz, yerel state'i elle değiştirmiyoruz.
+                    try {
+                      await provider.toggleItem(
+                        hatim,
+                        resolvedTask,
+                        item,
+                        userId: user.uid,
+                        userName: user.displayName ?? user.email ?? 'Kullanıcı',
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text("İşlem başarısız: $e"),
+                            backgroundColor: Colors.redAccent),
+                      );
+                      return;
+                    }
 
                     // 3. KULLANICIYA GÖRSEL BİLDİRİM VER
+                    if (!context.mounted) return;
                     ScaffoldMessenger.of(context)
                         .clearSnackBars(); // Üst üste binmesini engeller
                     ScaffoldMessenger.of(context).showSnackBar(

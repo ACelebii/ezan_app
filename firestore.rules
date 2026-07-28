@@ -1,0 +1,80 @@
+rules_version = '2';
+
+// =============================================================================
+// Bu dosya, uygulamanın (ezan_app) Firestore'da fiilen kullandığı TÜM
+// koleksiyonları kapsar. Kapsam, kod tabanındaki her `FirebaseFirestore`
+// kullanımı taranarak çıkarıldı (2026-07-28 itibarıyla sadece 3 dosyada
+// Firestore erişimi var: lib/features/auth/auth_service.dart,
+// lib/features/hutbe/data/hutbe_repository.dart,
+// lib/features/hatim/data/hatim_repository.dart):
+//   - users/{uid}                          (AuthService: e-posta, ayarlar)
+//   - users/{uid}/hatimGorevleri/{itemId}  (Hatim: "görevlerim" mirror'ı)
+//   - hutbeler/{hutbeId}                    (Hutbe: sadece okunuyor)
+//   - hatimler/{hatimId}                    (Hatim: özet + sayaçlar)
+//   - hatimler/{hatimId}/assignments/{itemId} (Hatim: görev durumu)
+//
+// Bu kuralları deploy etmeden önce Console'daki mevcut kuralı kontrol ettik:
+// proje şu an tamamen açık varsayılan kuralda (`allow read, write: if true`),
+// yani burada özel bir kural kaybı riski yok — bu dosya net bir güvenlik
+// iyileştirmesi.
+//
+// Yeni bir Firestore koleksiyonu eklerseniz, bu dosyaya da eklemeyi unutmayın
+// (aksi halde varsayılan "deny" nedeniyle o koleksiyon erişilemez olur).
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Kullanıcı hesabı: sadece kendi dokümanını okur/yazar (AuthService
+    // her zaman kendi uid'i üzerinde çalışıyor, bu yüzden bu kural mevcut
+    // davranışı kısıtlamıyor).
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      // --- Kullanıcının aldığı hatim görevleri mirror'ı: sadece kendisi
+      // okur/yazar (HatimRepository transaction'ları bu yolu kullanıyor).
+      match /hatimGorevleri/{itemId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+    // --- Haftanın Hutbesi: herkese açık okuma, yazma yok (içerik Console'dan
+    // elle ekleniyor).
+    match /hutbeler/{hutbeId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // --- Hatim etkinlikleri: herkes okuyabilir, istemci asla doğrudan
+    // yazamaz (yazma sadece assignments alt koleksiyonundaki transaction'lar
+    // üzerinden; _recomputeHatimStats'ın client-side güncellediği sayaçlar
+    // için aşağıdaki dar update kuralı var).
+    match /hatimler/{hatimId} {
+      allow read: if true;
+      allow update: if request.auth != null &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['totalItems', 'takenItems', 'completedItems', 'participants']);
+      allow create, delete: if false; // Hatim etkinlikleri sadece Console'dan oluşturulur/silinir.
+
+      match /assignments/{itemId} {
+        allow read: if true;
+
+        // available -> taken: sadece kendi userId'ni yazarak alabilirsin.
+        allow update: if request.auth != null && (
+          (resource.data.status == 'available' &&
+            request.resource.data.status == 'taken' &&
+            request.resource.data.userId == request.auth.uid) ||
+          // taken(own) -> available: bıraktığında alanları temizleyip geri veriyorsun.
+          (resource.data.status == 'taken' &&
+            resource.data.userId == request.auth.uid &&
+            request.resource.data.status == 'available') ||
+          // taken(own) -> completed: sadece kendi görevini tamamlayabilirsin.
+          (resource.data.status == 'taken' &&
+            resource.data.userId == request.auth.uid &&
+            request.resource.data.status == 'completed')
+        );
+        allow create, delete: if false; // Görev tanımları Console'dan oluşturulur.
+      }
+    }
+  }
+}

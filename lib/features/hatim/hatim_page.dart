@@ -3,16 +3,17 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'hatim_provider.dart';
 import 'hatim_model.dart';
+import '../auth/auth_service.dart';
 
+// HatimProvider artık main.dart'taki root MultiProvider'da (AuthService ile
+// ChangeNotifierProxyProvider bağlı) yaşıyor; bu sayfa kendi provider'ını
+// yaratmıyor, böylece görevler/hatim listesi sayfa değişince sıfırlanmıyor.
 class HatimPage extends StatelessWidget {
   const HatimPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => HatimProvider(),
-      child: const HatimView(),
-    );
+    return const HatimView();
   }
 }
 
@@ -45,12 +46,12 @@ class HatimView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () {
-              final currentProvider = context.read<HatimProvider>();
+              final isLoggedIn = context.read<AuthService>().user != null;
 
-              if (!currentProvider.isLoggedIn) {
-                context.push('/hatim/auth', extra: currentProvider);
+              if (!isLoggedIn) {
+                context.push('/settings/hesabim');
               } else {
-                context.push('/hatim/my-tasks', extra: currentProvider);
+                context.push('/hatim/my-tasks');
               }
             },
             child: const Text("Görevlerim",
@@ -95,22 +96,61 @@ class HatimView extends StatelessWidget {
 
           // 2. Hatim Listesi
           Expanded(
-            child: ListView.separated(
-              physics: const BouncingScrollPhysics(),
-              itemCount: provider.currentHatimler.length,
-              separatorBuilder: (context, index) => Divider(
-                  height: 1,
-                  color: isDark ? Colors.white10 : Colors.black12,
-                  indent: 16,
-                  endIndent: 16),
-              itemBuilder: (context, index) {
-                final hatim = provider.currentHatimler[index];
-                final isExpanded = provider.expandedHatimId == hatim.id;
+            child: Builder(builder: (context) {
+              if (provider.isHatimlerLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (provider.errorMessage != null) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(provider.errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: isDark
+                                    ? Colors.white54
+                                    : Colors.black54)),
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: provider.refresh,
+                          child: const Text("Tekrar Dene"),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              if (provider.currentHatimler.isEmpty) {
+                return Center(
+                  child: Text("Şu an aktif bir hatim bulunmuyor.",
+                      style: TextStyle(
+                          color: isDark ? Colors.white54 : Colors.black54)),
+                );
+              }
+              return RefreshIndicator(
+                onRefresh: provider.refresh,
+                child: ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(
+                      parent: BouncingScrollPhysics()),
+                  itemCount: provider.currentHatimler.length,
+                  separatorBuilder: (context, index) => Divider(
+                      height: 1,
+                      color: isDark ? Colors.white10 : Colors.black12,
+                      indent: 16,
+                      endIndent: 16),
+                  itemBuilder: (context, index) {
+                    final hatim = provider.currentHatimler[index];
+                    final isExpanded = provider.expandedHatimId == hatim.id;
 
-                return _buildHatimItem(
-                    context, hatim, isExpanded, provider, isDark);
-              },
-            ),
+                    return _buildHatimItem(
+                        context, hatim, isExpanded, provider, isDark);
+                  },
+                ),
+              );
+            }),
           ),
         ],
       ),
@@ -301,14 +341,11 @@ class HatimView extends StatelessWidget {
       bool isDark, Color textColor) {
     Color subTextColor = isDark ? Colors.white54 : Colors.black54;
 
-    // YENİ SAYFAYA MEVCUT PROVIDER'I ".value" İLE TAŞIYORUZ
-    final provider = context.read<HatimProvider>();
-
     return InkWell(
       onTap: () {
         if (task.isLocked || task.availableCount == 0) return;
 
-        context.push('/hatim/selection', extra: (provider, hatim, task));
+        context.push('/hatim/selection', extra: (hatim.id, task.title));
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
