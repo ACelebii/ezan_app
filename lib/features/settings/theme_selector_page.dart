@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_service.dart';
 import '../../core/utils/assets_constants.dart';
+import '../../core/widgets/gradient_feature_icon.dart';
 
 class ThemeSelectorPage extends StatefulWidget {
   const ThemeSelectorPage({super.key});
@@ -135,7 +136,7 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
                 color: isNext
                     ? accentColor
                     : (isGlass
-                        ? Colors.white.withOpacity(0.1)
+                        ? Colors.white.withValues(alpha: 0.1)
                         : const Color(0xFF1C1C1E)),
                 borderRadius: BorderRadius.circular(10),
                 border: isGlass
@@ -194,8 +195,8 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
                       color: isNext
-                          ? Colors.black.withOpacity(0.3)
-                          : Colors.black.withOpacity(0.6),
+                          ? Colors.black.withValues(alpha: 0.3)
+                          : Colors.black.withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(10),
                       border: isNext
                           ? Border.all(color: accentColor, width: 1.5)
@@ -412,14 +413,14 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
   Widget _buildPreviewDashboard(Color accentColor) {
     final authService = context.watch<AuthService>();
     final miniIcons = [
-      Icons.menu_book,
-      Icons.headset,
-      Icons.explore,
-      Icons.calendar_month,
-      Icons.touch_app,
-      Icons.mosque,
-      Icons.favorite,
-      Icons.settings
+      GradientFeatureIconKey.kuran,
+      GradientFeatureIconKey.kutuphane,
+      GradientFeatureIconKey.pusula,
+      GradientFeatureIconKey.imsakiye,
+      GradientFeatureIconKey.zikirmatik,
+      GradientFeatureIconKey.camiler,
+      GradientFeatureIconKey.dualar,
+      GradientFeatureIconKey.ayarlar,
     ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
@@ -441,8 +442,8 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 4, mainAxisSpacing: 12, crossAxisSpacing: 12),
               itemCount: 8,
-              itemBuilder: (c, i) =>
-                  Icon(miniIcons[i], color: accentColor, size: 18)),
+              itemBuilder: (c, i) => GradientFeatureIcon(
+                  iconKey: miniIcons[i], size: 18)),
           const Spacer(),
           _buildMiniGrid(accentColor),
         ],
@@ -462,7 +463,7 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
               errorBuilder: (c, e, s) =>
                   Container(color: const Color(0xFF101010))),
         ),
-        Container(color: Colors.black.withOpacity(0.35)),
+        Container(color: Colors.black.withValues(alpha: 0.35)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
           child: Column(
@@ -512,7 +513,7 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 8),
                       decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(10)),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -557,7 +558,7 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(10)),
                           child: Column(
                             children: [
@@ -586,7 +587,7 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(8)),
                           child: const Center(
                               child: Text("9 Şevval\n1447",
@@ -641,7 +642,7 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.white24),
                         ),
@@ -661,8 +662,8 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
                       onTap: () {
                         authService.updateSetting(
                             'ana_sayfa_stili', stiller[_currentIndex]['isim']);
-                        if (Navigator.canPop(context)) {
-                          Navigator.pop(context);
+                        if (context.canPop()) {
+                          context.pop();
                         }
                       },
                       borderRadius: BorderRadius.circular(12),
@@ -670,7 +671,7 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.white24),
                         ),
@@ -714,7 +715,7 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
                           boxShadow: _currentIndex == index
                               ? [
                                   BoxShadow(
-                                      color: stil['renk'].withOpacity(0.2),
+                                      color: stil['renk'].withValues(alpha: 0.2),
                                       blurRadius: 15,
                                       spreadRadius: 1)
                                 ]
@@ -764,7 +765,7 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
                       decoration: BoxDecoration(
                         color: _currentIndex == index
                             ? Colors.white
-                            : Colors.white.withOpacity(0.3),
+                            : Colors.white.withValues(alpha: 0.3),
                         shape: BoxShape.circle,
                       ),
                     ),

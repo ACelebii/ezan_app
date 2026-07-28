@@ -1,19 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/widgets/gradient_feature_icon.dart';
 import '../auth/auth_service.dart';
-import '../settings/settings_page.dart';
-import '../kuran/kuran_page.dart';
-import '../imsakiye/imsakiye_page.dart';
-import '../pusula/pusula_page.dart';
-import '../settings/theme_selector_page.dart';
-import '../zikirmatik/zikirmatik_page.dart';
-import '../dini_gunler/dini_gunler_page.dart';
-import '../hutbe/hutbe_page.dart';
-import '../camiler/cami_page.dart';
-import '../dualar/dualar_page.dart';
-import '../dualar/dualar_page.dart';
-import '../kutuphane/kutuphane_page.dart';
 
 bool _isDark(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;
@@ -21,8 +12,6 @@ Color _getBgColor(BuildContext context) =>
     _isDark(context) ? Colors.black : const Color(0xFFF2F2F7);
 Color _getCardColor(BuildContext context) =>
     _isDark(context) ? const Color(0xFF1C1C1E) : Colors.white;
-Color _getIconBoxColor(BuildContext context) =>
-    _isDark(context) ? const Color(0xFF2C2C2E) : Colors.grey.shade100;
 Color _getTextColor(BuildContext context) =>
     _isDark(context) ? Colors.white : Colors.black87;
 
@@ -36,7 +25,7 @@ class MenuPage extends StatelessWidget {
         content: Text(message,
             style: const TextStyle(
                 fontWeight: FontWeight.bold, color: Colors.white)),
-        backgroundColor: Colors.teal.withOpacity(0.8),
+        backgroundColor: Colors.teal.withValues(alpha: 0.8),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 1),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -50,73 +39,21 @@ class MenuPage extends StatelessWidget {
 
     // Menüdeki toplam 15 öğe (3 sütundan 5 satır tam oturması için ideal)
     final List<Map<String, dynamic>> menuItems = [
-      {"t": "Kuran", "i": Icons.menu_book_rounded, "c": Colors.cyan.shade600},
-      {
-        "t": "Kütüphane",
-        "i": Icons.library_books_rounded,
-        "c": Colors.cyan.shade600
-      },
-      {
-        "t": "Haftanın Hutbesi",
-        "i": Icons.mic_external_on_rounded,
-        "c": Colors.deepOrange.shade400
-      },
-      {
-        "t": "Multimedya",
-        "i": Icons.play_circle_filled_rounded,
-        "c": Colors.deepOrange.shade400
-      },
-      {
-        "t": "Dini Günler",
-        "i": Icons.event_note_rounded,
-        "c": Colors.cyan.shade600
-      },
-      {
-        "t": "Ana Sayfa",
-        "i": Icons.style_rounded,
-        "c": Colors.deepOrange.shade400
-      },
-      {
-        "t": "Zikirmatik",
-        "i": Icons.touch_app_rounded,
-        "c": Colors.cyan.shade600
-      },
-      {
-        "t": "Yakın Camiler",
-        "i": Icons.mosque_rounded,
-        "c": Colors.cyan.shade600
-      },
-      {
-        "t": "Hatim",
-        "i": Icons.check_circle_outline_rounded,
-        "c": Colors.cyan.shade600
-      },
-      {
-        "t": "Kazalar",
-        "i": Icons.fact_check_rounded,
-        "c": Colors.cyan.shade600
-      },
-      {
-        "t": "Ajanda",
-        "i": Icons.edit_calendar_rounded,
-        "c": Colors.cyan.shade600
-      },
-      {
-        "t": "Ayarlar",
-        "i": Icons.settings_rounded,
-        "c": Colors.deepOrange.shade400
-      },
-      {
-        "t": "İmsakiye",
-        "i": Icons.calendar_month_rounded,
-        "c": Colors.cyan.shade600
-      },
-      {
-        "t": "Pusula",
-        "i": Icons.explore_rounded,
-        "c": Colors.deepOrange.shade400
-      },
-      {"t": "Dualar", "i": Icons.favorite_rounded, "c": Colors.cyan.shade600},
+      {"t": "Kuran", "k": GradientFeatureIconKey.kuran},
+      {"t": "Kütüphane", "k": GradientFeatureIconKey.kutuphane},
+      {"t": "Haftanın Hutbesi", "k": GradientFeatureIconKey.hutbe},
+      {"t": "Multimedya", "k": GradientFeatureIconKey.multimedya},
+      {"t": "Dini Günler", "k": GradientFeatureIconKey.diniGunler},
+      {"t": "Ana Sayfa", "k": GradientFeatureIconKey.anaSayfa},
+      {"t": "Zikirmatik", "k": GradientFeatureIconKey.zikirmatik},
+      {"t": "Yakın Camiler", "k": GradientFeatureIconKey.camiler},
+      {"t": "Hatim", "k": GradientFeatureIconKey.hatim},
+      {"t": "Kazalar", "k": GradientFeatureIconKey.kazalar},
+      {"t": "Ajanda", "k": GradientFeatureIconKey.ajanda},
+      {"t": "Ayarlar", "k": GradientFeatureIconKey.ayarlar},
+      {"t": "İmsakiye", "k": GradientFeatureIconKey.imsakiye},
+      {"t": "Pusula", "k": GradientFeatureIconKey.pusula},
+      {"t": "Dualar", "k": GradientFeatureIconKey.dualar},
     ];
 
     return Directionality(
@@ -138,12 +75,7 @@ class MenuPage extends StatelessWidget {
           actions: [
             IconButton(
               icon: Icon(Icons.tune_rounded, color: _getTextColor(context)),
-              onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const SettingsPage()));
-              },
+              onPressed: () => context.push('/settings'),
             ),
             IconButton(
               icon: Container(
@@ -179,58 +111,61 @@ class MenuPage extends StatelessWidget {
                 onTap: () {
                   // SAYFA YÖNLENDİRMELERİ
                   if (item['t'] == 'Ayarlar') {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const SettingsPage()));
+                    context.push('/settings');
                   } else if (item['t'] == 'Kuran') {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const KuranPage()));
+                    context.push('/kuran');
                   } else if (item['t'] == 'Ana Sayfa') {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const ThemeSelectorPage()));
+                    context.push('/settings/theme');
                   } else if (item['t'] == 'İmsakiye') {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const ImsakiyePage()));
+                    context.push('/imsakiye');
                   } else if (item['t'] == 'Pusula') {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const PusulaPage()));
+                    context.push('/pusula');
                   } else if (item['t'] == 'Zikirmatik') {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const ZikirmatikPage()));
+                    context.push('/zikirmatik');
                   } else if (item['t'] == 'Dini Günler') {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const DiniGunlerPage()));
+                    context.push('/dini-gunler');
                   } else if (item['t'] == 'Haftanın Hutbesi') {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const HaftaninHutbesiPage()));
+                    context.push('/hutbe');
                   } else if (item['t'] == 'Yakın Camiler') {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const CamiPage()));
+                    context.push('/camiler');
                   } else if (item['t'] == 'Dualar') {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => DualarPage()));
+                    context.push('/dualar');
+                  } else if (item['t'] == 'Kazalar') {
+                    context.push('/kazalar');
+                  } else if (item['t'] == 'Hatim') {
+                    context.push('/hatim');
+                  } else if (item['t'] == 'Ajanda') {
+                    Permission.calendarFullAccess.status.then((status) async {
+                      if (status.isGranted) {
+                        if (context.mounted) {
+                          context.push('/ajanda');
+                        }
+                      } else {
+                        final result =
+                            await Permission.calendarFullAccess.request();
+
+                        if (result.isGranted) {
+                          if (context.mounted) {
+                            context.push('/ajanda');
+                          }
+                        } else if (result.isPermanentlyDenied) {
+                          if (context.mounted) {
+                            _showSnack(context,
+                                "Ayarlardan takvim izni vermeniz gerekiyor.");
+                          }
+                          Future.delayed(const Duration(seconds: 1), () {
+                            openAppSettings();
+                          });
+                        } else {
+                          if (context.mounted) {
+                            _showSnack(context,
+                                "Ajanda özelliğini kullanmak için izin gereklidir.");
+                          }
+                        }
+                      }
+                    });
                   } else if (item['t'] == 'Kütüphane') {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => KutuphanePage()));
+                    context.push('/kutuphane');
                   } else {
                     _showSnack(context,
                         "${authService.translate(item['t'])} yakında eklenecek...");
@@ -243,12 +178,9 @@ class MenuPage extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                            color: _getIconBoxColor(context),
-                            borderRadius: BorderRadius.circular(14)),
-                        child: Icon(item['i'], color: item['c'], size: 30),
+                      GradientFeatureIcon(
+                        iconKey: item['k'] as GradientFeatureIconKey,
+                        size: 46,
                       ),
                       const SizedBox(height: 10),
                       Padding(
@@ -275,5 +207,3 @@ class MenuPage extends StatelessWidget {
     );
   }
 }
-
-

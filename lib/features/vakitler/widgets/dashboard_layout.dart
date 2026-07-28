@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../auth/auth_service.dart';
-import '../../kuran/kuran_page.dart';
-import '../../pusula/pusula_page.dart';
-import '../../imsakiye/imsakiye_page.dart';
-import '../../settings/settings_page.dart';
-import '../../zikirmatik/zikirmatik_page.dart';
-import '../../dualar/dualar_page.dart';
+import '../../../core/widgets/gradient_feature_icon.dart';
 
 class DashboardLayout extends StatelessWidget {
   final String siradakiVakit;
@@ -30,28 +24,27 @@ class DashboardLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color accentColor = AppTheme.primaryColor;
-    final authService = context.read<AuthService>();
 
     final icons = [
-      {"i": Icons.menu_book_rounded, "t": "Kuran", "page": const KuranPage()},
-      {"i": Icons.library_books_rounded, "t": "Kütüphane", "page": null},
-      {"i": Icons.explore_rounded, "t": "Pusula", "page": const PusulaPage()},
+      {"k": GradientFeatureIconKey.kuran, "t": "Kuran", "path": "/kuran"},
+      {"k": GradientFeatureIconKey.kutuphane, "t": "Kütüphane", "path": null},
+      {"k": GradientFeatureIconKey.pusula, "t": "Pusula", "path": "/pusula"},
       {
-        "i": Icons.calendar_month_rounded,
+        "k": GradientFeatureIconKey.imsakiye,
         "t": "İmsakiye",
-        "page": const ImsakiyePage()
+        "path": "/imsakiye"
       },
       {
-        "i": Icons.touch_app_rounded,
+        "k": GradientFeatureIconKey.zikirmatik,
         "t": "Zikirmatik",
-        "page": ZikirmatikPage()
+        "path": "/zikirmatik"
       },
-      {"i": Icons.mosque_rounded, "t": "Camiler", "page": null},
-      {"i": Icons.favorite_rounded, "t": "Dualar", "page": const DualarPage()},
+      {"k": GradientFeatureIconKey.camiler, "t": "Camiler", "path": null},
+      {"k": GradientFeatureIconKey.dualar, "t": "Dualar", "path": "/dualar"},
       {
-        "i": Icons.settings_rounded,
+        "k": GradientFeatureIconKey.ayarlar,
         "t": "Ayarlar",
-        "page": const SettingsPage()
+        "path": "/settings"
       },
     ];
 
@@ -86,12 +79,8 @@ class DashboardLayout extends StatelessWidget {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () {
-                          if (item["page"] != null) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => item["page"] as Widget),
-                            );
+                          if (item["path"] != null) {
+                            context.push(item["path"] as String);
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                               content: Text(
@@ -99,7 +88,7 @@ class DashboardLayout extends StatelessWidget {
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white)),
-                              backgroundColor: accentColor.withOpacity(0.8),
+                              backgroundColor: accentColor.withValues(alpha: 0.8),
                               behavior: SnackBarBehavior.floating,
                               duration: const Duration(seconds: 1),
                               shape: RoundedRectangleBorder(
@@ -110,8 +99,11 @@ class DashboardLayout extends StatelessWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(item["i"] as IconData,
-                                color: accentColor, size: 30),
+                            GradientFeatureIcon(
+                              iconKey:
+                                  item["k"] as GradientFeatureIconKey,
+                              size: 40,
+                            ),
                             const SizedBox(height: 8),
                             Expanded(
                               child: Text(translate(item["t"] as String),
