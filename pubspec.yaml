@@ -63,9 +63,16 @@ flutter:
     - assets/Images/
     - assets/icons/gradient/
     - assets/ezan.mp3
+    - assets/ezan_kisa.mp3
     - assets/uyari.mp3
+    - assets/beep.mp3
+    - assets/ding_dong.mp3
+    - assets/melodi_1.mp3
+    - assets/melodi_2.mp3
+    - assets/melodi_3.mp3
+    - assets/melodi_4.mp3
+    - assets/melodi_19.mp3
     - .env
     - .env_production
     - assets/dualar.json
     - assets/json/dini_gunler.json
-    - assets/db/kutuphane.db

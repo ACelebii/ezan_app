@@ -3,15 +3,16 @@ rules_version = '2';
 // =============================================================================
 // Bu dosya, uygulamanın (ezan_app) Firestore'da fiilen kullandığı TÜM
 // koleksiyonları kapsar. Kapsam, kod tabanındaki her `FirebaseFirestore`
-// kullanımı taranarak çıkarıldı (2026-07-28 itibarıyla sadece 3 dosyada
-// Firestore erişimi var: lib/features/auth/auth_service.dart,
+// kullanımı taranarak çıkarıldı (2026-07-29 itibarıyla lib/features/auth/auth_service.dart,
 // lib/features/hutbe/data/hutbe_repository.dart,
-// lib/features/hatim/data/hatim_repository.dart):
+// lib/features/hatim/data/hatim_repository.dart ve
+// lib/features/kutuphane/data/kutuphane_repository.dart'ta Firestore erişimi var):
 //   - users/{uid}                          (AuthService: e-posta, ayarlar)
 //   - users/{uid}/hatimGorevleri/{itemId}  (Hatim: "görevlerim" mirror'ı)
 //   - hutbeler/{hutbeId}                    (Hutbe: sadece okunuyor)
 //   - hatimler/{hatimId}                    (Hatim: özet + sayaçlar)
 //   - hatimler/{hatimId}/assignments/{itemId} (Hatim: görev durumu)
+//   - kutuphane/{itemId}                    (Kütüphane: sadece okunuyor)
 //
 // Bu kuralları deploy etmeden önce Console'daki mevcut kuralı kontrol ettik:
 // proje şu an tamamen açık varsayılan kuralda (`allow read, write: if true`),
@@ -41,6 +42,13 @@ service cloud.firestore {
     // --- Haftanın Hutbesi: herkese açık okuma, yazma yok (içerik Console'dan
     // elle ekleniyor).
     match /hutbeler/{hutbeId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // --- Kütüphane: herkese açık okuma, yazma yok (kategori/kitap kayıtları
+    // Console'dan elle ekleniyor).
+    match /kutuphane/{itemId} {
       allow read: if true;
       allow write: if false;
     }

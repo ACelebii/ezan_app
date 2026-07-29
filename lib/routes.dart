@@ -6,6 +6,7 @@ import 'features/menu/menu_page.dart';
 
 import 'features/kutuphane/kutuphane_page.dart';
 import 'features/kutuphane/kutuphane_icerik_page.dart';
+import 'features/kutuphane/kutuphane_pdf_page.dart';
 import 'features/kutuphane/kutuphane_model.dart';
 
 import 'features/dini_gunler/dini_gunler_page.dart';
@@ -66,6 +67,10 @@ final GoRouter appRouter = GoRouter(
         path: '/kutuphane/icerik',
         builder: (context, state) =>
             KutuphaneIcerikPage(node: state.extra as LibraryNode)),
+    GoRoute(
+        path: '/kutuphane/pdf',
+        builder: (context, state) =>
+            KutuphanePdfPage(item: state.extra as LibraryNode)),
 
     // --- Dini Günler ---
     GoRoute(

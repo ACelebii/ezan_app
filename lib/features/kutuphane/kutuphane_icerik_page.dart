@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
-import 'data/kutuphane_repository.dart'; // import yolu düzeltildi
+import 'data/kutuphane_repository.dart';
 import 'kutuphane_model.dart';
 
 class KutuphaneIcerikPage extends StatelessWidget {
@@ -13,7 +13,6 @@ class KutuphaneIcerikPage extends StatelessWidget {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     Color textColor = isDark ? Colors.white : Colors.black87;
 
-    // Veritabanı bağlantımızı alıyoruz
     final repository = GetIt.instance<KutuphaneRepository>();
 
     return Scaffold(
@@ -28,15 +27,12 @@ class KutuphaneIcerikPage extends StatelessWidget {
             color: textColor,
             onPressed: () => context.pop()),
       ),
-      body: node.isArticle
-          ? _buildOkumaEkrani(textColor, repository)
-          : _buildListeEkrani(isDark, textColor, repository),
+      body: _buildListeEkrani(context, isDark, textColor, repository),
     );
   }
 
-  // 1. LİSTE EKRANI
-  Widget _buildListeEkrani(
-      bool isDark, Color textColor, KutuphaneRepository repository) {
+  Widget _buildListeEkrani(BuildContext context, bool isDark, Color textColor,
+      KutuphaneRepository repository) {
     return FutureBuilder<List<LibraryNode>>(
       future: repository.getAltKategoriler(node.id),
       builder: (context, snapshot) {
@@ -49,24 +45,29 @@ class KutuphaneIcerikPage extends StatelessWidget {
               child: Text("Bu kategoriye ait içerik henüz eklenmemiş."));
         }
 
-        final altKategoriler = snapshot.data!;
+        final altOgeler = snapshot.data!;
         return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: altKategoriler.length,
+          itemCount: altOgeler.length,
           itemBuilder: (context, index) {
-            final item = altKategoriler[index];
+            final item = altOgeler[index];
             return InkWell(
-              onTap: () => context.push('/kutuphane/icerik', extra: item),
+              onTap: () => context.push(
+                  item.isKitap ? '/kutuphane/pdf' : '/kutuphane/icerik',
+                  extra: item),
               child: Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 height: 160,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  image: DecorationImage(
-                      image: AssetImage(item.imagePath),
-                      fit: BoxFit.cover,
-                      onError: (exception, stackTrace) =>
-                          const Icon(Icons.image_not_supported)),
+                  color: Colors.grey.shade300,
+                  image: item.imageUrl.isEmpty
+                      ? null
+                      : DecorationImage(
+                          image: NetworkImage(item.imageUrl),
+                          fit: BoxFit.cover,
+                          onError: (exception, stackTrace) {},
+                        ),
                 ),
                 child: Container(
                   decoration: BoxDecoration(
@@ -91,43 +92,6 @@ class KutuphaneIcerikPage extends StatelessWidget {
               ),
             );
           },
-        );
-      },
-    );
-  }
-
-  // 2. OKUMA EKRANI
-  Widget _buildOkumaEkrani(Color textColor, KutuphaneRepository repository) {
-    return FutureBuilder<String>(
-      future: repository.getMakaleIcerigi(node.id),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-              child: CircularProgressIndicator(color: Colors.amber));
-        }
-
-        final metin = snapshot.data ?? "İçerik yüklenemedi.";
-
-        return SingleChildScrollView(
-          child: Column(
-            children: [
-              Image.asset(node.imagePath,
-                  width: double.infinity,
-                  height: 250,
-                  fit: BoxFit.cover,
-                  errorBuilder: (c, e, s) => Container(
-                      color: Colors.grey,
-                      height: 250,
-                      child: const Center(child: Icon(Icons.image)))),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(
-                  metin,
-                  style: TextStyle(color: textColor, fontSize: 17, height: 1.6),
-                ),
-              ),
-            ],
-          ),
         );
       },
     );

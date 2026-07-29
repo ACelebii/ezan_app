@@ -69,15 +69,20 @@ class _KutuphanePageContent extends StatelessWidget {
                           child: Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
+                              color: Colors.grey.shade300,
                               boxShadow: [
                                 BoxShadow(
                                     color: Colors.black.withValues(alpha: 0.2),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4))
                               ],
-                              image: DecorationImage(
-                                  image: AssetImage(kitap.imagePath),
-                                  fit: BoxFit.cover),
+                              image: kitap.imageUrl.isEmpty
+                                  ? null
+                                  : DecorationImage(
+                                      image: NetworkImage(kitap.imageUrl),
+                                      fit: BoxFit.cover,
+                                      onError: (exception, stackTrace) {},
+                                    ),
                             ),
                           ),
                         ),
