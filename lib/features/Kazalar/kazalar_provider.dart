@@ -1,3 +1,4 @@
+import 'package:app_badge_plus/app_badge_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,6 +26,16 @@ class KazalarProvider extends ChangeNotifier {
   bool _ikondaGoster = false;
   bool get ikondaGoster => _ikondaGoster;
 
+  // Bazı launcher'lar (ör. Pixel/stock Android) sayısal rozeti hiç
+  // desteklemez, yalnızca gerçek bir bildirimden gelen noktayı gösterir.
+  // Kullanıcı anahtarı açtığında rozetin neden görünmediğini anlayabilsin
+  // diye bu bilgi ayrı tutulur.
+  bool _badgeDestekleniyor = true;
+  bool get badgeDestekleniyor => _badgeDestekleniyor;
+
+  int get toplamKazaSayisi =>
+      kazaSayilari.values.fold(0, (toplam, deger) => toplam + deger);
+
   KazalarProvider() {
     _verileriYukle();
   }
@@ -39,6 +50,20 @@ class KazalarProvider extends ChangeNotifier {
       sonKayitTarihleri[key] = prefs.getString('kaza_tarih_$key') ?? "";
     }
     notifyListeners();
+    _ikonRozetiniGuncelle();
+  }
+
+  // Uygulama ikonundaki rozeti günceller. Platform veya launcher desteklemiyorsa
+  // (ör. Windows/Linux masaüstü, test ortamı, rozeti desteklemeyen bir launcher)
+  // MethodChannel çağrısı sessizce başarısız olabilir; bu beklenen bir durumdur.
+  Future<void> _ikonRozetiniGuncelle() async {
+    try {
+      _badgeDestekleniyor = await AppBadgePlus.isSupported();
+      await AppBadgePlus.updateBadge(_ikondaGoster ? toplamKazaSayisi : 0);
+    } catch (_) {
+    } finally {
+      notifyListeners();
+    }
   }
 
   // Sadece değişen vakti hafızaya kaydeder
@@ -54,6 +79,7 @@ class KazalarProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('kaza_ikonda_goster', _ikondaGoster);
     notifyListeners();
+    _ikonRozetiniGuncelle();
   }
 
   String _simdikiZamaniGetir() {
@@ -81,6 +107,7 @@ class KazalarProvider extends ChangeNotifier {
     sonKayitTarihleri[vakit] = _simdikiZamaniGetir();
     _veriyiKaydet(vakit);
     notifyListeners();
+    _ikonRozetiniGuncelle();
   }
 
   void azalt(String vakit) {
@@ -89,6 +116,7 @@ class KazalarProvider extends ChangeNotifier {
       sonKayitTarihleri[vakit] = _simdikiZamaniGetir();
       _veriyiKaydet(vakit);
       notifyListeners();
+      _ikonRozetiniGuncelle();
     }
   }
 
@@ -98,6 +126,7 @@ class KazalarProvider extends ChangeNotifier {
       sonKayitTarihleri[vakit] = _simdikiZamaniGetir();
       _veriyiKaydet(vakit);
       notifyListeners();
+      _ikonRozetiniGuncelle();
     }
   }
 }

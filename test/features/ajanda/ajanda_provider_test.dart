@@ -3,11 +3,10 @@ import 'package:ezan_vakti_uygulamasi/features/ajanda/ajanda_provider.dart';
 
 void main() {
   group('AjandaProvider', () {
-    test('starts on today with permission not granted', () {
+    test('starts on today', () {
       final provider = AjandaProvider();
 
       expect(provider.isBugun, isTrue);
-      expect(provider.izinVerildiMi, isFalse);
     });
 
     test('sonrakiGun moves the selected date forward by one day', () {
@@ -39,17 +38,6 @@ void main() {
       provider.buguneDon();
 
       expect(provider.isBugun, isTrue);
-    });
-
-    test('izinDurumunuGuncelle updates permission state and notifies', () {
-      final provider = AjandaProvider();
-      var notified = false;
-      provider.addListener(() => notified = true);
-
-      provider.izinDurumunuGuncelle(true);
-
-      expect(provider.izinVerildiMi, isTrue);
-      expect(notified, isTrue);
     });
   });
 }

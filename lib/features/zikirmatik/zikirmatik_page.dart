@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../auth/auth_service.dart';
+import 'zikirmatik_provider.dart';
 
 // ============================================================================
 // ORTAK BUTON TASARIMI (Glassmorphism / Şeffaf Kutu)
@@ -56,54 +57,9 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
   bool isEditing = false;
   String? _showingDeleteFor;
 
-  final List<Map<String, dynamic>> _aktifZikirler = [
-    {
-      "ad": "Zikirmatik",
-      "sayi": 5,
-      "hedef": 99,
-      "imame": 33,
-      "isDefault": true
-    },
-  ];
-
-  final List<Map<String, dynamic>> _hazirZikirler = [
-    {
-      "ad": "100 Sübhânellâhi",
-      "sayi": 0,
-      "hedef": 100,
-      "imame": 100,
-      "arapca": "سُبْحَانَ اللّٰهِ وَبِحَمْدِهِ سُبْحَانَ اللّٰهِ الْعَظِيمِ",
-      "okunusu": "Sübhânellâhi ve bi hamdihî sübhânellâhil azîm",
-      "anlami": "Allah'ü Teala'yı tesbih ederim, hamd O'na mahsustur.",
-      "isDefault": false
-    },
-    {
-      "ad": "99 Lâ havle",
-      "sayi": 0,
-      "hedef": 99,
-      "imame": 99,
-      "arapca":
-          "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللّٰهِ الْعَلِيِّ الْعَظِيمِ",
-      "okunusu": "Lâ havle ve lâ kuvvete illâ billâhil aliyyil azîm",
-      "anlami": "Bütün kudret ve kuvvet, Aliyy ve Azîm olan Allah'a aittir.",
-      "isDefault": false
-    },
-    {
-      "ad": "Salavat",
-      "sayi": 0,
-      "hedef": 100,
-      "imame": 25,
-      "arapca":
-          "اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ وَعَلٰى اٰلِ سَيِّدِنَا مُحَمَّدٍ",
-      "okunusu":
-          "Allahümme Salli Ala Seyyidina Muhammedin ve Ala Ali Seyyidina Muhammed",
-      "anlami": "Allah'ım, efendimiz Hz. Muhammed'e ve aline salat eyle.",
-      "isDefault": false
-    },
-  ];
-
   void _showAddPopup(BuildContext context,
       {Map<String, dynamic>? initialData}) async {
+    final provider = context.read<ZikirmatikProvider>();
     final result = await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -118,17 +74,11 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
       ),
     );
     if (result != null && result is Map<String, dynamic>) {
-      setState(() {
-        if (initialData != null) {
-          int index = _aktifZikirler.indexOf(initialData);
-          if (index != -1) {
-            result['sayi'] = initialData['sayi'];
-            _aktifZikirler[index] = result;
-          }
-        } else {
-          _aktifZikirler.add(result);
-        }
-      });
+      if (initialData != null) {
+        provider.zikirGuncelle(initialData, result);
+      } else {
+        provider.zikirEkle(result);
+      }
     }
   }
 
@@ -136,6 +86,9 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
   Widget build(BuildContext context) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     final authService = context.watch<AuthService>();
+    final zikirProvider = context.watch<ZikirmatikProvider>();
+    final aktifZikirler = zikirProvider.aktifZikirler;
+    final hazirZikirler = zikirProvider.hazirZikirler;
     Color cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
 
     return Scaffold(
@@ -189,10 +142,10 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
                                     offset: const Offset(0, 4))
                               ]),
                     child: Column(
-                      children: _aktifZikirler.asMap().entries.map((entry) {
+                      children: aktifZikirler.asMap().entries.map((entry) {
                         int index = entry.key;
                         var z = entry.value;
-                        bool isLast = index == _aktifZikirler.length - 1;
+                        bool isLast = index == aktifZikirler.length - 1;
                         bool isDefault = z['isDefault'] == true;
                         bool showDelete = _showingDeleteFor == z['ad'];
 
@@ -271,9 +224,8 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
                                       const SizedBox(width: 12),
                                       GestureDetector(
                                         onTap: () {
+                                          zikirProvider.aktiftenKaldir(z);
                                           setState(() {
-                                            _aktifZikirler.remove(z);
-                                            _hazirZikirler.add(z);
                                             _showingDeleteFor = null;
                                           });
                                         },
@@ -319,15 +271,13 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
                                             : Colors.black26),
                                   ],
                                 ),
-                          onTap: () async {
+                          onTap: () {
                             if (isEditing) {
                               if (!isDefault) {
                                 _showAddPopup(context, initialData: z);
                               }
                             } else {
-                              await context.push('/zikirmatik/sayac',
-                                  extra: z);
-                              setState(() {});
+                              context.push('/zikirmatik/sayac', extra: z);
                             }
                           },
                         );
@@ -354,10 +304,7 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
                                     ),
                                     onDismissed: (direction) {
                                       if (!isDefault) {
-                                        setState(() {
-                                          _aktifZikirler.remove(z);
-                                          _hazirZikirler.add(z);
-                                        });
+                                        zikirProvider.aktiftenKaldir(z);
                                       }
                                     },
                                     child: tile,
@@ -373,7 +320,7 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
                       }).toList(),
                     ),
                   ),
-                  if (_hazirZikirler.isNotEmpty) ...[
+                  if (hazirZikirler.isNotEmpty) ...[
                     const SizedBox(height: 20),
                     Container(
                       decoration: BoxDecoration(
@@ -388,10 +335,10 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
                                       offset: const Offset(0, 4))
                                 ]),
                       child: Column(
-                        children: _hazirZikirler.asMap().entries.map((entry) {
+                        children: hazirZikirler.asMap().entries.map((entry) {
                           int index = entry.key;
                           var z = entry.value;
-                          bool isLast = index == _hazirZikirler.length - 1;
+                          bool isLast = index == hazirZikirler.length - 1;
 
                           return Column(
                             children: [
@@ -410,10 +357,7 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
                                         fontSize: 16,
                                         fontWeight: FontWeight.w500)),
                                 onTap: () {
-                                  setState(() {
-                                    _aktifZikirler.add(z);
-                                    _hazirZikirler.remove(z);
-                                  });
+                                  zikirProvider.hazirdanEkle(z);
                                 },
                               ),
                               if (!isLast)
@@ -496,16 +440,16 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
         _loop++;
         _count = 0;
       }
-      widget.zikirData['sayi'] = _count;
     });
+    context.read<ZikirmatikProvider>().sayaciGuncelle(widget.zikirData, _count);
   }
 
   void _reset() {
     setState(() {
       _count = 0;
       _loop = 0;
-      widget.zikirData['sayi'] = 0;
     });
+    context.read<ZikirmatikProvider>().sayaciGuncelle(widget.zikirData, 0);
   }
 
   // --- RENK SEÇİCİ POPUP EKRANI ---
@@ -703,21 +647,6 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          InkWell(
-                            onTap: () {},
-                            borderRadius: const BorderRadius.horizontal(
-                                left: Radius.circular(20)),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
-                              child: Icon(Icons.g_translate_rounded,
-                                  color: topIconColor, size: 18),
-                            ),
-                          ),
-                          Container(
-                              width: 1,
-                              height: 16,
-                              color: isDark ? Colors.white24 : Colors.black12),
                           Theme(
                             data: Theme.of(context).copyWith(
                                 splashColor: Colors.transparent,
@@ -1130,5 +1059,3 @@ class _ZikirEkleDuzenlePageState extends State<ZikirEkleDuzenlePage> {
     );
   }
 }
-
-

@@ -95,5 +95,16 @@ void main() {
 
       expect(second.kazaSayilari["Akşam"], 2);
     });
+
+    test('toplamKazaSayisi sums every vakit', () async {
+      final provider = await _createLoadedProvider();
+
+      provider.artir("Sabah");
+      provider.artir("Sabah");
+      provider.artir("Öğle");
+      provider.artir("Oruç");
+
+      expect(provider.toplamKazaSayisi, 4);
+    });
   });
 }

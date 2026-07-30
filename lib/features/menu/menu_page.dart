@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/widgets/gradient_feature_icon.dart';
@@ -135,35 +134,7 @@ class MenuPage extends StatelessWidget {
                   } else if (item['t'] == 'Hatim') {
                     context.push('/hatim');
                   } else if (item['t'] == 'Ajanda') {
-                    Permission.calendarFullAccess.status.then((status) async {
-                      if (status.isGranted) {
-                        if (context.mounted) {
-                          context.push('/ajanda');
-                        }
-                      } else {
-                        final result =
-                            await Permission.calendarFullAccess.request();
-
-                        if (result.isGranted) {
-                          if (context.mounted) {
-                            context.push('/ajanda');
-                          }
-                        } else if (result.isPermanentlyDenied) {
-                          if (context.mounted) {
-                            _showSnack(context,
-                                "Ayarlardan takvim izni vermeniz gerekiyor.");
-                          }
-                          Future.delayed(const Duration(seconds: 1), () {
-                            openAppSettings();
-                          });
-                        } else {
-                          if (context.mounted) {
-                            _showSnack(context,
-                                "Ajanda özelliğini kullanmak için izin gereklidir.");
-                          }
-                        }
-                      }
-                    });
+                    context.push('/ajanda');
                   } else if (item['t'] == 'Kütüphane') {
                     context.push('/kutuphane');
                   } else if (item['t'] == 'Multimedya') {

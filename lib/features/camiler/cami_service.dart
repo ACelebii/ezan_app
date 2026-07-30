@@ -10,7 +10,14 @@ class CamiService {
 
     if (response.statusCode == 200) {
       final data = response.data;
-      final List results = data['results'];
+      final status = data['status'] as String?;
+      // Google, Places API kapalı/kotası aşılmış gibi durumlarda da HTTP 200
+      // döner; gerçek sonucu 'status' alanından ayırt etmek gerekir, aksi
+      // halde bir API hatası sessizce "yakında cami yok" gibi görünür.
+      if (status != 'OK' && status != 'ZERO_RESULTS') {
+        throw Exception('Places API error: ${data['error_message'] ?? status}');
+      }
+      final List results = data['results'] ?? [];
       return results.map((e) => Cami.fromJson(e)).toList();
     } else {
       throw Exception('Failed to load mosques');

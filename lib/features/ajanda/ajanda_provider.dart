@@ -2,15 +2,8 @@ import 'package:flutter/material.dart';
 
 class AjandaProvider extends ChangeNotifier {
   DateTime _seciliTarih = DateTime.now();
-  bool _izinVerildiMi = false;
 
   DateTime get seciliTarih => _seciliTarih;
-  bool get izinVerildiMi => _izinVerildiMi;
-
-  void izinDurumunuGuncelle(bool durum) {
-    _izinVerildiMi = durum;
-    notifyListeners();
-  }
 
   void sonrakiGun() {
     _seciliTarih = _seciliTarih.add(const Duration(days: 1));

@@ -201,7 +201,17 @@
       "Bash(MSYS_NO_PATHCONV=1 /c/Users/AHTU/AppData/Local/Android/Sdk/platform-tools/adb.exe pull /sdcard/window_dump.xml m2.xml)",
       "Bash(kill 1915)",
       "Bash(powershell -Command 'Get-Process | Where-Object {$_.ProcessName -match '\\\\''dart'\\\\''} | Select-Object Id,ProcessName,StartTime')",
-      "Bash(powershell -Command \"Stop-Process -Id 21464,22156,26912,30408,7344 -Force -ErrorAction SilentlyContinue\")"
+      "Bash(powershell -Command \"Stop-Process -Id 21464,22156,26912,30408,7344 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(rm lib/features/zikirmatik/data/zikirmatik_repository.dart)",
+      "Bash(rmdir lib/features/zikirmatik/data)",
+      "Bash(kill 1369)",
+      "Bash(powershell -Command \"Stop-Process -Id 17540,18936,23072,34216,1700 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(grep -n \"Flutter run key commands\" /tmp/flutter_run4.log)",
+      "Bash(MSYS_NO_PATHCONV=1 /c/Users/AHTU/AppData/Local/Android/Sdk/platform-tools/adb.exe pull /sdcard/window_dump.xml aj1.xml)",
+      "Bash(kill 1933)",
+      "Bash(powershell -Command \"Stop-Process -Id 19000,21212,21800,22444,29860,32248,32944,7184,32016 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(grep -n \"Flutter run key commands\" /tmp/flutter_run5.log)",
+      "Bash(MSYS_NO_PATHCONV=1 /c/Users/AHTU/AppData/Local/Android/Sdk/platform-tools/adb.exe pull /sdcard/window_dump.xml cm1.xml)"
     ],
     "additionalDirectories": [
       "C:\\Users\\AHTU\\Downloads",

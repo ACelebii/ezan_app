@@ -2,7 +2,6 @@ import 'package:get_it/get_it.dart';
 import 'features/dini_gunler/data/dini_gunler_repository.dart';
 import 'features/kutuphane/data/kutuphane_repository.dart';
 import 'features/vakitler/data/vakitler_repository.dart';
-import 'features/zikirmatik/data/zikirmatik_repository.dart';
 import 'features/hutbe/data/hutbe_repository.dart';
 import 'features/dualar/data/dualar_repository.dart';
 import 'features/hatim/data/hatim_repository.dart';
@@ -27,8 +26,6 @@ void setupLocator() {
       .registerLazySingleton<KutuphaneRepository>(() => KutuphaneRepository());
   locator.registerLazySingleton<VakitlerRepository>(
       () => VakitlerRepository(city: 'İstanbul'));
-  locator.registerLazySingleton<ZikirmatikRepository>(
-      () => ZikirmatikRepository());
   locator.registerLazySingleton<HutbeRepository>(() => HutbeRepository());
   locator.registerLazySingleton<DualarRepository>(() => DualarRepository());
   locator.registerLazySingleton<HatimRepository>(() => HatimRepository());

@@ -17,8 +17,10 @@ class _CamiPageState extends State<CamiPage> {
   final CamiService _camiService = CamiService();
   Set<Marker> _markers = {};
   List<Cami> _mosques = [];
+  Cami? _selectedCami;
   Position? _currentPosition;
   bool _isLoading = true;
+  bool _fetchError = false;
   MapType _currentMapType = MapType.satellite;
 
   @override
@@ -47,6 +49,7 @@ class _CamiPageState extends State<CamiPage> {
 
   Future<void> _fetchMosques() async {
     if (_currentPosition == null) return;
+    setState(() => _fetchError = false);
     try {
       final mosques = await _camiService.getNearbyMosques(
           _currentPosition!.latitude, _currentPosition!.longitude);
@@ -57,6 +60,7 @@ class _CamiPageState extends State<CamiPage> {
                   markerId: MarkerId(c.id),
                   position: LatLng(c.lat, c.lon),
                   infoWindow: InfoWindow(title: c.name),
+                  onTap: () => setState(() => _selectedCami = c),
                 ))
             .toSet();
         _isLoading = false;
@@ -65,6 +69,7 @@ class _CamiPageState extends State<CamiPage> {
       debugPrint("Cami getirme hatası: $e");
       setState(() {
         _isLoading = false;
+        _fetchError = true;
       });
     }
   }
@@ -123,6 +128,7 @@ class _CamiPageState extends State<CamiPage> {
               zoom: 15,
             ),
             onMapCreated: (controller) {},
+            onTap: (_) => setState(() => _selectedCami = null),
             markers: _markers,
             myLocationEnabled: true,
             mapType: _currentMapType,
@@ -130,15 +136,147 @@ class _CamiPageState extends State<CamiPage> {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
                 children: [
-                  _buildGlassButton(Icons.arrow_back_ios_new_rounded,
-                      () => context.pop()),
-                  _buildMapMenu(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildGlassButton(Icons.arrow_back_ios_new_rounded,
+                          () => context.pop()),
+                      _buildMapMenu(),
+                    ],
+                  ),
+                  if (_fetchError) ...[
+                    const SizedBox(height: 12),
+                    _buildErrorBanner(),
+                  ] else if (!_isLoading && _mosques.isEmpty) ...[
+                    const SizedBox(height: 12),
+                    _buildEmptyBanner(),
+                  ],
                 ],
               ),
             ),
+          ),
+          if (_selectedCami != null)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 24,
+              child: SafeArea(
+                top: false,
+                child: _buildSelectedCamiCard(_selectedCami!),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8)
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.wifi_off_rounded, color: Colors.redAccent, size: 20),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text('Cami listesi yüklenemedi.',
+                style: TextStyle(color: Colors.black87, fontSize: 13)),
+          ),
+          TextButton(
+            onPressed: _fetchMosques,
+            child: const Text('Tekrar Dene'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8)
+        ],
+      ),
+      child: const Text('Yakınında cami bulunamadı.',
+          style: TextStyle(color: Colors.black87, fontSize: 13)),
+    );
+  }
+
+  Widget _buildSelectedCamiCard(Cami cami) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 12)
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(cami.name,
+                        style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold)),
+                    if (cami.address != null && cami.address!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(cami.address!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: Colors.grey.shade600, fontSize: 13)),
+                    ],
+                  ],
+                ),
+              ),
+              InkWell(
+                onTap: () => setState(() => _selectedCami = null),
+                child: const Icon(Icons.close_rounded, color: Colors.black45),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _launchNavigation(cami, 'Otomobil'),
+                  icon: const Icon(Icons.directions_car_rounded, size: 18),
+                  label: const Text('Araçla'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _launchNavigation(cami, 'Yürüme'),
+                  icon: const Icon(Icons.directions_walk_rounded, size: 18),
+                  label: const Text('Yürüyerek'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -173,21 +311,12 @@ class _CamiPageState extends State<CamiPage> {
             if (value == 'Uydu') _currentMapType = MapType.satellite;
             if (value == 'Standart') _currentMapType = MapType.normal;
           });
-          if ((value == 'Otomobil' || value == 'Yürüme') &&
-              _mosques.isNotEmpty) {
-            _launchNavigation(_mosques.first, value);
-          }
         },
         itemBuilder: (context) => [
           const PopupMenuItem(value: 'Uydu', child: Text('Uydu')),
           const PopupMenuItem(value: 'Standart', child: Text('Standart')),
-          const PopupMenuDivider(),
-          const PopupMenuItem(value: 'Otomobil', child: Text('Otomobil')),
-          const PopupMenuItem(value: 'Yürüme', child: Text('Yürüme')),
         ],
       ),
     );
   }
 }
-
-

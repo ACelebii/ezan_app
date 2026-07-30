@@ -12,6 +12,7 @@ import 'features/sync/sync_notifier.dart';
 import 'features/kutuphane/data/kutuphane_repository.dart';
 import 'features/kuran/kuran_download_service.dart';
 import 'features/hatim/hatim_provider.dart';
+import 'features/zikirmatik/zikirmatik_provider.dart';
 
 import 'locator.dart';
 import 'routes.dart';
@@ -64,6 +65,7 @@ void main() async {
             return provider;
           },
         ),
+        ChangeNotifierProvider(create: (_) => ZikirmatikProvider()),
       ],
       child: ValueListenableBuilder<ThemeMode>(
         valueListenable: themeNotifier,

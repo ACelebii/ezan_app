@@ -181,70 +181,85 @@ class KazalarView extends StatelessWidget {
                 color: cardColor,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Cami ikonlu PRO Badge tasarımı
-                  Stack(
-                    clipBehavior: Clip.none,
+                  Row(
                     children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Colors.deepOrange, Colors.orangeAccent],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                      // Cami ikonlu PRO Badge tasarımı
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Colors.deepOrange, Colors.orangeAccent],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.mosque_rounded,
+                                color: Colors.white, size: 26),
                           ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.mosque_rounded,
-                            color: Colors.white, size: 26),
-                      ),
-                      Positioned(
-                        top: -6,
-                        left: -6,
-                        child: Text(
-                          "Pro",
-                          style: TextStyle(
-                              color: Colors.amber.shade300,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              fontStyle: FontStyle.italic),
-                        ),
-                      ),
-                      Positioned(
-                        top: -4,
-                        right: -4,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                              color: Colors.red, shape: BoxShape.circle),
-                          child: const Text("1",
+                          Positioned(
+                            top: -6,
+                            left: -6,
+                            child: Text(
+                              "Pro",
                               style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold)),
-                        ),
+                                  color: Colors.amber.shade300,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  fontStyle: FontStyle.italic),
+                            ),
+                          ),
+                          Positioned(
+                            top: -4,
+                            right: -4,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                  color: Colors.red, shape: BoxShape.circle),
+                              child: const Text("1",
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold)),
+                            ),
+                          )
+                        ],
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text("Kaza sayısını iconda göster",
+                            style: TextStyle(
+                                color: textColor,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500)),
+                      ),
+                      Switch(
+                        value: provider.ikondaGoster,
+                        onChanged: (val) =>
+                            provider.ikonGosteriminiDegistir(val),
+                        activeThumbColor: Colors.white,
+                        activeTrackColor: Colors.white30,
+                        inactiveThumbColor: Colors.white,
+                        inactiveTrackColor: Colors.white12,
                       )
                     ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text("Kaza sayısını iconda göster",
-                        style: TextStyle(
-                            color: textColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500)),
-                  ),
-                  Switch(
-                    value: provider.ikondaGoster,
-                    onChanged: (val) => provider.ikonGosteriminiDegistir(val),
-                    activeThumbColor: Colors.white,
-                    activeTrackColor: Colors.white30,
-                    inactiveThumbColor: Colors.white,
-                    inactiveTrackColor: Colors.white12,
-                  )
+                  if (provider.ikondaGoster && !provider.badgeDestekleniyor)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, left: 60),
+                      child: Text(
+                        "Bu cihazın ana ekranı sayısal rozetleri desteklemiyor; "
+                        "yalnızca bildirim noktası gösterilebilir.",
+                        style: TextStyle(color: subTextColor, fontSize: 12),
+                      ),
+                    ),
                 ],
               ),
             ),
