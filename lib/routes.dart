@@ -33,6 +33,11 @@ import 'features/Kazalar/kazalar_page.dart';
 import 'features/zikirmatik/zikirmatik_page.dart';
 import 'features/hutbe/hutbe_page.dart';
 
+import 'features/multimedya/multimedya_page.dart';
+import 'features/multimedya/multimedya_video_detail_page.dart';
+import 'features/multimedya/multimedya_wallpaper_preview_page.dart';
+import 'features/multimedya/multimedya_model.dart';
+
 import 'features/hatim/hatim_page.dart';
 import 'features/hatim/hatim_selection_page.dart';
 import 'features/hatim/my_tasks_page.dart';
@@ -141,6 +146,18 @@ final GoRouter appRouter = GoRouter(
         path: '/hutbe/pdf',
         builder: (context, state) =>
             HutbePdfPage(hutbe: state.extra as HutbeItem)),
+
+    // --- Multimedya ---
+    GoRoute(
+        path: '/multimedya', builder: (context, state) => const MultimediaPage()),
+    GoRoute(
+        path: '/multimedya/video',
+        builder: (context, state) =>
+            VideoDetailPage(item: state.extra as MultimediaItem)),
+    GoRoute(
+        path: '/multimedya/wallpaper',
+        builder: (context, state) =>
+            WallpaperPreviewPage(item: state.extra as MultimediaItem)),
 
     // --- Hatim ---
     // HatimProvider artık root MultiProvider'da (main.dart) yaşıyor, bu

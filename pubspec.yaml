@@ -40,6 +40,8 @@ dependencies:
   flutter_slidable: ^4.0.3
   path: ^1.9.1
   flutter_svg: ^2.0.10+1
+  share_plus: ^13.3.0
+  async_wallpaper: ^3.1.0
 
 # 2. GELİŞTİRİCİ ARAÇLARI (İkon paketi buraya gelir)
 dev_dependencies:
@@ -62,6 +64,7 @@ flutter:
   assets:
     - assets/Images/
     - assets/icons/gradient/
+    - assets/icons/youtube.svg
     - assets/ezan.mp3
     - assets/ezan_kisa.mp3
     - assets/uyari.mp3

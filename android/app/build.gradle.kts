@@ -24,7 +24,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.ezan_app"
-        minSdk = flutter.minSdkVersion      // Burası 23 kalıyor (Firebase'in çalışması için şart)
+        minSdk = 24      // async_wallpaper paketi minSdk 24 istiyor (Multimedya/Duvar Kağıdı özelliği)
         targetSdk = 33   // Burası 33 kalıyor (Konum/Pusula servisinin çökmemsi için)
         versionCode = 1
         versionName = "1.0"

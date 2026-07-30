@@ -51,6 +51,12 @@ class AuthService extends ChangeNotifier {
         'secili': 'true'
       }
     ],
+    'hatirlaticilar': {
+      'cuma': {'enabled': true, 'offset': 60, 'sound': 'ezan_kisa'},
+      'oruc': {'enabled': true, 'offset': 60, 'sound': 'ezan_kisa'},
+      'teheccut': {'enabled': false, 'offset': 45, 'sound': 'ezan_kisa'},
+      'ramazan': {'enabled': false, 'offset': 60, 'sound': 'ezan_kisa'},
+    },
   };
 
   AuthService() {
@@ -329,6 +335,25 @@ class AuthService extends ChangeNotifier {
       ? (_userData?['ayarlar']?['ikindi_hesabi'] ??
           'Şafi, Maliki, Hanbeli, Türkiye')
       : _guestSettings['ikindi_hesabi'];
+
+  /// Cuma/Oruç/Teheccüt/Ramazan hatırlatıcı ayarları. Depolanmış veri kısmi
+  /// olsa bile (ör. eski bir sürümden kalma) her hatırlatıcı türü için
+  /// varsayılanlarla birleştirilmiş tam bir map döner.
+  Map<String, dynamic> get hatirlaticiAyarlari {
+    final defaults =
+        Map<String, dynamic>.from(_guestSettings['hatirlaticilar'] as Map);
+    final kayitli = _user != null
+        ? _userData?['ayarlar']?['hatirlaticilar'] as Map?
+        : _guestSettings['hatirlaticilar'] as Map?;
+    if (kayitli == null) return defaults;
+    return {
+      for (final tur in defaults.keys)
+        tur: {
+          ...Map<String, dynamic>.from(defaults[tur] as Map),
+          ...Map<String, dynamic>.from(kayitli[tur] as Map? ?? const {}),
+        }
+    };
+  }
   List<dynamic> get kayitliSehirler => _user != null
       ? (_userData?['ayarlar']?['kayitli_sehirler'] ??
           _guestSettings['kayitli_sehirler'])

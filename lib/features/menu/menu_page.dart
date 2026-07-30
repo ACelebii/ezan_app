@@ -166,6 +166,8 @@ class MenuPage extends StatelessWidget {
                     });
                   } else if (item['t'] == 'Kütüphane') {
                     context.push('/kutuphane');
+                  } else if (item['t'] == 'Multimedya') {
+                    context.push('/multimedya');
                   } else {
                     _showSnack(context,
                         "${authService.translate(item['t'])} yakında eklenecek...");

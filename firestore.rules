@@ -13,6 +13,7 @@ rules_version = '2';
 //   - hatimler/{hatimId}                    (Hatim: özet + sayaçlar)
 //   - hatimler/{hatimId}/assignments/{itemId} (Hatim: görev durumu)
 //   - kutuphane/{itemId}                    (Kütüphane: sadece okunuyor)
+//   - multimedya/{itemId}                   (Multimedya: sadece okunuyor)
 //
 // Bu kuralları deploy etmeden önce Console'daki mevcut kuralı kontrol ettik:
 // proje şu an tamamen açık varsayılan kuralda (`allow read, write: if true`),
@@ -49,6 +50,13 @@ service cloud.firestore {
     // --- Kütüphane: herkese açık okuma, yazma yok (kategori/kitap kayıtları
     // Console'dan elle ekleniyor).
     match /kutuphane/{itemId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // --- Multimedya (Video/Ayet/Hadis/Duvar Kağıdı): herkese açık okuma,
+    // yazma yok (kayıtlar Console'dan elle ekleniyor, kutuphane ile aynı desen).
+    match /multimedya/{itemId} {
       allow read: if true;
       allow write: if false;
     }

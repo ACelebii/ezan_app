@@ -10,11 +10,6 @@ export '../auth/auth_service.dart';
 // ============================================================================
 // GLOBAL DEĞİŞKENLER VE TEMA YARDIMCILARI
 // ============================================================================
-final Set<String> globalIndirilenSesler = {
-  "Melodi 1",
-  "Melodi 3",
-  "Ezan Sultanahmet"
-};
 String globalGeceModu = "Otomatik";
 
 bool isDark(BuildContext context) {

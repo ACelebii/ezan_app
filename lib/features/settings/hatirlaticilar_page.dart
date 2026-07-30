@@ -1,7 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'settings_common.dart';
+import '../../core/services/notification_service.dart';
+import '../hatirlaticilar/data/reminder_scheduler.dart';
+import '../hatirlaticilar/data/reminder_sound.dart';
 
 class HatirlaticilarPage extends StatefulWidget {
   const HatirlaticilarPage({super.key});
@@ -9,29 +13,88 @@ class HatirlaticilarPage extends StatefulWidget {
   State<HatirlaticilarPage> createState() => _HatirlaticilarPageState();
 }
 
-class _HatirlaticilarPageState extends State<HatirlaticilarPage> {
-  bool cumaOn = true;
-  String cumaSure = "60 Dakika Önce";
-  String cumaSes = "Sela";
+class _HatirlaticilarPageState extends State<HatirlaticilarPage>
+    with WidgetsBindingObserver {
+  PermissionStatus? _bildirimIzni;
 
-  bool orucOn = true;
-  String orucSure = "60 Dakika Önce";
-  String orucSes = "Melodi 1";
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _izinDurumunuYenile();
+  }
 
-  bool teheccutOn = false;
-  String teheccutSure = "45 Dakika Önce";
-  String teheccutSes = "Melodi 3";
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
-  bool ramazanOn = false;
-  String ramazanSure = "60 Dakika Önce";
-  String ramazanSes = "Melodi 19";
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Kullanıcı sistem ayarlarından izin verip uygulamaya geri döndüğünde
+    // banner'ın otomatik kaybolması için.
+    if (state == AppLifecycleState.resumed) _izinDurumunuYenile();
+  }
+
+  Future<void> _izinDurumunuYenile() async {
+    final durum = await NotificationService.instance.permissionStatus();
+    if (mounted) setState(() => _bildirimIzni = durum);
+  }
+
+  Future<void> _izinIste() async {
+    if (_bildirimIzni?.isPermanentlyDenied == true) {
+      await openAppSettings();
+      return;
+    }
+    final durum = await NotificationService.instance.requestPermissions();
+    if (mounted) setState(() => _bildirimIzni = durum);
+  }
 
   List<String> get _timeOptions =>
       List.generate(14, (i) => "${(i + 1) * 5} Dakika Önce");
 
+  String _offsetToLabel(int minutes) => "$minutes Dakika Önce";
+  int _labelToOffset(String label) => int.parse(label.split(' ').first);
+
+  // Bir hatırlatıcı açılırken bildirim izni yoksa önce izin ister; izin
+  // verilmezse anahtar açılmaz (üstteki banner zaten sebebini gösteriyor).
+  // Kapatma her zaman doğrudan uygulanır, izin gerekmez.
+  Future<void> _anahtarDegisti(
+      AuthService authService, String tur, bool acik) async {
+    if (acik && _bildirimIzni?.isGranted != true) {
+      await _izinIste();
+      if (_bildirimIzni?.isGranted != true) {
+        if (mounted && _bildirimIzni?.isPermanentlyDenied != true) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(authService.translate(
+                  "Hatırlatıcının çalışması için bildirim izni gerekir."))));
+        }
+        return;
+      }
+    }
+    _guncelle(authService, tur, (m) => {...m, 'enabled': acik});
+  }
+
+  void _guncelle(AuthService authService, String tur,
+      Map<String, dynamic> Function(Map<String, dynamic> mevcut) degistir) {
+    final guncelAyarlar =
+        Map<String, dynamic>.from(authService.hatirlaticiAyarlari);
+    guncelAyarlar[tur] =
+        degistir(Map<String, dynamic>.from(guncelAyarlar[tur] as Map));
+    authService.updateSetting('hatirlaticilar', guncelAyarlar);
+    ReminderScheduler.rescheduleAll(authService);
+  }
+
   @override
   Widget build(BuildContext context) {
     final authService = context.watch<AuthService>();
+    final ayarlar = authService.hatirlaticiAyarlari;
+    final cuma = ayarlar['cuma'] as Map;
+    final oruc = ayarlar['oruc'] as Map;
+    final teheccut = ayarlar['teheccut'] as Map;
+    final ramazan = ayarlar['ramazan'] as Map;
+
     return Directionality(
       textDirection: authService.uygulamaDili == "العربية"
           ? TextDirection.rtl
@@ -53,61 +116,129 @@ class _HatirlaticilarPageState extends State<HatirlaticilarPage> {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.all(16),
           children: [
+            _buildPermissionBanner(authService),
             _buildHatirlaticiCard(
+                authService,
                 "Cuma Namazı Hatırlatma",
                 "Cumadan",
-                cumaOn,
-                (v) => setState(() => cumaOn = v),
-                cumaSure,
-                (s) => setState(() => cumaSure = s),
-                cumaSes,
-                (s) => setState(() => cumaSes = s)),
+                cuma['enabled'] as bool,
+                (v) => _anahtarDegisti(authService, 'cuma', v),
+                _offsetToLabel(cuma['offset'] as int),
+                (s) => _guncelle(authService, 'cuma',
+                    (m) => {...m, 'offset': _labelToOffset(s)}),
+                cuma['sound'] as String,
+                (key) => _guncelle(
+                    authService, 'cuma', (m) => {...m, 'sound': key})),
             const SizedBox(height: 20),
             _buildHatirlaticiCard(
+                authService,
                 "Pazartesi/Perşembe Orucu",
                 "İmsaktan",
-                orucOn,
-                (v) => setState(() => orucOn = v),
-                orucSure,
-                (s) => setState(() => orucSure = s),
-                orucSes,
-                (s) => setState(() => orucSes = s)),
+                oruc['enabled'] as bool,
+                (v) => _anahtarDegisti(authService, 'oruc', v),
+                _offsetToLabel(oruc['offset'] as int),
+                (s) => _guncelle(authService, 'oruc',
+                    (m) => {...m, 'offset': _labelToOffset(s)}),
+                oruc['sound'] as String,
+                (key) => _guncelle(
+                    authService, 'oruc', (m) => {...m, 'sound': key})),
             const SizedBox(height: 20),
             _buildHatirlaticiCard(
+                authService,
                 "Teheccüt Uyandırması",
                 "İmsaktan",
-                teheccutOn,
-                (v) => setState(() => teheccutOn = v),
-                teheccutSure,
-                (s) => setState(() => teheccutSure = s),
-                teheccutSes,
-                (s) => setState(() => teheccutSes = s)),
+                teheccut['enabled'] as bool,
+                (v) => _anahtarDegisti(authService, 'teheccut', v),
+                _offsetToLabel(teheccut['offset'] as int),
+                (s) => _guncelle(authService, 'teheccut',
+                    (m) => {...m, 'offset': _labelToOffset(s)}),
+                teheccut['sound'] as String,
+                (key) => _guncelle(
+                    authService, 'teheccut', (m) => {...m, 'sound': key})),
             const SizedBox(height: 20),
             _buildHatirlaticiCard(
+                authService,
                 "Ramazan Davulcusu",
                 "İmsaktan",
-                ramazanOn,
-                (v) => setState(() => ramazanOn = v),
-                ramazanSure,
-                (s) => setState(() => ramazanSure = s),
-                ramazanSes,
-                (s) => setState(() => ramazanSes = s)),
+                ramazan['enabled'] as bool,
+                (v) => _anahtarDegisti(authService, 'ramazan', v),
+                _offsetToLabel(ramazan['offset'] as int),
+                (s) => _guncelle(authService, 'ramazan',
+                    (m) => {...m, 'offset': _labelToOffset(s)}),
+                ramazan['sound'] as String,
+                (key) => _guncelle(
+                    authService, 'ramazan', (m) => {...m, 'sound': key})),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildPermissionBanner(AuthService authService) {
+    final durum = _bildirimIzni;
+    if (durum == null || durum.isGranted) return const SizedBox.shrink();
+
+    final kaliciReddedildi = durum.isPermanentlyDenied;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: isDark(context) ? 0.15 : 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.notifications_off_rounded, color: Colors.orange),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(authService.translate("Bildirim izni verilmedi"),
+                    style: TextStyle(
+                        color: getTextColor(context),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15)),
+                const SizedBox(height: 4),
+                Text(
+                    authService.translate(
+                        "Hatırlatıcıların çalabilmesi için bildirim izni gerekir."),
+                    style: TextStyle(
+                        color: getSubTextColor(context),
+                        fontSize: 13,
+                        height: 1.3)),
+                const SizedBox(height: 10),
+                InkWell(
+                  onTap: _izinIste,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Text(
+                      authService.translate(
+                          kaliciReddedildi ? "Ayarları Aç" : "İzin Ver"),
+                      style: TextStyle(
+                          color: getAccentColor(context),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHatirlaticiCard(
+      AuthService authService,
       String title,
       String offsetLabel,
       bool isOn,
       Function(bool) onSwitch,
       String timeVal,
       Function(String) onTimeSelect,
-      String soundVal,
+      String soundKey,
       Function(String) onSoundSelect) {
-    final authService = context.watch<AuthService>();
     return Container(
       decoration: BoxDecoration(
           color: getCardColor(context),
@@ -170,10 +301,10 @@ class _HatirlaticilarPageState extends State<HatirlaticilarPage> {
             Divider(color: getDividerColor(context), height: 1, indent: 16),
             InkWell(
               onTap: () async {
-                final secilen = await context.push<String>(
+                final secilenKey = await context.push<String>(
                     '/settings/ses-secimi',
-                    extra: soundVal);
-                if (secilen != null) onSoundSelect(secilen);
+                    extra: soundKey);
+                if (secilenKey != null) onSoundSelect(secilenKey);
               },
               child: Padding(
                 padding:
@@ -186,7 +317,9 @@ class _HatirlaticilarPageState extends State<HatirlaticilarPage> {
                             color: getTextColor(context), fontSize: 15)),
                     Row(
                       children: [
-                        Text(authService.translate(soundVal),
+                        Text(
+                            authService.translate(
+                                ReminderSounds.byKey(soundKey).displayName),
                             style: TextStyle(
                                 color: getSubTextColor(context), fontSize: 15)),
                         const SizedBox(width: 8),
@@ -207,4 +340,3 @@ class _HatirlaticilarPageState extends State<HatirlaticilarPage> {
     );
   }
 }
-

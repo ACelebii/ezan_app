@@ -2,6 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'settings_common.dart';
+import '../hatirlaticilar/data/reminder_sound.dart';
 
 class SoundSelectionPage extends StatefulWidget {
   final String mevcutSes;
@@ -11,30 +12,13 @@ class SoundSelectionPage extends StatefulWidget {
 }
 
 class _SoundSelectionPageState extends State<SoundSelectionPage> {
-  final List<String> sesler = [
-    "Sela",
-    "Melodi 1",
-    "Melodi 2",
-    "Melodi 3",
-    "Melodi 4",
-    "Melodi 19",
-    "Ding Dong",
-    "Beep",
-    "Kuş Sesi 1",
-    "Kısa Ezan 1",
-    "Kısa Ezan 2",
-    "Kısa Ezan 3",
-    "Ezan Sultanahmet",
-    "Ezan Mekke"
-  ];
-  Set<String> indirilenYapanlar = {};
   final AudioPlayer _audioPlayer = AudioPlayer();
-  late String _seciliSes;
+  late String _seciliSesKey;
 
   @override
   void initState() {
     super.initState();
-    _seciliSes = widget.mevcutSes;
+    _seciliSesKey = widget.mevcutSes;
   }
 
   @override
@@ -45,20 +29,17 @@ class _SoundSelectionPageState extends State<SoundSelectionPage> {
 
   void _geriDon() {
     _audioPlayer.stop();
-    context.pop(_seciliSes);
+    context.pop(_seciliSesKey);
   }
 
-  String _getAudioUrl(String sesAdi) {
-    if (sesAdi.contains("Melodi")) {
-      return "https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3";
+  Future<void> _onaySesiCal(ReminderSound ses) async {
+    setState(() => _seciliSesKey = ses.key);
+    await _audioPlayer.stop();
+    if (ses.assetPath != null) {
+      // AssetSource, pubspec'te bildirilen `assets/` önekini kendi ekler.
+      final relatifYol = ses.assetPath!.replaceFirst('assets/', '');
+      await _audioPlayer.play(AssetSource(relatifYol));
     }
-    if (sesAdi.contains("Sela")) {
-      return "https://cdn.islamic.network/quran/audio/128/ar.husary/2.mp3";
-    }
-    if (sesAdi.contains("Ezan")) {
-      return "https://cdn.islamic.network/quran/audio/128/ar.husary/1.mp3";
-    }
-    return "https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3";
   }
 
   @override
@@ -102,77 +83,64 @@ class _SoundSelectionPageState extends State<SoundSelectionPage> {
                       padding:
                           const EdgeInsets.only(left: 16, top: 16, bottom: 8),
                       child: Text(
-                          authService.translate("Varsayılan Sistem Sesi"),
+                          authService.translate("Sesler"),
                           style: TextStyle(
                               color: getSubTextColor(context), fontSize: 14)),
                     ),
                     Divider(color: getDividerColor(context), height: 1),
-                    ...sesler.asMap().entries.map((entry) {
+                    ...ReminderSounds.all.asMap().entries.map((entry) {
                       int idx = entry.key;
-                      String ses = entry.value;
-                      bool isSelected = ses == _seciliSes;
-                      bool isDownloaded = globalIndirilenSesler.contains(ses);
-                      bool isDownloading = indirilenYapanlar.contains(ses);
+                      ReminderSound ses = entry.value;
+                      bool isSelected = ses.key == _seciliSesKey;
 
                       return Column(
                         children: [
                           ListTile(
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 4),
-                            leading: Icon(Icons.play_arrow,
-                                color: getTextColor(context)),
-                            title: Text(ses,
+                            leading: Icon(
+                                ses.isAvailable
+                                    ? Icons.play_arrow
+                                    : Icons.lock_outline,
+                                color: ses.isAvailable
+                                    ? getTextColor(context)
+                                    : getSubTextColor(context)),
+                            title: Text(authService.translate(ses.displayName),
                                 style: TextStyle(
-                                    color: getTextColor(context),
+                                    color: ses.isAvailable
+                                        ? getTextColor(context)
+                                        : getSubTextColor(context),
                                     fontSize: 16)),
                             trailing: isSelected
                                 ? Icon(Icons.check,
                                     color: getAccentColor(context))
-                                : isDownloading
-                                    ? SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(
-                                            color: getAccentColor(context),
-                                            strokeWidth: 2))
-                                    : !isDownloaded
-                                        ? IconButton(
-                                            icon: Icon(
-                                                Icons.cloud_download_outlined,
+                                : !ses.isAvailable
+                                    ? Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                            color: getTextFieldColor(context),
+                                            borderRadius:
+                                                BorderRadius.circular(8)),
+                                        child: Text(
+                                            authService.translate("Yakında"),
+                                            style: TextStyle(
                                                 color:
-                                                    getSubTextColor(context)),
-                                            onPressed: () {
-                                              setState(() =>
-                                                  indirilenYapanlar.add(ses));
-                                              Future.delayed(
-                                                  const Duration(seconds: 2),
-                                                  () {
-                                                if (mounted) {
-                                                  setState(() {
-                                                    indirilenYapanlar
-                                                        .remove(ses);
-                                                    globalIndirilenSesler
-                                                        .add(ses);
-                                                  });
-                                                }
-                                              });
-                                            },
-                                          )
-                                        : null,
-                            onTap: () async {
-                              if (isDownloaded) {
-                                setState(() => _seciliSes = ses);
-                                await _audioPlayer.stop();
-                                String sesUrL = _getAudioUrl(ses);
-                                await _audioPlayer.play(UrlSource(sesUrL));
+                                                    getSubTextColor(context),
+                                                fontSize: 12)),
+                                      )
+                                    : null,
+                            onTap: () {
+                              if (ses.isAvailable) {
+                                _onaySesiCal(ses);
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                     content: Text(authService.translate(
-                                        'Sesi kullanmak için önce indirmelisiniz.'))));
+                                        'Bu ses için dosya henüz eklenmedi.'))));
                               }
                             },
                           ),
-                          if (idx != sesler.length - 1)
+                          if (idx != ReminderSounds.all.length - 1)
                             Divider(
                                 color: getDividerColor(context),
                                 height: 1,
@@ -191,4 +159,3 @@ class _SoundSelectionPageState extends State<SoundSelectionPage> {
     );
   }
 }
-

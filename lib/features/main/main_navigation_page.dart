@@ -10,6 +10,8 @@ import '../kuran/kuran_page.dart';
 import '../pusula/pusula_page.dart';
 import '../imsakiye/imsakiye_page.dart';
 import '../menu/menu_page.dart';
+import '../../core/services/notification_service.dart';
+import '../hatirlaticilar/data/reminder_scheduler.dart';
 
 class MainNavigationPage extends StatefulWidget {
   const MainNavigationPage({super.key});
@@ -17,13 +19,15 @@ class MainNavigationPage extends StatefulWidget {
   State<MainNavigationPage> createState() => _MainNavigationPageState();
 }
 
-class _MainNavigationPageState extends State<MainNavigationPage> {
+class _MainNavigationPageState extends State<MainNavigationPage>
+    with WidgetsBindingObserver {
   int _currentIndex = 0;
   late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     _pages = [
       const EzanVaktiPage(),
@@ -75,7 +79,31 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
           }
         }
       });
+
+      _kurulumVeHatirlaticilariPlanla();
     });
+  }
+
+  Future<void> _kurulumVeHatirlaticilariPlanla() async {
+    await NotificationService.instance.initialize();
+    await NotificationService.instance.requestPermissions();
+    if (!mounted) return;
+    final authService = Provider.of<AuthService>(context, listen: false);
+    await ReminderScheduler.rescheduleAll(authService);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      ReminderScheduler.rescheduleAll(authService);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
