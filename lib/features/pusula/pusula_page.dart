@@ -25,13 +25,17 @@ class _PusulaView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<PusulaController>(
       builder: (context, controller, child) {
-        if (!controller.isLoaded) {
+        if (!controller.isReady) {
           return Scaffold(
             backgroundColor: const Color(0xFF0A0A0B),
             body: Center(
               child: controller.errorMessage != null
-                  ? Text(controller.errorMessage!,
-                      style: const TextStyle(color: Colors.redAccent))
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Text(controller.errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.redAccent)),
+                    )
                   : const CircularProgressIndicator(color: Colors.amber),
             ),
           );

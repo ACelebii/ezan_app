@@ -72,28 +72,18 @@ class HatimModel {
 
   /// `hatimler/{id}` özet dokümanından oluşturur. `tasks` başlangıçta boştur;
   /// ilgili hatim genişletildiğinde `assignments` alt koleksiyonundan
-  /// [withTasks] ile doldurulur.
+  /// canlı olarak doldurulur (bkz. HatimProvider._applyAssignments).
   factory HatimModel.fromFirestore(String id, Map<String, dynamic> data) {
     final total = (data['totalItems'] as num?)?.toInt() ?? 0;
     final completed = (data['completedItems'] as num?)?.toInt() ?? 0;
+    final taken = (data['takenItems'] as num?)?.toInt() ?? 0;
     return HatimModel(
       id: id,
       date: data['date']?.toString() ?? '',
       participants: (data['participants'] as num?)?.toInt() ?? 0,
       okunmaYuzdesi: total == 0 ? 0 : ((completed / total) * 100).round(),
-      paylasilmaYuzdesi: 0,
+      paylasilmaYuzdesi: total == 0 ? 0 : ((taken / total) * 100).round(),
       tasks: const [],
-    );
-  }
-
-  HatimModel withTasks(List<HatimTask> newTasks) {
-    return HatimModel(
-      id: id,
-      date: date,
-      participants: participants,
-      okunmaYuzdesi: okunmaYuzdesi,
-      paylasilmaYuzdesi: paylasilmaYuzdesi,
-      tasks: newTasks,
     );
   }
 

@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'providers/kuran_provider.dart';
 import 'kuran_models.dart';
+import 'kuran_download_service.dart';
+import '../auth/auth_service.dart';
 
 class SearchBottomSheet extends StatefulWidget {
   final KuranProvider provider;
@@ -35,6 +38,15 @@ class _SearchBottomSheetState extends State<SearchBottomSheet> {
       List<int> allPages = List.generate(604, (i) => i + 1);
       if (query.isEmpty) return allPages;
       return allPages.where((p) => p.toString().contains(query)).toList();
+    } else if (selectedTab == 3) {
+      // Meal (çeviri) araması yalnızca o an açık olan sure/cüz/sayfanın
+      // ayetleri içinde çalışır; Kuran ana sayfasından açıldığında henüz
+      // yüklü ayet olmadığından boş liste döner.
+      if (query.isEmpty) return widget.provider.currentAyahs;
+      return widget.provider.currentAyahs
+          .where((a) =>
+              a.translation.toLowerCase().contains(query.toLowerCase()))
+          .toList();
     }
     return [];
   }
@@ -46,11 +58,15 @@ class _SearchBottomSheetState extends State<SearchBottomSheet> {
       widget.provider.loadJuzDetails(item as int);
     } else if (selectedTab == 0) {
       widget.provider.loadPageDetails(item as int);
+    } else if (selectedTab == 3) {
+      final ayah = item as AyahModel;
+      final index = widget.provider.currentAyahs.indexOf(ayah);
+      if (index != -1) widget.provider.playSingleAyah(index);
     }
 
     Navigator.of(context).pop();
 
-    if (widget.isFromMainPage) {
+    if (widget.isFromMainPage && selectedTab != 3) {
       context.push('/kuran/surah-detail', extra: widget.provider);
     }
   }
@@ -107,26 +123,49 @@ class _SearchBottomSheetState extends State<SearchBottomSheet> {
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    String title = "";
-                    if (selectedTab == 2) {
-                      title = "${(item as SurahModel).id}. ${item.nameSimple}";
-                    } else if (selectedTab == 1) {
-                      title = "$item. Cüz";
-                    } else if (selectedTab == 0) {
-                      title = "$item. Sayfa";
-                    }
+              child: selectedTab == 3 && items.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          widget.provider.currentAyahs.isEmpty
+                              ? "Meal araması için önce bir sure, cüz veya sayfa açın."
+                              : "Sonuç bulunamadı.",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white54),
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        final item = items[index];
+                        String title = "";
+                        if (selectedTab == 2) {
+                          title =
+                              "${(item as SurahModel).id}. ${item.nameSimple}";
+                        } else if (selectedTab == 1) {
+                          title = "$item. Cüz";
+                        } else if (selectedTab == 0) {
+                          title = "$item. Sayfa";
+                        } else if (selectedTab == 3) {
+                          final ayah = item as AyahModel;
+                          title = "${ayah.verseKey}  ${ayah.translation}";
+                        }
 
-                    return ListTile(
-                      title: Text(title,
-                          style: const TextStyle(color: Colors.white70),
-                          textAlign: TextAlign.center),
-                      onTap: () => _onItemTapped(item),
-                    );
-                  }),
+                        return ListTile(
+                          title: Text(title,
+                              style: const TextStyle(color: Colors.white70),
+                              textAlign: selectedTab == 3
+                                  ? TextAlign.left
+                                  : TextAlign.center,
+                              maxLines: selectedTab == 3 ? 2 : 1,
+                              overflow: selectedTab == 3
+                                  ? TextOverflow.ellipsis
+                                  : TextOverflow.clip),
+                          onTap: () => _onItemTapped(item),
+                        );
+                      }),
             ),
             Container(
               width: double.infinity,
@@ -201,7 +240,8 @@ class SurahDetailPage extends StatelessWidget {
               Navigator.pop(context);
               Navigator.pop(context);
             }),
-            _buildMenuTile(Icons.list, "Fihrist", context),
+            _buildMenuTile(Icons.list, "Fihrist", context,
+                onTap: () => _showComingSoon(context, "Fihrist")),
             const Divider(color: Colors.white12, height: 24),
             _buildMenuTile(
                 Icons.bookmark_border,
@@ -223,11 +263,15 @@ class SurahDetailPage extends StatelessWidget {
                 );
               }
             }),
-            _buildMenuTile(Icons.favorite_border, "Favori", context),
-            _buildMenuTile(Icons.edit_outlined, "Not", context),
+            _buildMenuTile(Icons.favorite_border, "Favori", context,
+                onTap: () => _showComingSoon(context, "Favori")),
+            _buildMenuTile(Icons.edit_outlined, "Not", context,
+                onTap: () => _showComingSoon(context, "Not")),
             const Divider(color: Colors.white12, height: 24),
-            _buildMenuTile(Icons.playlist_play, "Okuma Listesi", context),
-            _buildMenuTile(Icons.replay, "Ezberleme", context),
+            _buildMenuTile(Icons.playlist_play, "Okuma Listesi", context,
+                onTap: () => _showComingSoon(context, "Okuma Listesi")),
+            _buildMenuTile(Icons.replay, "Ezberleme", context,
+                onTap: () => _showComingSoon(context, "Ezberleme")),
             const Padding(
                 padding: EdgeInsets.only(left: 16, top: 16, bottom: 8),
                 child: Text("Ayarlar",
@@ -240,7 +284,8 @@ class SurahDetailPage extends StatelessWidget {
                 padding: EdgeInsets.only(left: 16, top: 16, bottom: 8),
                 child: Text("Yardım",
                     style: TextStyle(color: Colors.grey, fontSize: 13))),
-            _buildMenuTile(Icons.headset_mic_outlined, "Seslendirme", context),
+            _buildMenuTile(Icons.headset_mic_outlined, "Seslendirme", context,
+                onTap: () => _showComingSoon(context, "Seslendirme")),
             const SizedBox(height: 20),
           ],
         );
@@ -256,6 +301,16 @@ class SurahDetailPage extends StatelessWidget {
       trailing: const Icon(Icons.chevron_right, color: Colors.white24),
       onTap: onTap ?? () => Navigator.pop(context),
     );
+  }
+
+  void _showComingSoon(BuildContext context, String feature) {
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text("$feature özelliği yakında eklenecek.",
+          style: const TextStyle(color: Colors.white)),
+      backgroundColor: const Color(0xFF2C2C2C),
+      duration: const Duration(seconds: 2),
+    ));
   }
 
   void _showCombinedSettings(BuildContext context, KuranProvider provider) {
@@ -462,9 +517,22 @@ class SurahDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<KuranProvider>();
+    final authService = context.watch<AuthService>();
     final Color bgColor = provider.backgroundColor;
     final Color txtColor = provider.textColor;
+    final double arabicFontSize = authService.kuranYaziBoyutu;
     const Color bottomPanelColor = Color(0xFF1E1E1E);
+
+    if (provider.errorMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        final msg = provider.errorMessage;
+        if (msg == null) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(msg), backgroundColor: Colors.redAccent));
+        provider.clearError();
+      });
+    }
 
     return Opacity(
       opacity: 0.5 + (provider.brightness * 0.5),
@@ -544,8 +612,8 @@ class SurahDetailPage extends StatelessWidget {
                   : provider.pageStyle == "Resim"
                       ? _buildImageView(provider)
                       : provider.pageStyle == "Metin (Sayfa)"
-                          ? _buildTextPageView(provider, txtColor)
-                          : _buildListView(provider, txtColor),
+                          ? _buildTextPageView(provider, txtColor, arabicFontSize)
+                          : _buildListView(provider, txtColor, arabicFontSize),
             ),
             Container(
               padding: const EdgeInsets.only(
@@ -568,7 +636,13 @@ class SurahDetailPage extends StatelessWidget {
                     IconButton(
                         icon: const Icon(Icons.record_voice_over_outlined,
                             color: Colors.white, size: 28),
-                        onPressed: () {}),
+                        onPressed: () => ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          content: Text("Seslendirme özelliği yakında eklenecek.",
+                              style: TextStyle(color: Colors.white)),
+                          backgroundColor: Color(0xFF2C2C2C),
+                          duration: Duration(seconds: 2),
+                        ))),
                     TextButton(
                         onPressed: () => provider.changeSpeed(),
                         child: Text("${provider.speed.toStringAsFixed(1)}x",
@@ -637,7 +711,8 @@ class SurahDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildListView(KuranProvider provider, Color txtColor) {
+  Widget _buildListView(
+      KuranProvider provider, Color txtColor, double arabicFontSize) {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: provider.currentAyahs.length,
@@ -673,7 +748,7 @@ class SurahDetailPage extends StatelessWidget {
                       color: isActive && provider.ayahTrackingStyle == "Renk"
                           ? Colors.amber
                           : txtColor,
-                      fontSize: 28,
+                      fontSize: arabicFontSize,
                       height: 1.8),
                 ),
                 const SizedBox(height: 16),
@@ -695,7 +770,8 @@ class SurahDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTextPageView(KuranProvider provider, Color txtColor) {
+  Widget _buildTextPageView(
+      KuranProvider provider, Color txtColor, double arabicFontSize) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Directionality(
@@ -709,7 +785,7 @@ class SurahDetailPage extends StatelessWidget {
               return TextSpan(
                 text: "${ayah.textUthmani} ﴿${ayah.verseKey.split(':')[1]}﴾ ",
                 style: TextStyle(
-                  fontSize: 26,
+                  fontSize: arabicFontSize,
                   height: 1.8,
                   color: isActive && provider.ayahTrackingStyle == "Renk"
                       ? Colors.amber
@@ -766,37 +842,102 @@ class SurahDetailPage extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Image.network(
-              imageUrl,
-              headers: const {"User-Agent": "Mozilla/5.0"},
-              fit: BoxFit.fitWidth,
-              color: inkColor,
-              loadingBuilder: (context, child, progress) {
-                if (progress == null) return child;
-                return SizedBox(
-                    height: 400,
-                    child: Center(
-                        child: CircularProgressIndicator(color: borderColor)));
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return SizedBox(
-                  height: 400,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.broken_image_rounded,
-                            color: borderColor.withValues(alpha: 0.5), size: 48),
-                        const SizedBox(height: 12),
-                        Text("Sayfa görseli indirilemedi.",
-                            style: TextStyle(color: inkColor.withValues(alpha: 0.5))),
-                      ],
-                    ),
-                  ),
-                );
-              },
+            child: _KuranPageImage(
+              pageNumber: pageNum,
+              imageUrl: imageUrl,
+              inkColor: inkColor,
+              borderColor: borderColor,
             ),
           ),
+        );
+      },
+    );
+  }
+}
+
+/// Sayfayı önce yerel önbellekten (daha önce indirildiyse) gösterir; yoksa
+/// ağdan çeker ve başarılı yüklemenin ardından bir sonraki (olası çevrimdışı)
+/// görüntüleme için sessizce diske kaydeder.
+class _KuranPageImage extends StatefulWidget {
+  final int pageNumber;
+  final String imageUrl;
+  final Color inkColor;
+  final Color borderColor;
+
+  const _KuranPageImage({
+    required this.pageNumber,
+    required this.imageUrl,
+    required this.inkColor,
+    required this.borderColor,
+  });
+
+  @override
+  State<_KuranPageImage> createState() => _KuranPageImageState();
+}
+
+class _KuranPageImageState extends State<_KuranPageImage> {
+  late final Future<String?> _localPathFuture;
+  bool _cachingTriggered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _localPathFuture = KuranDownloadService.getPagePath(widget.pageNumber);
+  }
+
+  void _cacheInBackground() {
+    if (_cachingTriggered) return;
+    _cachingTriggered = true;
+    KuranDownloadService.downloadPage(widget.pageNumber, widget.imageUrl)
+        .catchError((_) {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: _localPathFuture,
+      builder: (context, snapshot) {
+        final localPath = snapshot.data;
+        if (localPath != null && File(localPath).existsSync()) {
+          return Image.file(File(localPath),
+              fit: BoxFit.fitWidth, color: widget.inkColor);
+        }
+
+        return Image.network(
+          widget.imageUrl,
+          headers: const {"User-Agent": "Mozilla/5.0"},
+          fit: BoxFit.fitWidth,
+          color: widget.inkColor,
+          loadingBuilder: (context, child, progress) {
+            if (progress == null) {
+              _cacheInBackground();
+              return child;
+            }
+            return SizedBox(
+                height: 400,
+                child: Center(
+                    child:
+                        CircularProgressIndicator(color: widget.borderColor)));
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return SizedBox(
+              height: 400,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.broken_image_rounded,
+                        color: widget.borderColor.withValues(alpha: 0.5),
+                        size: 48),
+                    const SizedBox(height: 12),
+                    Text("Sayfa görseli indirilemedi.",
+                        style: TextStyle(
+                            color: widget.inkColor.withValues(alpha: 0.5))),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );

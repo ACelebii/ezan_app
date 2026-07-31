@@ -1,22 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'settings_common.dart';
+import '../hatirlaticilar/data/reminder_scheduler.dart';
+import '../hatirlaticilar/data/reminder_sound.dart';
 
 class VaktindeKilDetayPage extends StatefulWidget {
-  final String vakitAdi;
-  const VaktindeKilDetayPage({super.key, required this.vakitAdi});
+  final String vakitKey;
+  const VaktindeKilDetayPage({super.key, required this.vakitKey});
   @override
   State<VaktindeKilDetayPage> createState() => _VaktindeKilDetayPageState();
 }
 
 class _VaktindeKilDetayPageState extends State<VaktindeKilDetayPage> {
-  String ilkUyari = "30 Dakika";
-  String ses = "Melodi 19";
-  String siklik = "10 Dakika";
+  final List<String> ilkUyariSecenekleri = [
+    "10 Dakika",
+    "20 Dakika",
+    "30 Dakika",
+    "40 Dakika",
+    "50 Dakika"
+  ];
+  final List<String> siklikSecenekleri = [
+    "5 Dakika",
+    "10 Dakika",
+    "15 Dakika",
+    "20 Dakika"
+  ];
+
+  void _guncelle(AuthService authService,
+      Map<String, dynamic> Function(Map<String, dynamic> mevcut) degistir) {
+    final guncelAyarlar =
+        Map<String, dynamic>.from(authService.vaktindeKilAyarlari);
+    guncelAyarlar[widget.vakitKey] = degistir(
+        Map<String, dynamic>.from(guncelAyarlar[widget.vakitKey] as Map));
+    authService.updateSetting('vaktinde_kil_ayarlari', guncelAyarlar);
+    ReminderScheduler.rescheduleAll(authService);
+  }
 
   @override
   Widget build(BuildContext context) {
     final authService = context.watch<AuthService>();
+    final ayar = Map<String, dynamic>.from(
+        authService.vaktindeKilAyarlari[widget.vakitKey] as Map);
+    final ilkUyariDakika = (ayar['ilkUyariDakika'] as int?) ?? 30;
+    final siklikDakika = (ayar['siklikDakika'] as int?) ?? 10;
+    final sesKey = (ayar['sound'] as String?) ?? 'melodi_19';
+    final displayName =
+        ReminderScheduler.vakitDisplayNames[widget.vakitKey] ?? widget.vakitKey;
+
     return Directionality(
       textDirection: authService.uygulamaDili == "العربية"
           ? TextDirection.rtl
@@ -25,7 +55,7 @@ class _VaktindeKilDetayPageState extends State<VaktindeKilDetayPage> {
         backgroundColor: getBgColor(context),
         appBar: AppBar(
           leading: buildBeautifulBackButton(context),
-          title: Text(authService.translate(widget.vakitAdi),
+          title: Text(authService.translate(displayName),
               style: TextStyle(
                   color: getTextColor(context),
                   fontWeight: FontWeight.bold,
@@ -43,36 +73,49 @@ class _VaktindeKilDetayPageState extends State<VaktindeKilDetayPage> {
                   borderRadius: BorderRadius.circular(16)),
               child: Column(
                 children: [
-                  _buildDetayRow("İlk Uyarı Gecikmesi", ilkUyari, true,
+                  _buildDetayRow(
+                      "İlk Uyarı Gecikmesi", "$ilkUyariDakika Dakika", true,
                       onTap: () => showSwiperPicker(
                           context,
                           authService.translate("İlk Uyarı Gecikmesi"),
-                          [
-                            "10 Dakika",
-                            "20 Dakika",
-                            "30 Dakika",
-                            "40 Dakika",
-                            "50 Dakika"
-                          ],
-                          ilkUyari,
-                          (v) => setState(() => ilkUyari = v))),
+                          ilkUyariSecenekleri,
+                          "$ilkUyariDakika Dakika",
+                          (secilen) => _guncelle(
+                              authService,
+                              (m) => {
+                                    ...m,
+                                    'ilkUyariDakika':
+                                        int.parse(secilen.split(' ').first)
+                                  }))),
                   Divider(
                       color: getDividerColor(context), height: 1, indent: 16),
-                  _buildDetayRow("Ses", ses, false, onTap: () async {
-                    final secilen = await context.push<String>(
+                  _buildDetayRow(
+                      "Ses", ReminderSounds.byKey(sesKey).displayName, false,
+                      onTap: () async {
+                    final secilenKey = await context.push<String>(
                         '/settings/ses-secimi',
-                        extra: ses);
-                    if (secilen != null) setState(() => ses = secilen);
+                        extra: sesKey);
+                    if (secilenKey != null) {
+                      _guncelle(
+                          authService, (m) => {...m, 'sound': secilenKey});
+                    }
                   }),
                   Divider(
                       color: getDividerColor(context), height: 1, indent: 16),
-                  _buildDetayRow("Uyarı Sıklığı", siklik, true,
+                  _buildDetayRow(
+                      "Uyarı Sıklığı", "$siklikDakika Dakika", true,
                       onTap: () => showSwiperPicker(
                           context,
                           authService.translate("Uyarı Sıklığı"),
-                          ["5 Dakika", "10 Dakika", "15 Dakika", "20 Dakika"],
-                          siklik,
-                          (v) => setState(() => siklik = v))),
+                          siklikSecenekleri,
+                          "$siklikDakika Dakika",
+                          (secilen) => _guncelle(
+                              authService,
+                              (m) => {
+                                    ...m,
+                                    'siklikDakika':
+                                        int.parse(secilen.split(' ').first)
+                                  }))),
                 ],
               ),
             )
@@ -114,4 +157,3 @@ class _VaktindeKilDetayPageState extends State<VaktindeKilDetayPage> {
     );
   }
 }
-

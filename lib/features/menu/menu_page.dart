@@ -43,7 +43,7 @@ class MenuPage extends StatelessWidget {
       {"t": "Haftanın Hutbesi", "k": GradientFeatureIconKey.hutbe},
       {"t": "Multimedya", "k": GradientFeatureIconKey.multimedya},
       {"t": "Dini Günler", "k": GradientFeatureIconKey.diniGunler},
-      {"t": "Ana Sayfa", "k": GradientFeatureIconKey.anaSayfa},
+      {"t": "Ana Sayfa Stili", "k": GradientFeatureIconKey.anaSayfa},
       {"t": "Zikirmatik", "k": GradientFeatureIconKey.zikirmatik},
       {"t": "Yakın Camiler", "k": GradientFeatureIconKey.camiler},
       {"t": "Hatim", "k": GradientFeatureIconKey.hatim},
@@ -113,7 +113,7 @@ class MenuPage extends StatelessWidget {
                     context.push('/settings');
                   } else if (item['t'] == 'Kuran') {
                     context.push('/kuran');
-                  } else if (item['t'] == 'Ana Sayfa') {
+                  } else if (item['t'] == 'Ana Sayfa Stili') {
                     context.push('/settings/theme');
                   } else if (item['t'] == 'İmsakiye') {
                     context.push('/imsakiye');

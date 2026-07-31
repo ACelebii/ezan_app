@@ -46,6 +46,22 @@ class HatimProvider extends ChangeNotifier {
     }
     isHatimlerLoading = false;
     notifyListeners();
+    // Önbellekten hızlıca gösterdikten sonra, sunucuda yeni eklenmiş/değişmiş
+    // hatimleri yakalamak için arka planda sessizce güncel veriyi de çek
+    // (BaseRepository.getData önbellek doluyken bir daha sunucuya sormaz).
+    _refreshInBackground();
+  }
+
+  Future<void> _refreshInBackground() async {
+    try {
+      final remote = await _repo.fetchFromRemote();
+      await _repo.saveToCache(remote);
+      kuranHatimleri = remote;
+      notifyListeners();
+    } catch (_) {
+      // Sessizce yok say: kullanıcı zaten önbellekten gelen veriyi görüyor,
+      // gerekirse pull-to-refresh ile elle tekrar deneyebilir.
+    }
   }
 
   /// Pull-to-refresh: cache'i atlayıp doğrudan sunucudan çeker.
@@ -102,7 +118,28 @@ class HatimProvider extends ChangeNotifier {
         .map((e) => HatimTask(title: e.key, availableItems: e.value))
         .toList();
 
-    kuranHatimleri[idx] = kuranHatimleri[idx].withTasks(tasks);
+    // Kart başlığındaki Okunma%/Paylaşılma%/katılımcı sayısını da bu canlı
+    // assignments listesinden hesapla; aksi halde bunlar yalnızca hatim
+    // ilk yüklendiğindeki (potansiyel olarak eski) özet değerlerde donar.
+    final current = kuranHatimleri[idx];
+    final total = items.length;
+    final completed = items.where((i) => i.isCompleted).length;
+    final taken = items.where((i) => i.isTaken).length;
+    final participantIds = items
+        .where((i) => i.userId != null && i.userId!.isNotEmpty)
+        .map((i) => i.userId!)
+        .toSet();
+
+    kuranHatimleri[idx] = HatimModel(
+      id: current.id,
+      date: current.date,
+      participants: total == 0 ? current.participants : participantIds.length,
+      okunmaYuzdesi:
+          total == 0 ? current.okunmaYuzdesi : ((completed / total) * 100).round(),
+      paylasilmaYuzdesi:
+          total == 0 ? current.paylasilmaYuzdesi : ((taken / total) * 100).round(),
+      tasks: tasks,
+    );
     notifyListeners();
   }
 
@@ -147,7 +184,7 @@ class HatimProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> toggleItem(
+  Future<HatimToggleResult> toggleItem(
     HatimModel hatim,
     HatimTask task,
     HatimSubItem item, {

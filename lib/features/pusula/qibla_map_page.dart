@@ -64,6 +64,12 @@ class _QiblaMapPageState extends State<QiblaMapPage> {
       _goToUserLocation();
     } catch (e) {
       debugPrint("Konum alınamadı: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'Konumunuz alınamadı, harita Kâbe merkezli gösteriliyor.'),
+            backgroundColor: Colors.orange));
+      }
     }
   }
 

@@ -216,20 +216,24 @@ class KazalarView extends StatelessWidget {
                                   fontStyle: FontStyle.italic),
                             ),
                           ),
-                          Positioned(
-                            top: -4,
-                            right: -4,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                  color: Colors.red, shape: BoxShape.circle),
-                              child: const Text("1",
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold)),
-                            ),
-                          )
+                          if (provider.toplamKazaSayisi > 0)
+                            Positioned(
+                              top: -4,
+                              right: -4,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                    color: Colors.red, shape: BoxShape.circle),
+                                child: Text(
+                                    provider.toplamKazaSayisi > 99
+                                        ? "99+"
+                                        : "${provider.toplamKazaSayisi}",
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold)),
+                              ),
+                            )
                         ],
                       ),
                       const SizedBox(width: 16),

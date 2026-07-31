@@ -72,7 +72,8 @@ class _WallpaperCategoryRow extends StatelessWidget {
                         : DecorationImage(
                             image: NetworkImage(item.imageUrl),
                             fit: BoxFit.cover,
-                            onError: (exception, stackTrace) {},
+                            onError: (exception, stackTrace) =>
+                                debugPrint("Kapak görseli yüklenemedi: $exception"),
                           ),
                   ),
                 ),

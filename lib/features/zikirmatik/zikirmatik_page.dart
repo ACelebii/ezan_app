@@ -91,6 +91,13 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
     final hazirZikirler = zikirProvider.hazirZikirler;
     Color cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
 
+    if (!zikirProvider.yuklendi) {
+      return Scaffold(
+        backgroundColor: isDark ? Colors.black : const Color(0xFFF2F2F7),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF2F2F7),
       body: SafeArea(
@@ -287,7 +294,12 @@ class _ZikirmatikPageState extends State<ZikirmatikPage> {
                             isEditing
                                 ? tile
                                 : Dismissible(
-                                    key: Key(z['ad']),
+                                    // Ad'a göre anahtarlamak, aynı isimli iki
+                                    // zikir eklenince (veya ikisi de boş adlı
+                                    // olunca) Flutter'ın duplicate-key
+                                    // hatasıyla çökmesine yol açıyordu.
+                                    key: Key(
+                                        z['id']?.toString() ?? 'zikir_$index'),
                                     direction: DismissDirection.endToStart,
                                     background: Container(
                                       alignment: Alignment.centerRight,
@@ -397,14 +409,12 @@ class ZikirmatikSayacPage extends StatefulWidget {
 class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
   late int _count;
   late int _target;
-  int _loop = 0;
+  late int _loop;
 
   bool _isTapped = false;
   double _scale = 1.0;
-  int _currentView = 1;
 
   // --- TESBİH RENK PALETLERİ ---
-  int _selectedBeadColorIndex = 3; // Varsayılan Kırmızı (index 3)
   final List<List<Color>> _beadColorPalettes = [
     [Colors.white, const Color(0xFFFDE6C5), const Color(0xFFD4A373)], // Krem
     [
@@ -430,6 +440,7 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
     super.initState();
     _count = widget.zikirData['sayi'];
     _target = widget.zikirData['hedef'];
+    _loop = (widget.zikirData['loop'] as int?) ?? 0;
   }
 
   void _increment() {
@@ -441,7 +452,9 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
         _count = 0;
       }
     });
-    context.read<ZikirmatikProvider>().sayaciGuncelle(widget.zikirData, _count);
+    context
+        .read<ZikirmatikProvider>()
+        .sayaciGuncelle(widget.zikirData, _count, loop: _loop);
   }
 
   void _reset() {
@@ -449,11 +462,14 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
       _count = 0;
       _loop = 0;
     });
-    context.read<ZikirmatikProvider>().sayaciGuncelle(widget.zikirData, 0);
+    context
+        .read<ZikirmatikProvider>()
+        .sayaciGuncelle(widget.zikirData, 0, loop: 0);
   }
 
   // --- RENK SEÇİCİ POPUP EKRANI ---
   void _showBeadColorPicker() {
+    final provider = context.read<ZikirmatikProvider>();
     showModalBottomSheet(
         context: context,
         backgroundColor: Colors.transparent,
@@ -484,10 +500,8 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                       return GestureDetector(
                         onTap: () {
                           setModalState(() {
-                            _selectedBeadColorIndex = index;
+                            provider.setTesbihRengi(index);
                           });
-                          setState(
-                              () {}); // Arkadaki ana sayfayı da yenile
                         },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
@@ -501,7 +515,7 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                               colors: _beadColorPalettes[index],
                               stops: const [0.0, 0.4, 1.0],
                             ),
-                            border: _selectedBeadColorIndex == index
+                            border: provider.tesbihRengi == index
                                 ? Border.all(
                                     color: Colors.blue.withValues(alpha: 0.8),
                                     width: 3)
@@ -560,6 +574,13 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                 style: TextStyle(
                     fontSize: 16,
                     color: isDark ? Colors.white54 : Colors.black45)),
+            if (widget.zikirData['imame'] != null) ...[
+              const SizedBox(width: 12),
+              Text("İmame: ${widget.zikirData['imame']}",
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.white38 : Colors.black38)),
+            ],
           ],
         ),
       ],
@@ -567,10 +588,10 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
   }
 
   // --- RENGE GÖRE TESBİH OLUŞTURUCU ---
-  List<Widget> _buildBeadSequence(bool isDark) {
+  List<Widget> _buildBeadSequence(bool isDark, int beadColorIndex) {
     List<double> sizes = [15, 25, 40, 60, 80, 60, 40, 25, 15];
     List<Widget> children = [];
-    List<Color> currentPalette = _beadColorPalettes[_selectedBeadColorIndex];
+    List<Color> currentPalette = _beadColorPalettes[beadColorIndex];
     Color separatorColor = currentPalette[1]
         .withValues(alpha: 0.6); // Ara noktalar için paletin orta rengi
 
@@ -611,6 +632,8 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
   Widget build(BuildContext context) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     Color topIconColor = isDark ? Colors.white : Colors.black87;
+    final provider = context.watch<ZikirmatikProvider>();
+    final currentView = provider.gorunumTuru;
 
     return Scaffold(
       body: Container(
@@ -662,13 +685,13 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                                   borderRadius: BorderRadius.circular(16)),
                               onSelected: (value) {
                                 if (value == 'v1') {
-                                  setState(() => _currentView = 1);
+                                  provider.setGorunumTuru(1);
                                 }
                                 if (value == 'v2') {
-                                  setState(() => _currentView = 2);
+                                  provider.setGorunumTuru(2);
                                 }
                                 if (value == 'v3') {
-                                  setState(() => _currentView = 3);
+                                  provider.setGorunumTuru(3);
                                 }
                                 if (value == 'tesbih') {
                                   _showBeadColorPicker(); // Tesbih Renk Seçici
@@ -681,7 +704,7 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                                 PopupMenuItem(
                                     value: 'v1',
                                     child: Row(children: [
-                                      if (_currentView == 1)
+                                      if (currentView == 1)
                                         const Icon(Icons.check,
                                             size: 18, color: Colors.blue)
                                       else
@@ -692,7 +715,7 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                                 PopupMenuItem(
                                     value: 'v2',
                                     child: Row(children: [
-                                      if (_currentView == 2)
+                                      if (currentView == 2)
                                         const Icon(Icons.check,
                                             size: 18, color: Colors.blue)
                                       else
@@ -703,7 +726,7 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                                 PopupMenuItem(
                                     value: 'v3',
                                     child: Row(children: [
-                                      if (_currentView == 3)
+                                      if (currentView == 3)
                                         const Icon(Icons.check,
                                             size: 18, color: Colors.blue)
                                       else
@@ -738,7 +761,7 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                 ),
               ),
               Expanded(
-                child: _currentView == 1
+                child: currentView == 1
                     ? Center(
                         child: AnimatedScale(
                           scale: _scale,
@@ -807,7 +830,7 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                               top: 40,
                               child: _buildCountTexts(isDark, alignLeft: true),
                             ),
-                            if (_currentView == 2)
+                            if (currentView == 2)
                               Positioned(
                                   right: 16,
                                   top: 20,
@@ -823,10 +846,11 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                                             fit: BoxFit.scaleDown,
                                             child: Column(
                                                 mainAxisSize: MainAxisSize.min,
-                                                children:
-                                                    _buildBeadSequence(isDark)),
+                                                children: _buildBeadSequence(
+                                                    isDark,
+                                                    provider.tesbihRengi)),
                                           )))),
-                            if (_currentView == 3)
+                            if (currentView == 3)
                               Positioned(
                                   left: 16,
                                   right: 16,
@@ -842,8 +866,9 @@ class _ZikirmatikSayacPageState extends State<ZikirmatikSayacPage> {
                                             fit: BoxFit.scaleDown,
                                             child: Row(
                                                 mainAxisSize: MainAxisSize.min,
-                                                children:
-                                                    _buildBeadSequence(isDark)),
+                                                children: _buildBeadSequence(
+                                                    isDark,
+                                                    provider.tesbihRengi)),
                                           )))),
                           ],
                         ),
@@ -980,10 +1005,24 @@ class _ZikirEkleDuzenlePageState extends State<ZikirEkleDuzenlePage> {
                         fontSize: 16,
                         fontWeight: FontWeight.bold)),
                 _buildGlassButton(context, text: "Kaydet", onTap: () {
+                  final ad = adController.text.trim();
+                  if (ad.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text("Lütfen zikir adı girin.")));
+                    return;
+                  }
+                  final hedef = int.tryParse(adetController.text) ?? 99;
+                  if (hedef < 1) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text("Adet en az 1 olmalı.")));
+                    return;
+                  }
                   final yeniZikir = {
-                    "ad": adController.text,
+                    "id": widget.initialData?['id']?.toString() ??
+                        DateTime.now().millisecondsSinceEpoch.toString(),
+                    "ad": ad,
                     "sayi": 0,
-                    "hedef": int.tryParse(adetController.text) ?? 99,
+                    "hedef": hedef,
                     "imame": int.tryParse(imameController.text) ?? 33,
                     "arapca": arapcaController.text,
                     "okunusu": okunusuController.text,

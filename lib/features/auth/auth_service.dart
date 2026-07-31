@@ -57,6 +57,37 @@ class AuthService extends ChangeNotifier {
       'teheccut': {'enabled': false, 'offset': 45, 'sound': 'ezan_kisa'},
       'ramazan': {'enabled': false, 'offset': 60, 'sound': 'ezan_kisa'},
     },
+    'vakit_ezan_ayarlari': {
+      'imsak': _varsayilanVakitAyari,
+      'sabah': _varsayilanVakitAyari,
+      'ogle': _varsayilanVakitAyari,
+      'ikindi': _varsayilanVakitAyari,
+      'aksam': _varsayilanVakitAyari,
+      'yatsi': _varsayilanVakitAyari,
+    },
+    'vaktinde_kil_ayarlari': {
+      'ogle': _varsayilanVaktindeKilAyari,
+      'ikindi': _varsayilanVaktindeKilAyari,
+      'aksam': _varsayilanVaktindeKilAyari,
+      'yatsi': _varsayilanVaktindeKilAyari,
+    },
+  };
+
+  static const Map<String, dynamic> _varsayilanVakitAyari = {
+    'enabled': true,
+    'sound': 'ezan_kisa',
+    'vaktindeOku': false,
+    'onceEnabled': false,
+    'onceSound': 'uyari',
+    'onceDakika': 45,
+    'gunler': [true, true, true, true, true, true, true],
+  };
+
+  static const Map<String, dynamic> _varsayilanVaktindeKilAyari = {
+    'enabled': true,
+    'ilkUyariDakika': 30,
+    'sound': 'melodi_19',
+    'siklikDakika': 10,
   };
 
   AuthService() {
@@ -181,6 +212,9 @@ class AuthService extends ChangeNotifier {
         "Hatim": "Hatm",
         "Kazalar": "Missed Prayers",
         "Ajanda": "Agenda",
+        "Dini Günler": "Religious Days",
+        "Haftanın Hutbesi": "Sermon of the Week",
+        "Multimedya": "Multimedia",
         "Amel Defteri": "Deeds Book",
         "Hesaplanıyor...": "Calculating...",
         "Yükleniyor...": "Loading...",
@@ -354,6 +388,75 @@ class AuthService extends ChangeNotifier {
         }
     };
   }
+
+  /// Vakit bazlı ezan alarmı ayarları (İmsak/Sabah/Öğle/İkindi/Akşam/Yatsı).
+  /// [hatirlaticiAyarlari] ile aynı varsayılanlarla-birleştirme deseni.
+  Map<String, dynamic> get vakitEzanAyarlari {
+    final defaults = Map<String, dynamic>.from(
+        _guestSettings['vakit_ezan_ayarlari'] as Map);
+    final kayitli = _user != null
+        ? _userData?['ayarlar']?['vakit_ezan_ayarlari'] as Map?
+        : _guestSettings['vakit_ezan_ayarlari'] as Map?;
+    if (kayitli == null) return defaults;
+    return {
+      for (final vakit in defaults.keys)
+        vakit: {
+          ...Map<String, dynamic>.from(defaults[vakit] as Map),
+          ...Map<String, dynamic>.from(kayitli[vakit] as Map? ?? const {}),
+        }
+    };
+  }
+
+  /// "Vaktinde Kıl" hatırlatıcı ayarları (Öğle/İkindi/Akşam/Yatsı).
+  Map<String, dynamic> get vaktindeKilAyarlari {
+    final defaults = Map<String, dynamic>.from(
+        _guestSettings['vaktinde_kil_ayarlari'] as Map);
+    final kayitli = _user != null
+        ? _userData?['ayarlar']?['vaktinde_kil_ayarlari'] as Map?
+        : _guestSettings['vaktinde_kil_ayarlari'] as Map?;
+    if (kayitli == null) return defaults;
+    return {
+      for (final vakit in defaults.keys)
+        vakit: {
+          ...Map<String, dynamic>.from(defaults[vakit] as Map),
+          ...Map<String, dynamic>.from(kayitli[vakit] as Map? ?? const {}),
+        }
+    };
+  }
+
+  static const Map<String, int> _varsayilanTemkinler = {
+    "İmsak": 0,
+    "Güneş": -7,
+    "Öğle": 5,
+    "İkindi": 4,
+    "Akşam": 7,
+    "Yatsı": 0,
+  };
+
+  /// Vakit başına dakika cinsinden temkin (ihtiyat payı) değerleri.
+  Map<String, int> get temkinDegerleri {
+    final raw = _user != null
+        ? _userData?['ayarlar']?['temkinler'] as Map?
+        : _guestSettings['temkinler'] as Map?;
+    if (raw == null) return Map<String, int>.from(_varsayilanTemkinler);
+    return {
+      for (final key in _varsayilanTemkinler.keys)
+        key: (raw[key] as num?)?.toInt() ?? _varsayilanTemkinler[key]!,
+    };
+  }
+
+  String get bildirimErteleDurumu => _user != null
+      ? (_userData?['ayarlar']?['bildirim_ertele'] ?? 'Kapalı')
+      : (_guestSettings['bildirim_ertele'] ?? 'Kapalı');
+
+  /// Kur'an-ı Kerim sayfasında Arapça metin için yazı boyutu (px).
+  double get kuranYaziBoyutu {
+    final raw = _user != null
+        ? _userData?['ayarlar']?['kuran_font_size']
+        : _guestSettings['kuran_font_size'];
+    return (raw as num?)?.toDouble() ?? 28.0;
+  }
+
   List<dynamic> get kayitliSehirler => _user != null
       ? (_userData?['ayarlar']?['kayitli_sehirler'] ??
           _guestSettings['kayitli_sehirler'])
@@ -504,6 +607,24 @@ class AuthService extends ChangeNotifier {
         return "Şifre hatalı.";
       case 'email-already-in-use':
         return "Bu e-posta zaten kullanımda.";
+      // firebase_auth 6.x, kimlik-enumeration'ı önlemek için hem yanlış
+      // şifre hem de bilinmeyen hesap durumunda bu kodu döner.
+      case 'invalid-credential':
+        return "E-posta veya şifre hatalı.";
+      case 'invalid-email':
+        return "Geçersiz e-posta adresi.";
+      case 'user-disabled':
+        return "Bu hesap devre dışı bırakılmış.";
+      case 'too-many-requests':
+        return "Çok fazla deneme yapıldı. Lütfen biraz sonra tekrar deneyin.";
+      case 'network-request-failed':
+        return "İnternet bağlantınızı kontrol edin.";
+      case 'weak-password':
+        return "Şifre çok zayıf. En az 6 karakter kullanın.";
+      case 'operation-not-allowed':
+        return "Bu giriş yöntemi şu anda kullanılamıyor.";
+      case 'requires-recent-login':
+        return "Bu işlem için tekrar giriş yapmanız gerekiyor.";
       default:
         return "Bir hata oluştu ($code)";
     }

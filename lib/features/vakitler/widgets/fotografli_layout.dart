@@ -11,6 +11,8 @@ class FotografliLayout extends StatelessWidget {
   final Function(BuildContext, Color, Color) buildWeatherHeader;
   final Function(int) getMonthName;
   final Function(int) getDayName;
+  final String? hicriGun;
+  final String? hicriAy;
 
   const FotografliLayout({
     super.key,
@@ -20,6 +22,8 @@ class FotografliLayout extends StatelessWidget {
     required this.buildWeatherHeader,
     required this.getMonthName,
     required this.getDayName,
+    this.hicriGun,
+    this.hicriAy,
   });
 
   @override
@@ -189,9 +193,12 @@ class FotografliLayout extends StatelessWidget {
                                   color: Colors.black.withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Center(
-                                  child: Text("9 Shawwal\n1447",
-                                      style: TextStyle(
+                                child: Center(
+                                  child: Text(
+                                      hicriGun != null && hicriAy != null
+                                          ? "$hicriGun ${authService.translate(hicriAy!)}"
+                                          : "--",
+                                      style: const TextStyle(
                                           color: Colors.white70,
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,

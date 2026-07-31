@@ -3,12 +3,14 @@ class DuaModel {
   final String arapca;
   final String okunus;
   final String anlam;
+  final String kaynak;
 
   DuaModel({
     required this.baslik,
     required this.arapca,
     required this.okunus,
     required this.anlam,
+    this.kaynak = '',
   });
 
   factory DuaModel.fromJson(Map<String, dynamic> json) {
@@ -18,6 +20,7 @@ class DuaModel {
       arapca: json['arabic']?.toString() ?? '',
       okunus: json['pronunciation']?.toString() ?? '',
       anlam: json['meaning']?.toString() ?? '',
+      kaynak: json['reference']?.toString() ?? '',
     );
   }
 
@@ -27,6 +30,7 @@ class DuaModel {
       'arabic': arapca,
       'pronunciation': okunus,
       'meaning': anlam,
+      'reference': kaynak,
     };
   }
 }

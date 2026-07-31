@@ -28,7 +28,16 @@ class _MultimediaPageState extends State<MultimediaPage> {
     _future = _repo.getData();
   }
 
+  // getData() önbellek doluyken asla sunucuya sormadığından (BaseRepository),
+  // önce gerçek bir uzak yenileme yapılır; aksi halde pull-to-refresh hep
+  // aynı eski veriyi yeniden gösterirdi.
   Future<void> _refreshData() async {
+    try {
+      await _repo.refresh();
+    } catch (e) {
+      debugPrint("Multimedya yenileme hatası: $e");
+    }
+    if (!mounted) return;
     setState(() {
       _future = _repo.getData();
     });

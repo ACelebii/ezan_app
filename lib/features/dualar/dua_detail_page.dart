@@ -86,6 +86,20 @@ class DuaDetailPage extends StatelessWidget {
                           style: TextStyle(
                               color: textColor, fontSize: 18, height: 1.4)),
                     ],
+                    if (dua.kaynak.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      Text("Kaynak",
+                          style: TextStyle(
+                              color: Colors.teal.shade400,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Text(dua.kaynak,
+                          style: TextStyle(
+                              color: textColor.withValues(alpha: 0.7),
+                              fontSize: 14,
+                              fontStyle: FontStyle.italic)),
+                    ],
                   ],
                 ),
               ),

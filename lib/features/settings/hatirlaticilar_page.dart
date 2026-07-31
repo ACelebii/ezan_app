@@ -16,12 +16,23 @@ class HatirlaticilarPage extends StatefulWidget {
 class _HatirlaticilarPageState extends State<HatirlaticilarPage>
     with WidgetsBindingObserver {
   PermissionStatus? _bildirimIzni;
+  bool _ramazanVerisiYok = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _izinDurumunuYenile();
+    _ramazanVerisiniKontrolEt();
+  }
+
+  // dini_gunler.json içinde bulunduğumuz/gelecek Ramazan için veri yoksa
+  // (ör. veri seti gelecek yıllar için henüz güncellenmediyse), "Ramazan
+  // Davulcusu" açık görünse bile arka planda sessizce hiçbir şey
+  // planlanmaz; bunu kullanıcıya açıkça bildiriyoruz.
+  Future<void> _ramazanVerisiniKontrolEt() async {
+    final window = await ReminderScheduler.currentRamadanWindow();
+    if (mounted) setState(() => _ramazanVerisiYok = window == null);
   }
 
   @override
@@ -168,6 +179,16 @@ class _HatirlaticilarPageState extends State<HatirlaticilarPage>
                 ramazan['sound'] as String,
                 (key) => _guncelle(
                     authService, 'ramazan', (m) => {...m, 'sound': key})),
+            if (ramazan['enabled'] == true && _ramazanVerisiYok)
+              Padding(
+                padding: const EdgeInsets.only(top: 8, left: 4, right: 4),
+                child: Text(
+                    authService.translate(
+                        "Bu yıl için Ramazan takvim verisi henüz eklenmedi; hatırlatıcı şu an hiçbir şey planlamıyor."),
+                    style: TextStyle(
+                        color: Colors.orange.withValues(alpha: 0.9),
+                        fontSize: 12)),
+              ),
           ],
         ),
       ),

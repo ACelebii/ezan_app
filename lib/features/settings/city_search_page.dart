@@ -156,8 +156,19 @@ class _CitySearchPageState extends State<CitySearchPage> {
                         borderSide: BorderSide.none),
                     contentPadding: const EdgeInsets.symmetric(vertical: 0)),
                 onSubmitted: (value) {
-                  if (value.trim().isNotEmpty) {
-                    context.pop(value.trim());
+                  final trimmed = value.trim();
+                  if (trimmed.isEmpty) return;
+                  // Serbest metni doğrudan kabul etmek yerine, ancak listede
+                  // gerçekten var olan bir şehirle eşleşiyorsa (tam eşleşme
+                  // ya da tek bir filtrelenmiş sonuç varsa) kapat; aksi halde
+                  // yazım hataları olduğu gibi API'ye gitmesin.
+                  final exactMatch = _tumSehirler.firstWhere(
+                      (s) => s.toLowerCase() == trimmed.toLowerCase(),
+                      orElse: () => '');
+                  if (exactMatch.isNotEmpty) {
+                    context.pop(exactMatch);
+                  } else if (_filtrelenmisSehirler.length == 1) {
+                    context.pop(_filtrelenmisSehirler.first);
                   }
                 },
               ),

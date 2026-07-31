@@ -12,8 +12,7 @@ class VideoDetailPage extends StatelessWidget {
 
   Future<void> _watchOnYoutube(BuildContext context) async {
     final url = Uri.tryParse(item.contentUrl);
-    if (url == null) return;
-    if (await canLaunchUrl(url)) {
+    if (url != null && await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -104,7 +103,8 @@ class VideoDetailPage extends StatelessWidget {
                             : DecorationImage(
                                 image: NetworkImage(item.displayThumbnail),
                                 fit: BoxFit.cover,
-                                onError: (exception, stackTrace) {},
+                                onError: (exception, stackTrace) =>
+                                    debugPrint("Kapak görseli yüklenemedi: $exception"),
                               ),
                       ),
                       child: const Center(

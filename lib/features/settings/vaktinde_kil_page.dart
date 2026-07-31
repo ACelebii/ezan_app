@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'settings_common.dart';
+import '../hatirlaticilar/data/reminder_scheduler.dart';
 
 class VaktindeKilPage extends StatefulWidget {
   const VaktindeKilPage({super.key});
@@ -10,16 +11,20 @@ class VaktindeKilPage extends StatefulWidget {
 }
 
 class _VaktindeKilPageState extends State<VaktindeKilPage> {
-  Map<String, bool> namazDurumlari = {
-    'Öğle': true,
-    'İkindi': true,
-    'Akşam': true,
-    'Yatsı': true
-  };
+  void _guncelle(AuthService authService, String vakitKey,
+      Map<String, dynamic> Function(Map<String, dynamic> mevcut) degistir) {
+    final guncelAyarlar =
+        Map<String, dynamic>.from(authService.vaktindeKilAyarlari);
+    guncelAyarlar[vakitKey] =
+        degistir(Map<String, dynamic>.from(guncelAyarlar[vakitKey] as Map));
+    authService.updateSetting('vaktinde_kil_ayarlari', guncelAyarlar);
+    ReminderScheduler.rescheduleAll(authService);
+  }
 
   @override
   Widget build(BuildContext context) {
     final authService = context.watch<AuthService>();
+    final ayarlar = authService.vaktindeKilAyarlari;
     return Directionality(
       textDirection: authService.uygulamaDili == "العربية"
           ? TextDirection.rtl
@@ -68,19 +73,22 @@ class _VaktindeKilPageState extends State<VaktindeKilPage> {
                   ),
                   Divider(
                       color: getDividerColor(context), height: 1, indent: 50),
-                  _buildNamazRow("Öğle", Icons.wb_sunny_rounded, Colors.orange),
-                  Divider(
-                      color: getDividerColor(context), height: 1, indent: 50),
-                  _buildNamazRow(
-                      "İkindi", Icons.wb_twilight_rounded, Colors.amber),
-                  Divider(
-                      color: getDividerColor(context), height: 1, indent: 50),
-                  _buildNamazRow("Akşam", Icons.brightness_4_rounded,
-                      Colors.deepOrangeAccent),
-                  Divider(
-                      color: getDividerColor(context), height: 1, indent: 50),
-                  _buildNamazRow("Yatsı", Icons.brightness_2_rounded,
-                      Colors.lightBlueAccent),
+                  ...ReminderScheduler.vaktindeKilKeys
+                      .asMap()
+                      .entries
+                      .expand((entry) => [
+                            _buildNamazRow(
+                                authService,
+                                entry.value,
+                                Map<String, dynamic>.from(
+                                    ayarlar[entry.value] as Map)),
+                            if (entry.key <
+                                ReminderScheduler.vaktindeKilKeys.length - 1)
+                              Divider(
+                                  color: getDividerColor(context),
+                                  height: 1,
+                                  indent: 50),
+                          ]),
                 ],
               ),
             ),
@@ -101,15 +109,23 @@ class _VaktindeKilPageState extends State<VaktindeKilPage> {
     );
   }
 
-  Widget _buildNamazRow(String title, IconData icon, Color iconColor) {
-    bool isOn = namazDurumlari[title]!;
-    final authService = context.watch<AuthService>();
+  Widget _buildNamazRow(
+      AuthService authService, String vakitKey, Map<String, dynamic> ayar) {
+    final title = ReminderScheduler.vakitDisplayNames[vakitKey]!;
+    final isOn = ayar['enabled'] == true;
+    const iconMap = {
+      'ogle': (Icons.wb_sunny_rounded, Colors.orange),
+      'ikindi': (Icons.wb_twilight_rounded, Colors.amber),
+      'aksam': (Icons.brightness_4_rounded, Colors.deepOrangeAccent),
+      'yatsi': (Icons.brightness_2_rounded, Colors.lightBlueAccent),
+    };
+    final (icon, iconColor) = iconMap[vakitKey]!;
     return InkWell(
       onTap: () {
         if (isOn) {
-          context.push('/settings/vaktinde-kil/detay', extra: title);
+          context.push('/settings/vaktinde-kil/detay', extra: vakitKey);
         } else {
-          setState(() => namazDurumlari[title] = true);
+          _guncelle(authService, vakitKey, (m) => {...m, 'enabled': true});
         }
       },
       child: Padding(
@@ -125,7 +141,8 @@ class _VaktindeKilPageState extends State<VaktindeKilPage> {
             CupertinoSwitch(
                 value: isOn,
                 activeTrackColor: CupertinoColors.activeGreen,
-                onChanged: (v) => setState(() => namazDurumlari[title] = v)),
+                onChanged: (v) => _guncelle(
+                    authService, vakitKey, (m) => {...m, 'enabled': v})),
             if (isOn) ...[
               const SizedBox(width: 8),
               Icon(Icons.arrow_forward_ios,
@@ -139,4 +156,3 @@ class _VaktindeKilPageState extends State<VaktindeKilPage> {
     );
   }
 }
-

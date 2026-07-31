@@ -1,7 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'kutuphane_model.dart';
+
+/// "Son Okunan" kartının okuduğu/yazdığı SharedPreferences anahtarları.
+/// Kütüphane ana sayfasındaki kart burada yazılan değerleri okur.
+class KutuphaneSonOkunan {
+  KutuphaneSonOkunan._();
+  static const _idKey = 'kutuphane_son_okunan_id';
+  static const _baslikKey = 'kutuphane_son_okunan_baslik';
+  static const _gorselKey = 'kutuphane_son_okunan_gorsel';
+  static const _pdfKey = 'kutuphane_son_okunan_pdf';
+  static const _sayfaKey = 'kutuphane_son_okunan_sayfa';
+
+  static Future<void> save(LibraryNode item, int page) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_idKey, item.id);
+    await prefs.setString(_baslikKey, item.title);
+    await prefs.setString(_gorselKey, item.imageUrl);
+    await prefs.setString(_pdfKey, item.pdfUrl);
+    await prefs.setInt(_sayfaKey, page);
+  }
+
+  static Future<({LibraryNode item, int page})?> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final id = prefs.getString(_idKey);
+    if (id == null) return null;
+    final item = LibraryNode(
+      id: id,
+      parentId: null,
+      title: prefs.getString(_baslikKey) ?? '',
+      imageUrl: prefs.getString(_gorselKey) ?? '',
+      pdfUrl: prefs.getString(_pdfKey) ?? '',
+      sira: 0,
+    );
+    return (item: item, page: prefs.getInt(_sayfaKey) ?? 1);
+  }
+
+  static Future<int?> pageFor(String itemId) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getString(_idKey) != itemId) return null;
+    return prefs.getInt(_sayfaKey);
+  }
+}
 
 Widget _buildGlassButton(BuildContext context,
     {required IconData icon, required VoidCallback onTap}) {
@@ -34,6 +76,7 @@ class KutuphanePdfPage extends StatefulWidget {
 
 class _KutuphanePdfPageState extends State<KutuphanePdfPage> {
   bool _isLoading = true;
+  final PdfViewerController _pdfController = PdfViewerController();
 
   @override
   Widget build(BuildContext context) {
@@ -93,13 +136,23 @@ class _KutuphanePdfPageState extends State<KutuphanePdfPage> {
                           children: [
                             SfPdfViewer.network(
                               widget.item.pdfUrl,
+                              controller: _pdfController,
                               canShowScrollHead: false,
                               enableDoubleTapZooming: true,
                               onDocumentLoaded:
-                                  (PdfDocumentLoadedDetails details) {
+                                  (PdfDocumentLoadedDetails details) async {
                                 setState(() {
                                   _isLoading = false;
                                 });
+                                final kaldigiSayfa = await KutuphaneSonOkunan
+                                    .pageFor(widget.item.id);
+                                if (kaldigiSayfa != null &&
+                                    kaldigiSayfa > 1 &&
+                                    kaldigiSayfa <=
+                                        details.document.pages.count &&
+                                    mounted) {
+                                  _pdfController.jumpToPage(kaldigiSayfa);
+                                }
                               },
                               onDocumentLoadFailed:
                                   (PdfDocumentLoadFailedDetails details) {
@@ -110,6 +163,10 @@ class _KutuphanePdfPageState extends State<KutuphanePdfPage> {
                                     const SnackBar(
                                         content: Text(
                                             "PDF yüklenirken hata oluştu! Linki kontrol edin.")));
+                              },
+                              onPageChanged: (PdfPageChangedDetails details) {
+                                KutuphaneSonOkunan.save(
+                                    widget.item, details.newPageNumber);
                               },
                             ),
                             if (_isLoading)

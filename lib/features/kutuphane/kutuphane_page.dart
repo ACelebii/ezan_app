@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:ezan_vakti_uygulamasi/core/theme/app_theme.dart';
-import 'package:ezan_vakti_uygulamasi/core/utils/assets_constants.dart';
 import 'package:ezan_vakti_uygulamasi/features/kutuphane/providers/kutuphane_provider.dart';
+import 'kutuphane_model.dart';
+import 'kutuphane_pdf_page.dart';
 
 class KutuphanePage extends StatelessWidget {
   const KutuphanePage({super.key});
@@ -17,8 +18,35 @@ class KutuphanePage extends StatelessWidget {
   }
 }
 
-class _KutuphanePageContent extends StatelessWidget {
+class _KutuphanePageContent extends StatefulWidget {
   const _KutuphanePageContent();
+
+  @override
+  State<_KutuphanePageContent> createState() => _KutuphanePageContentState();
+}
+
+class _KutuphanePageContentState extends State<_KutuphanePageContent> {
+  ({LibraryNode item, int page})? _sonOkunan;
+
+  @override
+  void initState() {
+    super.initState();
+    _sonOkunaniYukle();
+  }
+
+  Future<void> _sonOkunaniYukle() async {
+    final data = await KutuphaneSonOkunan.load();
+    if (mounted) setState(() => _sonOkunan = data);
+  }
+
+  Future<void> _openItem(LibraryNode kitap) async {
+    await context.push(
+        kitap.isKitap ? '/kutuphane/pdf' : '/kutuphane/icerik',
+        extra: kitap);
+    // Bir PDF okunmuş olabileceğinden, dönüşte "Son Okunan" kartını
+    // güncel tut.
+    _sonOkunaniYukle();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,8 +89,7 @@ class _KutuphanePageContent extends StatelessWidget {
                 (context, index) {
                   final kitap = kitaplar[index];
                   return InkWell(
-                    onTap: () =>
-                        context.push('/kutuphane/icerik', extra: kitap),
+                    onTap: () => _openItem(kitap),
                     child: Column(
                       children: [
                         Expanded(
@@ -107,59 +134,88 @@ class _KutuphanePageContent extends StatelessWidget {
   }
 
   Widget _buildSonOkunanKarti(BuildContext context, Color textColor) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.asset(Assets.fotografCamiteMa,
-                width: 70, height: 100, fit: BoxFit.cover),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Son Okunan",
-                    style: TextStyle(
-                        color: textColor.withValues(alpha: 0.5), fontSize: 12)),
-                const SizedBox(height: 4),
-                Text("Bakara Suresi\n17. Ayet",
-                    style: TextStyle(
-                        color: textColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold)),
-                const Divider(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildIconBtn(context, Icons.menu_book, "Sureler"),
-                    _buildIconBtn(context, Icons.bookmark, "Yer İmleri"),
-                  ],
-                )
-              ],
+    final sonOkunan = _sonOkunan;
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: sonOkunan == null ? null : () => _openItem(sonOkunan.item),
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.getCardColor(context),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: sonOkunan != null && sonOkunan.item.imageUrl.isNotEmpty
+                  ? Image.network(sonOkunan.item.imageUrl,
+                      width: 70,
+                      height: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (c, e, s) => Container(
+                          width: 70,
+                          height: 100,
+                          color: Colors.grey.shade300,
+                          child: const Icon(Icons.menu_book_rounded)))
+                  : Container(
+                      width: 70,
+                      height: 100,
+                      color: Colors.grey.shade300,
+                      child: const Icon(Icons.menu_book_rounded)),
             ),
-          )
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Son Okunan",
+                      style: TextStyle(
+                          color: textColor.withValues(alpha: 0.5),
+                          fontSize: 12)),
+                  const SizedBox(height: 4),
+                  Text(
+                      sonOkunan != null
+                          ? "${sonOkunan.item.title}\n${sonOkunan.page}. Sayfa"
+                          : "Henüz bir kitap okumadınız.",
+                      style: TextStyle(
+                          color: textColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold)),
+                  const Divider(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildIconBtn(context, Icons.menu_book, "Sureler"),
+                      _buildIconBtn(context, Icons.bookmark, "Yer İmleri"),
+                    ],
+                  )
+                ],
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildIconBtn(BuildContext context, IconData icon, String label) {
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: AppTheme.primaryColor),
-        const SizedBox(width: 4),
-        Text(label,
-            style: TextStyle(
-                fontSize: 12, color: AppTheme.getSubTextColor(context))),
-      ],
+    return InkWell(
+      onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("$label özelliği yakında eklenecek."),
+        duration: const Duration(seconds: 2),
+      )),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: AppTheme.primaryColor),
+          const SizedBox(width: 4),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 12, color: AppTheme.getSubTextColor(context))),
+        ],
+      ),
     );
   }
 }

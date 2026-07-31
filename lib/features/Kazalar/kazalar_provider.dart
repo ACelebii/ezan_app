@@ -53,16 +53,25 @@ class KazalarProvider extends ChangeNotifier {
     _ikonRozetiniGuncelle();
   }
 
+  // Art arda gelen artir/azalt çağrılarının rozet güncellemeleri
+  // çakışmasın diye: yalnızca en son başlatılan çağrı gerçekten rozeti
+  // yazar (aksi halde önce başlayıp sonra biten bir çağrı, sonra başlayıp
+  // önce biten bir çağrının üzerine yazıp rozeti eski değerde bırakabilir).
+  int _badgeGuncellemeSayaci = 0;
+
   // Uygulama ikonundaki rozeti günceller. Platform veya launcher desteklemiyorsa
   // (ör. Windows/Linux masaüstü, test ortamı, rozeti desteklemeyen bir launcher)
   // MethodChannel çağrısı sessizce başarısız olabilir; bu beklenen bir durumdur.
   Future<void> _ikonRozetiniGuncelle() async {
+    final istekNo = ++_badgeGuncellemeSayaci;
     try {
-      _badgeDestekleniyor = await AppBadgePlus.isSupported();
+      final destekleniyor = await AppBadgePlus.isSupported();
+      if (istekNo != _badgeGuncellemeSayaci) return;
+      _badgeDestekleniyor = destekleniyor;
       await AppBadgePlus.updateBadge(_ikondaGoster ? toplamKazaSayisi : 0);
     } catch (_) {
     } finally {
-      notifyListeners();
+      if (istekNo == _badgeGuncellemeSayaci) notifyListeners();
     }
   }
 
@@ -121,12 +130,14 @@ class KazalarProvider extends ChangeNotifier {
   }
 
   void topluDegerGir(String vakit, int yeniDeger) {
-    if (yeniDeger >= 0) {
-      kazaSayilari[vakit] = yeniDeger;
-      sonKayitTarihleri[vakit] = _simdikiZamaniGetir();
-      _veriyiKaydet(vakit);
-      notifyListeners();
-      _ikonRozetiniGuncelle();
-    }
+    if (yeniDeger < 0) return;
+    // Değer değişmediyse (ör. diyalog açılıp hiçbir şey değiştirmeden
+    // "Bitti"ye basıldıysa) son kayıt tarihini anlamsız yere güncelleme.
+    if (kazaSayilari[vakit] == yeniDeger) return;
+    kazaSayilari[vakit] = yeniDeger;
+    sonKayitTarihleri[vakit] = _simdikiZamaniGetir();
+    _veriyiKaydet(vakit);
+    notifyListeners();
+    _ikonRozetiniGuncelle();
   }
 }

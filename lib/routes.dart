@@ -191,7 +191,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
         path: '/settings/vaktinde-kil/detay',
         builder: (context, state) =>
-            VaktindeKilDetayPage(vakitAdi: state.extra as String)),
+            VaktindeKilDetayPage(vakitKey: state.extra as String)),
     GoRoute(
         path: '/settings/vakit',
         builder: (context, state) =>

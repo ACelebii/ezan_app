@@ -10,6 +10,7 @@ import 'features/auth/auth_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/sync/sync_notifier.dart';
 import 'features/kutuphane/data/kutuphane_repository.dart';
+import 'features/hutbe/data/hutbe_repository.dart';
 import 'features/kuran/kuran_download_service.dart';
 import 'features/hatim/hatim_provider.dart';
 import 'features/zikirmatik/zikirmatik_provider.dart';
@@ -20,9 +21,24 @@ import 'routes.dart';
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
-    final repo = KutuphaneRepository();
-    await repo.refresh();
-    await KuranDownloadService.refresh();
+    // Her adım kendi try/catch'inde: biri başarısız olursa (ör. geçici ağ
+    // hatası) diğerleri yine de çalışır ve arka plan görevi sessizce
+    // tamamen ölmez (önceden try/catch hiç yoktu).
+    try {
+      await KutuphaneRepository().refresh();
+    } catch (e) {
+      debugPrint("Arka plan Kütüphane senkron hatası: $e");
+    }
+    try {
+      await HutbeRepository().refresh();
+    } catch (e) {
+      debugPrint("Arka plan Hutbe senkron hatası: $e");
+    }
+    try {
+      await KuranDownloadService.refresh();
+    } catch (e) {
+      debugPrint("Arka plan Kuran önbellek senkron hatası: $e");
+    }
     return Future.value(true);
   });
 }

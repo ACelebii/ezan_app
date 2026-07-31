@@ -21,9 +21,11 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
 
   Future<void> _share() async {
     setState(() => _isSharing = true);
+    String? tempFilePath;
     try {
       final tempDir = await getTemporaryDirectory();
       final filePath = '${tempDir.path}/duvar_kagidi_${widget.item.id}.jpg';
+      tempFilePath = filePath;
       await Dio().download(widget.item.fullImageUrl, filePath);
       await SharePlus.instance
           .share(ShareParams(files: [XFile(filePath)]));
@@ -32,6 +34,14 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
       await SharePlus.instance
           .share(ShareParams(text: widget.item.fullImageUrl));
     } finally {
+      // Paylaşım sayfası dosyayı okuduktan sonra geçici kopyayı temizle;
+      // aksi halde her paylaşımda /tmp altında birikirler.
+      if (tempFilePath != null) {
+        try {
+          final file = File(tempFilePath);
+          if (await file.exists()) await file.delete();
+        } catch (_) {}
+      }
       if (mounted) setState(() => _isSharing = false);
     }
   }

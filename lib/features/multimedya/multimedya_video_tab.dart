@@ -80,7 +80,9 @@ class _CategoryRow extends StatelessWidget {
                                         image:
                                             NetworkImage(item.displayThumbnail),
                                         fit: BoxFit.cover,
-                                        onError: (exception, stackTrace) {},
+                                        onError: (exception, stackTrace) =>
+                                            debugPrint(
+                                                "Kapak görseli yüklenemedi: $exception"),
                                       ),
                               ),
                             ),

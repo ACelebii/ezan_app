@@ -308,6 +308,11 @@ class MyTasksPage extends StatelessWidget {
 
                                   await context.push('/kuran/surah-detail',
                                       extra: kuranProvider);
+                                  // '/kuran/surah-detail' rotası provider'ı
+                                  // ChangeNotifierProvider.value ile paylaşır,
+                                  // yani sahipliğini almaz; burada oluşturduğumuz
+                                  // için dispose etmek de bize düşüyor.
+                                  kuranProvider.dispose();
 
                                   if (!context.mounted) return;
                                   // Görev hâlâ "myTasks" içindeyse (okundu/

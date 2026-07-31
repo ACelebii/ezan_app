@@ -42,6 +42,10 @@ class _AjandaTimelineViewState extends State<AjandaTimelineView> {
   String? _sonCekilenSehir;
   int? _sonCekilenYontem;
 
+  // Kullanıcı gün değiştirme okuna hızlı basarsa eski bir isteğin geç gelen
+  // yanıtı, daha yeni bir isteğin sonucunun üzerine yazmasın diye.
+  int _istekSayaci = 0;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -66,6 +70,7 @@ class _AjandaTimelineViewState extends State<AjandaTimelineView> {
   Future<void> _vakitleriGetir(
       DateTime tarih, String sehir, int yontem) async {
     final anahtar = _cacheAnahtari(tarih, sehir, yontem);
+    final istekNo = ++_istekSayaci;
     final onbellek = _cache[anahtar];
     if (onbellek != null) {
       setState(() {
@@ -85,7 +90,7 @@ class _AjandaTimelineViewState extends State<AjandaTimelineView> {
       final tarihStr = '${tarih.day.toString().padLeft(2, '0')}-'
           '${tarih.month.toString().padLeft(2, '0')}-${tarih.year}';
       final url = Uri.parse(
-          'https://api.aladhan.com/v1/timingsByCity/$tarihStr?city=$sehir&country=Turkey&method=$yontem');
+          'https://api.aladhan.com/v1/timingsByCity/$tarihStr?city=${Uri.encodeComponent(sehir)}&country=Turkey&method=$yontem');
       final response = await http.get(url).timeout(const Duration(seconds: 8));
       if (response.statusCode != 200) {
         throw Exception('HTTP ${response.statusCode}');
@@ -94,13 +99,15 @@ class _AjandaTimelineViewState extends State<AjandaTimelineView> {
           json.decode(response.body)['data']['timings'] as Map<String, dynamic>;
       final vakitler = _timingsToList(timings);
       _cache[anahtar] = vakitler;
-      if (!mounted) return;
+      // Bu istek beklerken kullanıcı başka bir güne geçmiş olabilir; sadece
+      // hâlâ en güncel istek buysa sonucu uygula.
+      if (!mounted || istekNo != _istekSayaci) return;
       setState(() {
         _vakitler = vakitler;
         _isLoading = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || istekNo != _istekSayaci) return;
       setState(() {
         _isLoading = false;
         _hasError = true;
@@ -108,25 +115,40 @@ class _AjandaTimelineViewState extends State<AjandaTimelineView> {
     }
   }
 
+  ({int saat, int dakika}) _saatParcala(Map<String, dynamic> timings, String key) {
+    final raw = (timings[key] as String).split(' ').first;
+    final parcalar = raw.split(':');
+    return (saat: int.parse(parcalar[0]), dakika: int.parse(parcalar[1]));
+  }
+
+  ({int saat, int dakika}) _dakikaEkle(({int saat, int dakika}) t, int dakika) {
+    final toplam = ((t.saat * 60 + t.dakika + dakika) % 1440 + 1440) % 1440;
+    return (saat: toplam ~/ 60, dakika: toplam % 60);
+  }
+
   List<Map<String, dynamic>> _timingsToList(Map<String, dynamic> timings) {
-    Map<String, dynamic> girdi(String isim, String key) {
-      final raw = (timings[key] as String).split(' ').first;
-      final parcalar = raw.split(':');
-      return {
-        "isim": isim,
-        "saat": int.parse(parcalar[0]),
-        "dakika": int.parse(parcalar[1]),
-        "renk": Colors.redAccent,
-      };
-    }
+    Map<String, dynamic> girdi(String isim, ({int saat, int dakika}) t) => {
+          "isim": isim,
+          "saat": t.saat,
+          "dakika": t.dakika,
+          "renk": Colors.redAccent,
+        };
+
+    final gunes = _saatParcala(timings, 'Sunrise');
+    // Aladhan İşrak/Duha döndürmez; bu iki vakit yaygın kabul edilen sabit
+    // ofsetlerle Güneş vaktinden türetilir (İşrak: +45 dk, Duha: +65 dk).
+    final israk = _dakikaEkle(gunes, 45);
+    final duha = _dakikaEkle(gunes, 65);
 
     return [
-      girdi("İmsak", "Fajr"),
-      girdi("Güneş", "Sunrise"),
-      girdi("Öğle", "Dhuhr"),
-      girdi("İkindi", "Asr"),
-      girdi("Akşam", "Maghrib"),
-      girdi("Yatsı", "Isha"),
+      girdi("İmsak", _saatParcala(timings, 'Fajr')),
+      girdi("Güneş", gunes),
+      girdi("İşrak", israk),
+      girdi("Duha", duha),
+      girdi("Öğle", _saatParcala(timings, 'Dhuhr')),
+      girdi("İkindi", _saatParcala(timings, 'Asr')),
+      girdi("Akşam", _saatParcala(timings, 'Maghrib')),
+      girdi("Yatsı", _saatParcala(timings, 'Isha')),
     ];
   }
 

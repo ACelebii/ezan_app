@@ -47,7 +47,8 @@ class KuranView extends StatelessWidget {
                 onTap: () => Navigator.pop(context)),
             _buildMenuTile(Icons.library_books, "Cüzler", context,
                 onTap: () => Navigator.pop(context)),
-            _buildMenuTile(Icons.list, "Fihrist", context),
+            _buildMenuTile(Icons.list, "Fihrist", context,
+                onTap: () => _showComingSoon(context, "Fihrist")),
             const Divider(color: Colors.white12, height: 24),
             _buildMenuTile(
                 Icons.bookmark_border,
@@ -71,10 +72,13 @@ class KuranView extends StatelessWidget {
                 );
               }
             }),
-            _buildMenuTile(Icons.favorite_border, "Favori", context),
-            _buildMenuTile(Icons.edit_outlined, "Not", context),
+            _buildMenuTile(Icons.favorite_border, "Favori", context,
+                onTap: () => _showComingSoon(context, "Favori")),
+            _buildMenuTile(Icons.edit_outlined, "Not", context,
+                onTap: () => _showComingSoon(context, "Not")),
             const Divider(color: Colors.white12, height: 24),
-            _buildMenuTile(Icons.playlist_play, "Okuma Listesi", context),
+            _buildMenuTile(Icons.playlist_play, "Okuma Listesi", context,
+                onTap: () => _showComingSoon(context, "Okuma Listesi")),
           ],
         );
       },
@@ -89,6 +93,16 @@ class KuranView extends StatelessWidget {
       trailing: const Icon(Icons.chevron_right, color: Colors.white24),
       onTap: onTap ?? () => Navigator.pop(context),
     );
+  }
+
+  void _showComingSoon(BuildContext context, String feature) {
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text("$feature özelliği yakında eklenecek.",
+          style: const TextStyle(color: Colors.white)),
+      backgroundColor: const Color(0xFF2C2C2C),
+      duration: const Duration(seconds: 2),
+    ));
   }
 
   @override
@@ -172,6 +186,17 @@ class KuranView extends StatelessWidget {
             if (provider.isSurahListLoading || provider.isJuzListLoading) {
               return const Center(
                   child: CircularProgressIndicator(color: Color(0xFF0F4C3A)));
+            }
+
+            if (provider.errorMessage != null) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!context.mounted) return;
+                final msg = provider.errorMessage;
+                if (msg == null) return;
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(msg), backgroundColor: Colors.redAccent));
+                provider.clearError();
+              });
             }
 
             return Column(

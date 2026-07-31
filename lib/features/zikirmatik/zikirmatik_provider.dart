@@ -9,6 +9,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ZikirmatikProvider extends ChangeNotifier {
   static const _aktifKey = 'zikirmatik_aktif_zikirler';
   static const _hazirKey = 'zikirmatik_hazir_zikirler';
+  static const _gorunumKey = 'zikirmatik_gorunum_turu';
+  static const _tesbihRengiKey = 'zikirmatik_tesbih_rengi';
+
+  int gorunumTuru = 1;
+  int tesbihRengi = 3;
 
   List<Map<String, dynamic>> aktifZikirler = [
     {"ad": "Zikirmatik", "sayi": 0, "hedef": 99, "imame": 33, "isDefault": true},
@@ -59,18 +64,26 @@ class ZikirmatikProvider extends ChangeNotifier {
 
   Future<void> _yukle() async {
     final prefs = await SharedPreferences.getInstance();
-    final aktifJson = prefs.getString(_aktifKey);
-    final hazirJson = prefs.getString(_hazirKey);
-    if (aktifJson != null) {
-      aktifZikirler = (json.decode(aktifJson) as List)
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
+    try {
+      final aktifJson = prefs.getString(_aktifKey);
+      final hazirJson = prefs.getString(_hazirKey);
+      if (aktifJson != null) {
+        aktifZikirler = (json.decode(aktifJson) as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+      if (hazirJson != null) {
+        hazirZikirler = (json.decode(hazirJson) as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+    } catch (e) {
+      // Bozuk/uyumsuz bir JSON blobu tüm sayfayı çökertmesin; varsayılan
+      // zikir listeleriyle devam edilir.
+      debugPrint("Zikirmatik verisi okunamadı, varsayılanlara dönülüyor: $e");
     }
-    if (hazirJson != null) {
-      hazirZikirler = (json.decode(hazirJson) as List)
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
-    }
+    gorunumTuru = prefs.getInt(_gorunumKey) ?? gorunumTuru;
+    tesbihRengi = prefs.getInt(_tesbihRengiKey) ?? tesbihRengi;
     _yuklendi = true;
     notifyListeners();
   }
@@ -79,6 +92,20 @@ class ZikirmatikProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_aktifKey, json.encode(aktifZikirler));
     await prefs.setString(_hazirKey, json.encode(hazirZikirler));
+  }
+
+  void setGorunumTuru(int v) {
+    gorunumTuru = v;
+    SharedPreferences.getInstance()
+        .then((p) => p.setInt(_gorunumKey, v));
+    notifyListeners();
+  }
+
+  void setTesbihRengi(int v) {
+    tesbihRengi = v;
+    SharedPreferences.getInstance()
+        .then((p) => p.setInt(_tesbihRengiKey, v));
+    notifyListeners();
   }
 
   void zikirEkle(Map<String, dynamic> zikir) {
@@ -90,7 +117,12 @@ class ZikirmatikProvider extends ChangeNotifier {
   void zikirGuncelle(Map<String, dynamic> eski, Map<String, dynamic> yeni) {
     final index = aktifZikirler.indexOf(eski);
     if (index == -1) return;
-    yeni['sayi'] = eski['sayi'];
+    final eskiSayi = (eski['sayi'] as int?) ?? 0;
+    final yeniHedef = (yeni['hedef'] as int?) ?? 99;
+    // Hedef, mevcut sayının altına düşürüldüyse ilerlemeyi sıfırla; aksi
+    // halde halka %100'ü aşan bir ilerleme gösterir.
+    yeni['sayi'] = eskiSayi > yeniHedef ? 0 : eskiSayi;
+    yeni['loop'] = eski['loop'] ?? 0;
     aktifZikirler[index] = yeni;
     _kaydet();
     notifyListeners();
@@ -110,8 +142,9 @@ class ZikirmatikProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void sayaciGuncelle(Map<String, dynamic> zikir, int yeniSayi) {
+  void sayaciGuncelle(Map<String, dynamic> zikir, int yeniSayi, {int? loop}) {
     zikir['sayi'] = yeniSayi;
+    if (loop != null) zikir['loop'] = loop;
     _kaydet();
     notifyListeners();
   }

@@ -6,10 +6,13 @@ import '../../../locator.dart';
 class DiniGunlerProvider extends ChangeNotifier {
   final DiniGunlerRepository _repository = getIt<DiniGunlerRepository>();
   List<DiniGunlerModel> _allData = [];
-  int _seciliYil = 2026;
+  int _seciliYil = DateTime.now().year;
   bool _isLoading = true;
+  String? errorMessage;
 
-  final List<int> yillar = [2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027];
+  /// Yalnızca gerçekten veri bulunan yılları listeler; aksi halde yıl
+  /// seçiciden veri olmayan bir yıl seçilince boş ekran çıkardı.
+  List<int> get yillar => _allData.map((e) => e.yil).toSet().toList()..sort();
 
   DiniGunlerProvider() {
     _loadData();
@@ -19,7 +22,18 @@ class DiniGunlerProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   Future<void> _loadData() async {
-    _allData = await _repository.getDiniGunler();
+    try {
+      _allData = await _repository.getDiniGunler();
+      errorMessage = null;
+    } catch (e) {
+      errorMessage = "Dini günler yüklenemedi: $e";
+    }
+    // Bugünün yılına ait veri yoksa (ör. veri seti henüz güncellenmediyse),
+    // boş bir ekranda kalmak yerine verisi olan en yakın/son yıla düş.
+    final mevcutYillar = yillar;
+    if (mevcutYillar.isNotEmpty && !mevcutYillar.contains(_seciliYil)) {
+      _seciliYil = mevcutYillar.last;
+    }
     _isLoading = false;
     notifyListeners();
   }

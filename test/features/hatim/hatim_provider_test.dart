@@ -49,18 +49,19 @@ class _FakeHatimRepository extends HatimRepository {
   }
 
   @override
-  Future<void> toggleItem({
+  Future<HatimToggleResult> toggleItem({
     required String hatimId,
     required HatimSubItem item,
     required String userId,
     required String userName,
   }) async {
     final items = _assignments[hatimId];
-    if (items == null) return;
+    if (items == null) return HatimToggleResult.conflict;
     final idx = items.indexWhere((i) => i.id == item.id);
-    if (idx == -1) return;
+    if (idx == -1) return HatimToggleResult.conflict;
     final current = items[idx];
 
+    HatimToggleResult result;
     if (current.status == 'available') {
       items[idx] = HatimSubItem(
         id: current.id,
@@ -83,6 +84,7 @@ class _FakeHatimRepository extends HatimRepository {
           takenAt: DateTime.now(),
         ),
       ];
+      result = HatimToggleResult.taken;
     } else if (current.status == 'taken' && current.userId == userId) {
       items[idx] = HatimSubItem(
         id: current.id,
@@ -92,10 +94,14 @@ class _FakeHatimRepository extends HatimRepository {
         type: current.type,
       );
       _myTasks = _myTasks.where((t) => t.itemId != current.id).toList();
+      result = HatimToggleResult.released;
+    } else {
+      result = HatimToggleResult.conflict;
     }
 
     _emitAssignments(hatimId);
     _emitMyTasks();
+    return result;
   }
 
   @override

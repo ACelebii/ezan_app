@@ -70,10 +70,7 @@ class _CitiesPageState extends State<CitiesPage> {
                       ListTile(
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
-                        leading: Icon(
-                            sehir["tur"] == "Konumum"
-                                ? Icons.near_me_outlined
-                                : Icons.public,
+                        leading: Icon(Icons.public,
                             color: getSubTextColor(context)),
                         title: Text(sehir["isim"]!,
                             style: TextStyle(
@@ -94,6 +91,14 @@ class _CitiesPageState extends State<CitiesPage> {
                                   if (sehirler.length > 1) {
                                     List<dynamic> guncel = List.from(sehirler);
                                     guncel.removeAt(idx);
+                                    // Silinen şehir seçiliyse, kalan
+                                    // şehirlerden biri seçili işaretlenmezse
+                                    // hiçbir şehir "aktif" görünmez (fallback
+                                    // olarak sessizce ilk şehre dönülür, ama
+                                    // liste bunu göstermez).
+                                    if (isSecili && guncel.isNotEmpty) {
+                                      guncel[0]["secili"] = "true";
+                                    }
                                     authService.updateSetting(
                                         'kayitli_sehirler', guncel);
                                   } else {

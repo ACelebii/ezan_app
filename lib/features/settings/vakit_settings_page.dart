@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'settings_common.dart';
+import '../hatirlaticilar/data/reminder_scheduler.dart';
+import '../hatirlaticilar/data/reminder_sound.dart';
 
 // ============================================================================
 // VAKİT DETAY SAYFASI
@@ -14,14 +16,6 @@ class VakitSettingsPage extends StatefulWidget {
 }
 
 class _VakitSettingsPageState extends State<VakitSettingsPage> {
-  bool vakitDurumu = true;
-  String vakitSesi = "Ezan Sultanahmet";
-  bool vaktindeOku = false;
-  bool onceDurumu = false;
-  String onceSesi = "Melodi 1";
-  String onceSuresi = "45 Dakika Önce";
-
-  List<bool> gunler = [true, true, false, true, true, false, true];
   final List<String> gunIsimleriKisa = [
     "Paz",
     "Pzt",
@@ -40,8 +34,42 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
     "Cuma",
     "Cumartesi"
   ];
+  final List<String> onceSureSecenekleri = [
+    "15 Dakika Önce",
+    "30 Dakika Önce",
+    "45 Dakika Önce",
+    "60 Dakika Önce",
+    "75 Dakika Önce",
+    "90 Dakika Önce",
+  ];
 
-  String kapaliGunlerText(AuthService authService) {
+  late final String vakitKey;
+  late final String displayName;
+
+  @override
+  void initState() {
+    super.initState();
+    vakitKey = ReminderScheduler.vakitKeyFromLabel(widget.vakitAdi) ?? 'imsak';
+    displayName = ReminderScheduler.vakitDisplayNames[vakitKey] ?? widget.vakitAdi;
+  }
+
+  void _guncelle(AuthService authService,
+      Map<String, dynamic> Function(Map<String, dynamic> mevcut) degistir) {
+    final guncelAyarlar =
+        Map<String, dynamic>.from(authService.vakitEzanAyarlari);
+    guncelAyarlar[vakitKey] =
+        degistir(Map<String, dynamic>.from(guncelAyarlar[vakitKey] as Map));
+    authService.updateSetting('vakit_ezan_ayarlari', guncelAyarlar);
+    ReminderScheduler.rescheduleAll(authService);
+  }
+
+  List<bool> _gunlerOf(Map<String, dynamic> ayar) {
+    final raw = ayar['gunler'] as List?;
+    if (raw == null || raw.length != 7) return List.filled(7, true);
+    return raw.map((e) => e == true).toList();
+  }
+
+  String kapaliGunlerText(AuthService authService, List<bool> gunler) {
     List<String> kapaliOlanlar = [];
     for (int i = 0; i < gunler.length; i++) {
       if (!gunler[i]) {
@@ -140,7 +168,16 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
   @override
   Widget build(BuildContext context) {
     final authService = context.watch<AuthService>();
-    String safeTitle = widget.vakitAdi.replaceAll(" Vakti", "");
+    final ayar = Map<String, dynamic>.from(
+        authService.vakitEzanAyarlari[vakitKey] as Map);
+    final vakitDurumu = ayar['enabled'] == true;
+    final vakitSesKey = (ayar['sound'] as String?) ?? 'ezan_kisa';
+    final vaktindeOku = ayar['vaktindeOku'] == true;
+    final onceDurumu = ayar['onceEnabled'] == true;
+    final onceSesKey = (ayar['onceSound'] as String?) ?? 'uyari';
+    final onceDakika = (ayar['onceDakika'] as int?) ?? 45;
+    final onceSuresi = "$onceDakika Dakika Önce";
+    final gunler = _gunlerOf(ayar);
 
     return Directionality(
       textDirection: authService.uygulamaDili == "العربية"
@@ -150,7 +187,7 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
         backgroundColor: getBgColor(context),
         appBar: AppBar(
             leading: buildBeautifulBackButton(context),
-            title: Text(authService.translate(safeTitle),
+            title: Text(authService.translate(displayName),
                 style: TextStyle(
                     color: getTextColor(context),
                     fontWeight: FontWeight.bold,
@@ -163,31 +200,37 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
           children: [
             _sectionTitle(
                 context,
-                safeTitle == "İmsak" || safeTitle == "Sabah"
+                vakitKey == "imsak" || vakitKey == "sabah"
                     ? "Sabah Ezanı"
-                    : "$safeTitle Ezanı"),
+                    : "$displayName Ezanı"),
             _buildCard(context, children: [
               _buildSwitchTile(context, "Durumu", vakitDurumu,
-                  (v) => setState(() => vakitDurumu = v)),
+                  (v) => _guncelle(authService, (m) => {...m, 'enabled': v})),
               if (vakitDurumu) ...[
                 _buildDivider(context),
                 _buildTile(context,
                     icon: CupertinoIcons.speaker_2,
                     title: "Ses",
-                    trailingText: vakitSesi, onTap: () async {
-                  final secilenSes = await context.push<String>(
+                    trailingText:
+                        ReminderSounds.byKey(vakitSesKey).displayName,
+                    onTap: () async {
+                  final secilenKey = await context.push<String>(
                       '/settings/ses-secimi',
-                      extra: vakitSesi);
-                  if (secilenSes != null) {
-                    setState(() => vakitSesi = secilenSes);
+                      extra: vakitSesKey);
+                  if (secilenKey != null) {
+                    _guncelle(authService, (m) => {...m, 'sound': secilenKey});
                   }
                 }),
                 _buildDivider(context),
-                _buildSwitchTile(context, "$safeTitle vaktinde oku",
-                    vaktindeOku, (v) => setState(() => vaktindeOku = v)),
+                _buildSwitchTile(
+                    context,
+                    "$displayName vaktinde oku",
+                    vaktindeOku,
+                    (v) => _guncelle(
+                        authService, (m) => {...m, 'vaktindeOku': v})),
               ]
             ]),
-            if (safeTitle == "İmsak" || safeTitle == "Sabah")
+            if (vakitKey == "imsak" || vakitKey == "sabah")
               Padding(
                   padding: const EdgeInsets.only(top: 12, bottom: 20, left: 12),
                   child: Text(
@@ -196,21 +239,27 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
                           color: getSubTextColor(context), fontSize: 13)))
             else
               const SizedBox(height: 20),
-            _sectionTitle(context, "$safeTitle Vaktinden Önce Uyarı"),
+            _sectionTitle(context, "$displayName Vaktinden Önce Uyarı"),
             _buildCard(context, children: [
-              _buildSwitchTile(context, "Durumu", onceDurumu,
-                  (v) => setState(() => onceDurumu = v)),
+              _buildSwitchTile(
+                  context,
+                  "Durumu",
+                  onceDurumu,
+                  (v) => _guncelle(
+                      authService, (m) => {...m, 'onceEnabled': v})),
               if (onceDurumu) ...[
                 _buildDivider(context),
                 _buildTile(context,
                     icon: CupertinoIcons.speaker_2,
                     title: "Ses",
-                    trailingText: onceSesi, onTap: () async {
-                  final secilenSes = await context.push<String>(
+                    trailingText: ReminderSounds.byKey(onceSesKey).displayName,
+                    onTap: () async {
+                  final secilenKey = await context.push<String>(
                       '/settings/ses-secimi',
-                      extra: onceSesi);
-                  if (secilenSes != null) {
-                    setState(() => onceSesi = secilenSes);
+                      extra: onceSesKey);
+                  if (secilenKey != null) {
+                    _guncelle(
+                        authService, (m) => {...m, 'onceSound': secilenKey});
                   }
                 }),
                 _buildDivider(context),
@@ -224,7 +273,17 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
                       const SizedBox(width: 4),
                       Icon(Icons.unfold_more_rounded,
                           color: getSubTextColor(context), size: 18)
-                    ])),
+                    ]),
+                    onTap: () => showSwiperPicker(
+                        context,
+                        authService.translate("Uyarı Süresi"),
+                        onceSureSecenekleri,
+                        onceSuresi, (secilen) {
+                      final dakika =
+                          int.parse(secilen.split(' ').first);
+                      _guncelle(authService,
+                          (m) => {...m, 'onceDakika': dakika});
+                    })),
               ]
             ]),
             const SizedBox(height: 30),
@@ -238,8 +297,11 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
                   children: List.generate(7, (index) {
                     bool isActive = gunler[index];
                     return GestureDetector(
-                      onTap: () =>
-                          setState(() => gunler[index] = !gunler[index]),
+                      onTap: () => _guncelle(authService, (m) {
+                        final yeniGunler = List<bool>.from(gunler);
+                        yeniGunler[index] = !yeniGunler[index];
+                        return {...m, 'gunler': yeniGunler};
+                      }),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 8),
@@ -274,7 +336,7 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
             ]),
             Padding(
                 padding: const EdgeInsets.only(top: 8, left: 12),
-                child: Text(kapaliGunlerText(authService),
+                child: Text(kapaliGunlerText(authService, gunler),
                     style: TextStyle(
                         color: getSubTextColor(context), fontSize: 13))),
           ],
@@ -283,4 +345,3 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
     );
   }
 }
-

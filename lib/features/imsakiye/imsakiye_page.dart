@@ -1,11 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart'
     hide TextDirection; // intl çakışma hatası çözüldü
 import 'package:provider/provider.dart';
 import '../auth/auth_service.dart';
+import 'data/imsakiye_repository.dart';
 
 class ImsakiyePage extends StatefulWidget {
   final VoidCallback? onBack;
@@ -17,8 +16,12 @@ class ImsakiyePage extends StatefulWidget {
 class _ImsakiyePageState extends State<ImsakiyePage> {
   List data = [];
   bool loading = true;
+  String? errorMessage;
   String _lastCity = "";
   int _lastMethod = -1;
+
+  int _seciliAy = DateTime.now().month;
+  int _seciliYil = DateTime.now().year;
 
   @override
   void didChangeDependencies() {
@@ -30,57 +33,59 @@ class _ImsakiyePageState extends State<ImsakiyePage> {
     if (_lastCity != currentCity || _lastMethod != currentMethod) {
       _lastCity = currentCity;
       _lastMethod = currentMethod;
-      _fetch30Days(currentCity, currentMethod);
+      _fetchMonth();
     }
   }
 
-  Future<void> _fetch30Days(String city, int method) async {
+  void _oncekiAy() {
+    setState(() {
+      if (_seciliAy == 1) {
+        _seciliAy = 12;
+        _seciliYil--;
+      } else {
+        _seciliAy--;
+      }
+    });
+    _fetchMonth();
+  }
+
+  void _sonrakiAy() {
+    setState(() {
+      if (_seciliAy == 12) {
+        _seciliAy = 1;
+        _seciliYil++;
+      } else {
+        _seciliAy++;
+      }
+    });
+    _fetchMonth();
+  }
+
+  Future<void> _fetchMonth() async {
     if (!mounted) return;
     setState(() => loading = true);
     try {
-      DateTime now = DateTime.now();
-
-      int currentMonth = now.month;
-      int currentYear = now.year;
-
-      int nextMonth = currentMonth == 12 ? 1 : currentMonth + 1;
-      int nextYear = currentMonth == 12 ? currentYear + 1 : currentYear;
-
-      String url1 =
-          'https://api.aladhan.com/v1/calendarByCity?city=$city&country=Turkey&method=$method&month=$currentMonth&year=$currentYear';
-      String url2 =
-          'https://api.aladhan.com/v1/calendarByCity?city=$city&country=Turkey&method=$method&month=$nextMonth&year=$nextYear';
-
-      final responses = await Future.wait([
-        http.get(Uri.parse(url1)),
-        http.get(Uri.parse(url2)),
-      ]);
-
-      if (responses[0].statusCode == 200 &&
-          responses[1].statusCode == 200 &&
-          mounted) {
-        List data1 = json.decode(responses[0].body)['data'];
-        List data2 = json.decode(responses[1].body)['data'];
-
-        List combinedData = [...data1, ...data2];
-
-        String todayStr = DateFormat('dd-MM-yyyy').format(now);
-        int todayIndex = combinedData
-            .indexWhere((day) => day['date']['gregorian']['date'] == todayStr);
-        if (todayIndex == -1) todayIndex = 0;
-
-        int endIndex = todayIndex + 30;
-        if (endIndex > combinedData.length) endIndex = combinedData.length;
-
+      final repo = ImsakiyeRepository(
+        city: _lastCity,
+        method: _lastMethod,
+        month: _seciliAy,
+        year: _seciliYil,
+      );
+      final result = await repo.getData();
+      if (mounted) {
         setState(() {
-          data = combinedData.sublist(todayIndex, endIndex);
+          data = result;
           loading = false;
+          errorMessage = null;
         });
-      } else {
-        if (mounted) setState(() => loading = false);
       }
     } catch (e) {
-      if (mounted) setState(() => loading = false);
+      if (mounted) {
+        setState(() {
+          loading = false;
+          errorMessage = "İmsakiye yüklenemedi. İnternet bağlantınızı kontrol edin.";
+        });
+      }
     }
   }
 
@@ -133,9 +138,65 @@ class _ImsakiyePageState extends State<ImsakiyePage> {
                 color: textColor, fontSize: 20, fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator(color: Colors.orange))
-          : ListView.builder(
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                InkWell(
+                  onTap: _oncekiAy,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Icon(Icons.chevron_left_rounded,
+                        color: textColor, size: 26),
+                  ),
+                ),
+                Text(
+                    "${authService.translate(_getMonthName(_seciliAy))} $_seciliYil",
+                    style: TextStyle(
+                        color: textColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold)),
+                InkWell(
+                  onTap: _sonrakiAy,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Icon(Icons.chevron_right_rounded,
+                        color: textColor, size: 26),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: loading
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.orange))
+                : errorMessage != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(errorMessage!,
+                                  textAlign: TextAlign.center,
+                                  style:
+                                      const TextStyle(color: Colors.redAccent)),
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed: _fetchMonth,
+                                child: Text(authService.translate("Tekrar Dene")),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.all(16),
               itemCount: data.length,
@@ -200,6 +261,9 @@ class _ImsakiyePageState extends State<ImsakiyePage> {
                 );
               },
             ),
+          ),
+        ],
+      ),
     );
   }
 

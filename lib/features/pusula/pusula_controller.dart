@@ -12,6 +12,7 @@ class PusulaController extends ChangeNotifier {
   Position? _currentPosition;
   String? _errorMessage;
   StreamSubscription<CompassEvent>? _compassSubscription;
+  Timer? _compassTimeoutTimer;
 
   double get cumulativeHeading => _cumulativeHeading;
   double? get qiblaAngle => _qiblaAngle;
@@ -19,14 +20,26 @@ class PusulaController extends ChangeNotifier {
   Position? get currentPosition => _currentPosition;
   String? get errorMessage => _errorMessage;
 
+  /// Pusulanın gerçekten kullanılabilir olması için hem cihazın yönü hem
+  /// de gerçek kıble açısı hazır olmalı; aksi halde arayüz kıbleyi Kuzey'e
+  /// sabitlenmiş gibi (yanlış) göstermiş olur.
+  bool get isReady => _isLoaded && _qiblaAngle != null && _errorMessage == null;
+
   PusulaController() {
     _startCompass();
     _updateLocationAndQibla();
   }
 
   void _startCompass() {
-    _compassSubscription = FlutterCompass.events?.listen((event) {
+    final events = FlutterCompass.events;
+    if (events == null) {
+      _errorMessage = "Cihazınızda pusula sensörü bulunamadı.";
+      notifyListeners();
+      return;
+    }
+    _compassSubscription = events.listen((event) {
       if (event.heading != null) {
+        _compassTimeoutTimer?.cancel();
         double currentRaw = event.heading!;
         double diff = currentRaw - _lastRawHeading;
         if (diff > 180) diff -= 360;
@@ -34,6 +47,12 @@ class PusulaController extends ChangeNotifier {
         _cumulativeHeading += diff;
         _lastRawHeading = currentRaw;
         _isLoaded = true;
+        notifyListeners();
+      }
+    });
+    _compassTimeoutTimer = Timer(const Duration(seconds: 5), () {
+      if (!_isLoaded) {
+        _errorMessage = "Pusula sensöründen veri alınamadı.";
         notifyListeners();
       }
     });
@@ -71,8 +90,8 @@ class PusulaController extends ChangeNotifier {
             locationSettings:
                 const LocationSettings(accuracy: LocationAccuracy.high),
           );
-        } catch (_) {
-          // Konum alınamadı, pos null kalır.
+        } catch (e) {
+          debugPrint("Konum hatası: $e");
         }
       }
 
@@ -80,9 +99,14 @@ class PusulaController extends ChangeNotifier {
         _currentPosition = pos;
         _qiblaAngle = _calculateTrueBearing(pos.latitude, pos.longitude);
         notifyListeners();
+      } else {
+        _errorMessage = "Konum alınamadı. Lütfen tekrar deneyin.";
+        notifyListeners();
       }
     } catch (e) {
       debugPrint("Konum hatası: $e");
+      _errorMessage = "Konum alınamadı. Lütfen tekrar deneyin.";
+      notifyListeners();
     }
   }
 
@@ -102,6 +126,7 @@ class PusulaController extends ChangeNotifier {
   @override
   void dispose() {
     _compassSubscription?.cancel();
+    _compassTimeoutTimer?.cancel();
     super.dispose();
   }
 }

@@ -62,7 +62,8 @@ class _QuoteCard extends StatelessWidget {
             : DecorationImage(
                 image: NetworkImage(item.imageUrl),
                 fit: BoxFit.cover,
-                onError: (exception, stackTrace) {},
+                onError: (exception, stackTrace) =>
+                    debugPrint("Görsel yüklenemedi: $exception"),
               ),
       ),
       child: ClipRRect(

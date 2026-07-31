@@ -18,7 +18,16 @@ class CamiService {
         throw Exception('Places API error: ${data['error_message'] ?? status}');
       }
       final List results = data['results'] ?? [];
-      return results.map((e) => Cami.fromJson(e)).toList();
+      final mosques = <Cami>[];
+      for (final e in results) {
+        try {
+          mosques.add(Cami.fromJson(e as Map<String, dynamic>));
+        } catch (_) {
+          // Tek bir bozuk kayıt (beklenmeyen alan tipi/eksik veri) tüm
+          // listeyi düşürmesin; sadece o kayıt atlanır.
+        }
+      }
+      return mosques;
     } else {
       throw Exception('Failed to load mosques');
     }

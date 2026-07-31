@@ -1,17 +1,18 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import '../dini_gunler_model.dart';
 
 class DiniGunlerRepository {
+  /// Veri sabit bir asset'ten (assets/json/dini_gunler.json) okunur; uzak
+  /// bir kaynak yok, dolayısıyla okuma başarısız olursa (bozuk JSON gibi)
+  /// tekrar denemenin bir anlamı yoktur — hatayı olduğu gibi yukarı fırlatır.
   Future<List<DiniGunlerModel>> getDiniGunler() async {
     try {
-      // TODO: API'den veriyi çekmeye çalış.
-      // API çökerse veya internet yoksa catch bloğuna düşecek.
-      // Şimdilik sadece assets'ten okuyoruz.
       return await _fetchFromAssets();
     } catch (e) {
-      // Hata durumunda (veya internet yoksa) lokal (asset) veriyi getir.
-      return await _fetchFromAssets();
+      debugPrint("Dini günler verisi okunamadı: $e");
+      rethrow;
     }
   }
 

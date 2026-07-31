@@ -8,6 +8,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/repositories/base_repository.dart';
 import '../hatim_model.dart';
 
+/// [HatimRepository.toggleItem]'ın gerçekte ne yaptığını bildirir; UI bu
+/// sonuca göre doğru geri bildirimi gösterir (bkz. hatim_selection_page.dart).
+enum HatimToggleResult {
+  /// Görev müsaitti, kullanıcı tarafından alındı.
+  taken,
+
+  /// Kullanıcı kendi görevini bıraktı.
+  released,
+
+  /// Görev artık müsait değildi (başkası aldı ya da tamamlandı):
+  /// hiçbir yazma yapılmadı.
+  conflict,
+}
+
 /// Firestore şeması:
 ///   hatimler/{hatimId}                        -> özet sayaçlar (totalItems/takenItems/completedItems/participants)
 ///   hatimler/{hatimId}/assignments/{itemId}   -> Cüz/Sayfa/Sure görevi (type/value/title/subtitle/status/userId)
@@ -83,7 +97,9 @@ class HatimRepository extends BaseRepository<List<HatimModel>> {
   // --- Yazma işlemleri (transaction ile atomik) ---
 
   /// Görevi al (available -> taken) veya kendi aldığın görevi bırak (taken -> available).
-  Future<void> toggleItem({
+  /// Dönen [HatimToggleResult], çağıranın (UI) kullanıcıya doğru geri
+  /// bildirimi göstermesi için gerçekte ne olduğunu bildirir.
+  Future<HatimToggleResult> toggleItem({
     required String hatimId,
     required HatimSubItem item,
     required String userId,
@@ -97,7 +113,7 @@ class HatimRepository extends BaseRepository<List<HatimModel>> {
     final mirrorRef =
         _db.collection('users').doc(userId).collection('hatimGorevleri').doc(item.id);
 
-    await _db.runTransaction((tx) async {
+    final result = await _db.runTransaction<HatimToggleResult>((tx) async {
       final snap = await tx.get(assignmentRef);
       final status = snap.data()?['status']?.toString() ?? 'available';
       final ownerId = snap.data()?['userId']?.toString();
@@ -117,6 +133,7 @@ class HatimRepository extends BaseRepository<List<HatimModel>> {
           'value': item.value,
           'takenAt': FieldValue.serverTimestamp(),
         });
+        return HatimToggleResult.taken;
       } else if (status == 'taken' && ownerId == userId) {
         tx.update(assignmentRef, {
           'status': 'available',
@@ -125,12 +142,18 @@ class HatimRepository extends BaseRepository<List<HatimModel>> {
           'takenAt': FieldValue.delete(),
         });
         tx.delete(mirrorRef);
+        return HatimToggleResult.released;
       }
-      // Başkası tarafından alınmışsa veya zaten tamamlanmışsa: sessizce yok say.
-      // (Firestore rules aynı durumu sunucu tarafında da reddedecek.)
+      // Başkası tarafından alınmışsa veya zaten tamamlanmışsa: hiçbir şey
+      // yazmadan durumu bildir. (Firestore rules aynı durumu sunucu
+      // tarafında da reddedecek.)
+      return HatimToggleResult.conflict;
     });
 
-    await _recomputeHatimStats(hatimId);
+    if (result != HatimToggleResult.conflict) {
+      await _recomputeHatimStats(hatimId);
+    }
+    return result;
   }
 
   /// Kullanıcının kendi görevini "okudum" olarak işaretler.

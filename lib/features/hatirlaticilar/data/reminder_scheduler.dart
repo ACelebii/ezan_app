@@ -24,6 +24,63 @@ class ReminderScheduler {
   static const ramazanBaseId = 200;
   static const ramazanMaxDays = 30;
 
+  /// 6 vakit x 7 gün = 42 id (300-341): asıl ezan alarmı.
+  static const vakitEzanBaseId = 300;
+
+  /// 6 vakit x 1 id = 6 id (350-355): vaktinden önce uyarı.
+  static const vakitOnceBaseId = 350;
+
+  /// 4 vakit x 2 hatırlatma = 8 id (400-407): "Vaktinde Kıl".
+  static const vaktindeKilBaseId = 400;
+
+  static const vakitKeys = [
+    'imsak',
+    'sabah',
+    'ogle',
+    'ikindi',
+    'aksam',
+    'yatsi',
+  ];
+
+  /// Ayarlar sayfalarında kullanılan görünen etiketler (vakit_settings_page
+  /// ve settings_page'deki vakit alarm bölümü aynı etiketleri kullanır).
+  static const vakitLabels = {
+    'imsak': 'İmsak Vakti',
+    'sabah': 'Sabah Ezanı',
+    'ogle': 'Öğle Vakti',
+    'ikindi': 'İkindi Vakti',
+    'aksam': 'Akşam Vakti',
+    'yatsi': 'Yatsı Vakti',
+  };
+
+  static const vakitDisplayNames = {
+    'imsak': 'İmsak',
+    'sabah': 'Sabah',
+    'ogle': 'Öğle',
+    'ikindi': 'İkindi',
+    'aksam': 'Akşam',
+    'yatsi': 'Yatsı',
+  };
+
+  /// Vakit anahtarlarının Aladhan API'deki karşılık gelen alan adları.
+  static const vakitAladhanField = {
+    'imsak': 'Fajr',
+    'sabah': 'Sunrise',
+    'ogle': 'Dhuhr',
+    'ikindi': 'Asr',
+    'aksam': 'Maghrib',
+    'yatsi': 'Isha',
+  };
+
+  static const vaktindeKilKeys = ['ogle', 'ikindi', 'aksam', 'yatsi'];
+
+  static String? vakitKeyFromLabel(String label) {
+    for (final entry in vakitLabels.entries) {
+      if (entry.value == label) return entry.key;
+    }
+    return null;
+  }
+
   static const _turkceAylar = {
     'Ocak': 1,
     'Şubat': 2,
@@ -43,7 +100,7 @@ class ReminderScheduler {
     final ayarlar = authService.hatirlaticiAyarlari;
     final city = authService.seciliSehir['isim'] as String? ?? 'İstanbul';
 
-    final timings = await _timingsFor(authService, city);
+    final timings = await timingsFor(authService, city);
     if (timings == null) return;
 
     final imsak = parseMinutesOfDay(timings['Fajr']);
@@ -54,13 +111,125 @@ class ReminderScheduler {
     await _rescheduleOruc(_ayar(ayarlar, 'oruc'), imsak);
     await _rescheduleTeheccut(_ayar(ayarlar, 'teheccut'), imsak);
     await _rescheduleRamazan(_ayar(ayarlar, 'ramazan'), imsak);
+    await _rescheduleVakitEzanlari(authService, timings);
+    await _rescheduleVaktindeKil(authService, timings);
+  }
+
+  static Future<void> _rescheduleVakitEzanlari(
+      AuthService authService, Map<String, dynamic> timings) async {
+    final ayarlar = authService.vakitEzanAyarlari;
+    for (var i = 0; i < vakitKeys.length; i++) {
+      final key = vakitKeys[i];
+      final ayar = _ayar(ayarlar, key);
+      final field = vakitAladhanField[key]!;
+      final minutes = parseMinutesOfDay(timings[field]);
+      final displayName = vakitDisplayNames[key]!;
+      final gunler = _gunlerOf(ayar);
+
+      final ezanBase = vakitEzanBaseId + i * 7;
+      if (ayar['enabled'] != true || minutes == null) {
+        await NotificationService.instance
+            .cancelRange(ezanBase, ezanBase + 6);
+      } else {
+        final sound = (ayar['sound'] as String?) ?? 'ezan_kisa';
+        for (var weekday = DateTime.monday;
+            weekday <= DateTime.sunday;
+            weekday++) {
+          final id = ezanBase + (weekday - DateTime.monday);
+          if (!gunler[weekday % 7]) {
+            await NotificationService.instance.cancel(id);
+            continue;
+          }
+          await NotificationService.instance.scheduleWeekly(
+            id: id,
+            title: '$displayName Ezanı',
+            body: '$displayName vakti girdi.',
+            weekday: weekday,
+            hour: minutes ~/ 60,
+            minute: minutes % 60,
+            soundKey: sound,
+          );
+        }
+      }
+
+      final onceId = vakitOnceBaseId + i;
+      if (ayar['onceEnabled'] != true || minutes == null) {
+        await NotificationService.instance.cancel(onceId);
+      } else {
+        final onceDakika = (ayar['onceDakika'] as int?) ?? 45;
+        final t = triggerTime(minutes, onceDakika);
+        await NotificationService.instance.scheduleDaily(
+          id: onceId,
+          title: '$displayName Vaktine Yaklaşıyor',
+          body: '$displayName vaktine yaklaşık $onceDakika dakika kaldı.',
+          hour: t.hour,
+          minute: t.minute,
+          soundKey: (ayar['onceSound'] as String?) ?? 'uyari',
+        );
+      }
+    }
+  }
+
+  /// "Günler" alanını Firestore/SharedPreferences round-trip'inden sonra
+  /// bile güvenle List<bool>'a çevirir; index 0=Pazar ... 6=Cumartesi
+  /// (DateTime.weekday % 7 ile aynı sırada).
+  static List<bool> _gunlerOf(Map<String, dynamic> ayar) {
+    final raw = ayar['gunler'] as List?;
+    if (raw == null || raw.length != 7) {
+      return List.filled(7, true);
+    }
+    return raw.map((e) => e == true).toList();
+  }
+
+  static Future<void> _rescheduleVaktindeKil(
+      AuthService authService, Map<String, dynamic> timings) async {
+    final ayarlar = authService.vaktindeKilAyarlari;
+    for (var i = 0; i < vaktindeKilKeys.length; i++) {
+      final key = vaktindeKilKeys[i];
+      final ayar = _ayar(ayarlar, key);
+      final field = vakitAladhanField[key]!;
+      final minutes = parseMinutesOfDay(timings[field]);
+      final id1 = vaktindeKilBaseId + i * 2;
+      final id2 = id1 + 1;
+
+      if (ayar['enabled'] != true || minutes == null) {
+        await NotificationService.instance.cancel(id1);
+        await NotificationService.instance.cancel(id2);
+        continue;
+      }
+
+      final displayName = vakitDisplayNames[key]!;
+      final ilkUyari = (ayar['ilkUyariDakika'] as int?) ?? 30;
+      final siklik = (ayar['siklikDakika'] as int?) ?? 10;
+      final sound = (ayar['sound'] as String?) ?? 'melodi_19';
+
+      final t1 = triggerTime(minutes, -ilkUyari);
+      await NotificationService.instance.scheduleDaily(
+        id: id1,
+        title: 'Haydi kalk!',
+        body: 'Vakit girdi, $displayName namazını kıl.',
+        hour: t1.hour,
+        minute: t1.minute,
+        soundKey: sound,
+      );
+
+      final t2 = triggerTime(minutes, -(ilkUyari + siklik));
+      await NotificationService.instance.scheduleDaily(
+        id: id2,
+        title: 'Hatırlatma',
+        body: '$displayName namazını henüz kılmadıysan vakit daralıyor.',
+        hour: t2.hour,
+        minute: t2.minute,
+        soundKey: sound,
+      );
+    }
   }
 
   static Map<String, dynamic> _ayar(
           Map<String, dynamic> ayarlar, String key) =>
       Map<String, dynamic>.from(ayarlar[key] as Map? ?? const {});
 
-  static Future<Map<String, dynamic>?> _timingsFor(
+  static Future<Map<String, dynamic>?> timingsFor(
       AuthService authService, String city) async {
     final cached = await authService.getCachedPrayerTimes(city);
     if (cached != null) return cached;

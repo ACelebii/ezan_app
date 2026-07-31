@@ -45,6 +45,12 @@ class KuranProvider extends ChangeNotifier {
   };
   String selectedHafizName = "Abdul Basit";
 
+  /// just_audio çalma listesindeki her sıranın [currentAyahs] içindeki
+  /// gerçek indeksi. Sesi olmayan ayetler çalma listesine hiç girmediği
+  /// için bu eşleme olmadan `currentIndexStream`/`playSingleAyah` yanlış
+  /// ayeti işaretler/çalar.
+  List<int> _playlistAyahIndexes = [];
+
   int _bgIndex = 2;
   int get bgIndex => _bgIndex;
   String _pageStyle = "Resim";
@@ -75,6 +81,34 @@ class KuranProvider extends ChangeNotifier {
     fetchSurahs();
     fetchJuzs();
     _loadSavedBookmark();
+    _loadSavedPreferences();
+  }
+
+  Future<void> _loadSavedPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    _bgIndex = prefs.getInt('kuran_bg_index') ?? _bgIndex;
+    _pageStyle = prefs.getString('kuran_page_style') ?? _pageStyle;
+    _ayahTrackingStyle =
+        prefs.getString('kuran_ayah_tracking_style') ?? _ayahTrackingStyle;
+    selectedHafizName =
+        prefs.getString('kuran_hafiz_name') ?? selectedHafizName;
+    volume = prefs.getDouble('kuran_volume') ?? volume;
+    brightness = prefs.getDouble('kuran_brightness') ?? brightness;
+    speed = prefs.getDouble('kuran_speed') ?? speed;
+    audioPlayer.setVolume(volume);
+    audioPlayer.setSpeed(speed);
+    notifyListeners();
+  }
+
+  Future<void> _savePreference(String key, Object value) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (value is int) {
+      await prefs.setInt(key, value);
+    } else if (value is String) {
+      await prefs.setString(key, value);
+    } else if (value is double) {
+      await prefs.setDouble(key, value);
+    }
   }
 
   void _initAudio() {
@@ -82,12 +116,15 @@ class KuranProvider extends ChangeNotifier {
       isPlaying = state.playing;
       notifyListeners();
     });
-    audioPlayer.currentIndexStream.listen((index) {
-      if (index != null &&
-          currentAyahs.isNotEmpty &&
-          index < currentAyahs.length) {
-        activeAyahId = currentAyahs[index].id;
-        notifyListeners();
+    audioPlayer.currentIndexStream.listen((playlistIndex) {
+      if (playlistIndex != null &&
+          playlistIndex >= 0 &&
+          playlistIndex < _playlistAyahIndexes.length) {
+        final ayahIndex = _playlistAyahIndexes[playlistIndex];
+        if (ayahIndex < currentAyahs.length) {
+          activeAyahId = currentAyahs[ayahIndex].id;
+          notifyListeners();
+        }
       }
     });
   }
@@ -111,6 +148,10 @@ class KuranProvider extends ChangeNotifier {
     } else {
       isBookmarked = false;
     }
+  }
+
+  void clearError() {
+    errorMessage = null;
   }
 
   Future<void> fetchSurahs() async {
@@ -154,6 +195,8 @@ class KuranProvider extends ChangeNotifier {
         await _repo.getAyahsBySurah(surah.id, hafizList[selectedHafizName]!);
     if (result is Success<List<AyahModel>>) {
       currentAyahs = result.data ?? [];
+    } else if (result is Failure<List<AyahModel>>) {
+      errorMessage = result.errorMessage;
     }
 
     isAyahsLoading = false;
@@ -178,6 +221,8 @@ class KuranProvider extends ChangeNotifier {
         await _repo.getAyahsByJuz(juzNumber, hafizList[selectedHafizName]!);
     if (result is Success<List<AyahModel>>) {
       currentAyahs = result.data ?? [];
+    } else if (result is Failure<List<AyahModel>>) {
+      errorMessage = result.errorMessage;
     }
 
     isAyahsLoading = false;
@@ -202,6 +247,8 @@ class KuranProvider extends ChangeNotifier {
         await _repo.getAyahsByPage(pageNumber, hafizList[selectedHafizName]!);
     if (result is Success<List<AyahModel>>) {
       currentAyahs = result.data ?? [];
+    } else if (result is Failure<List<AyahModel>>) {
+      errorMessage = result.errorMessage;
     }
 
     isAyahsLoading = false;
@@ -210,12 +257,17 @@ class KuranProvider extends ChangeNotifier {
   }
 
   Future<void> _setupPlaylist() async {
+    _playlistAyahIndexes = [];
     if (currentAyahs.isEmpty) return;
     try {
-      final sources = currentAyahs
-          .where((ayah) => ayah.audioUrl.isNotEmpty)
-          .map((ayah) => AudioSource.uri(Uri.parse(ayah.audioUrl)))
-          .toList();
+      final sources = <AudioSource>[];
+      for (var i = 0; i < currentAyahs.length; i++) {
+        if (currentAyahs[i].audioUrl.isNotEmpty) {
+          _playlistAyahIndexes.add(i);
+          sources.add(AudioSource.uri(Uri.parse(currentAyahs[i].audioUrl)));
+        }
+      }
+      if (sources.isEmpty) return;
       await audioPlayer.setAudioSources(sources,
           initialIndex: 0, initialPosition: Duration.zero);
       // Eğer repeat açıksa yeni listede de aktif et
@@ -247,10 +299,15 @@ class KuranProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// [index] `currentAyahs` içindeki konumdur (UI listeleri bu diziyi
+  /// gösterir). Sesi olmayan bir ayete tıklanırsa sessizce yok sayılır.
   Future<void> playSingleAyah(int index) async {
+    if (index < 0 || index >= currentAyahs.length) return;
+    final playlistIndex = _playlistAyahIndexes.indexOf(index);
+    if (playlistIndex == -1) return;
     activeAyahId = currentAyahs[index].id;
     notifyListeners();
-    await audioPlayer.seek(Duration.zero, index: index);
+    await audioPlayer.seek(Duration.zero, index: playlistIndex);
     audioPlayer.play();
   }
 
@@ -320,26 +377,31 @@ class KuranProvider extends ChangeNotifier {
       speed = 1.0;
     }
     audioPlayer.setSpeed(speed);
+    _savePreference('kuran_speed', speed);
     notifyListeners();
   }
 
   void setBgIndex(int index) {
     _bgIndex = index;
+    _savePreference('kuran_bg_index', index);
     notifyListeners();
   }
 
   void setPageStyle(String style) {
     _pageStyle = style;
+    _savePreference('kuran_page_style', style);
     notifyListeners();
   }
 
   void setAyahTrackingStyle(String style) {
     _ayahTrackingStyle = style;
+    _savePreference('kuran_ayah_tracking_style', style);
     notifyListeners();
   }
 
   void changeHafiz(String name) {
     selectedHafizName = name;
+    _savePreference('kuran_hafiz_name', name);
     notifyListeners();
     if (activeSurah != null) {
       loadSurahDetails(activeSurah!);
@@ -353,11 +415,13 @@ class KuranProvider extends ChangeNotifier {
   void setVolume(double val) {
     volume = val;
     audioPlayer.setVolume(val);
+    _savePreference('kuran_volume', val);
     notifyListeners();
   }
 
   void setBrightness(double val) {
     brightness = val;
+    _savePreference('kuran_brightness', val);
     notifyListeners();
   }
 

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'hatim_model.dart';
 import 'hatim_provider.dart';
+import 'data/hatim_repository.dart' show HatimToggleResult;
 import '../auth/auth_service.dart';
 
 class HatimSelectionPage extends StatelessWidget {
@@ -102,8 +103,9 @@ class HatimSelectionPage extends StatelessWidget {
                     // 2. GÖREVİ AL VEYA BIRAK (Aç/Kapat Mantığı) — canlı
                     // dinleme sonucu yansıyacağı için burada yalnızca
                     // Firestore'a yazıyoruz, yerel state'i elle değiştirmiyoruz.
+                    HatimToggleResult result;
                     try {
-                      await provider.toggleItem(
+                      result = await provider.toggleItem(
                         hatim,
                         resolvedTask,
                         item,
@@ -120,22 +122,40 @@ class HatimSelectionPage extends StatelessWidget {
                       return;
                     }
 
-                    // 3. KULLANICIYA GÖRSEL BİLDİRİM VER
+                    // 3. KULLANICIYA GERÇEK SONUCA GÖRE GÖRSEL BİLDİRİM VER
+                    // (transaction başkası tarafından alınmışsa hiçbir şey
+                    // yazmadan "conflict" döner; bu durumda sahte bir
+                    // "eklendi" mesajı göstermek yerine gerçek durumu bildir).
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context)
                         .clearSnackBars(); // Üst üste binmesini engeller
+                    final String message;
+                    final Color color;
+                    switch (result) {
+                      case HatimToggleResult.taken:
+                        message =
+                            "${item.title} ${item.subtitle} Görevlerinize eklendi.";
+                        color = Colors.teal;
+                        break;
+                      case HatimToggleResult.released:
+                        message =
+                            "${item.title} ${item.subtitle} Görevlerinizden çıkarıldı.";
+                        color = Colors.redAccent;
+                        break;
+                      case HatimToggleResult.conflict:
+                        message =
+                            "${item.title} ${item.subtitle} az önce başka biri tarafından alındı.";
+                        color = Colors.orange;
+                        break;
+                    }
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(
-                            !isTaken
-                                ? "${item.title} ${item.subtitle} Görevlerinize eklendi."
-                                : "${item.title} ${item.subtitle} Görevlerinizden çıkarıldı.",
+                        content: Text(message,
                             style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold)),
-                        backgroundColor:
-                            !isTaken ? Colors.teal : Colors.redAccent,
-                        duration: const Duration(milliseconds: 1000),
+                        backgroundColor: color,
+                        duration: const Duration(milliseconds: 1200),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );

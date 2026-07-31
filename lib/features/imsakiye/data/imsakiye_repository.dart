@@ -6,20 +6,30 @@ import 'package:ezan_vakti_uygulamasi/core/repositories/base_repository.dart';
 class ImsakiyeRepository extends BaseRepository<List<dynamic>> {
   final String city;
   final int method;
-  static const String _cacheKey = 'imsakiye_cache';
+  final int month;
+  final int year;
 
-  ImsakiyeRepository({required this.city, required this.method});
+  ImsakiyeRepository({
+    required this.city,
+    required this.method,
+    required this.month,
+    required this.year,
+  });
+
+  // Şehir/yöntem/ay/yıl birleşimine özel: aksi halde farklı bir şehir ya da
+  // ayın önbelleği aynı tek anahtarın üzerine yazar ve yanlış veri gösterir.
+  String get _cacheKey => 'imsakiye_cache_${city}_${method}_${month}_$year';
 
   @override
   Future<List<dynamic>> fetchFromRemote() async {
-    // Simplified fetching logic for demonstration
-    String url =
-        'https://api.aladhan.com/v1/calendarByCity?city=$city&country=Turkey&method=$method';
+    final url = 'https://api.aladhan.com/v1/calendarByCity'
+        '?city=${Uri.encodeComponent(city)}&country=Turkey'
+        '&method=$method&month=$month&year=$year';
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
       return json.decode(response.body)['data'];
     }
-    throw Exception("İmsakiye yüklenemedi");
+    throw Exception("İmsakiye yüklenemedi (${response.statusCode})");
   }
 
   @override

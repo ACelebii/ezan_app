@@ -37,6 +37,10 @@ class _AddCityPreviewPageState extends State<AddCityPreviewPage> {
   void initState() {
     super.initState();
     _gosterilenSehir = widget.baslangicSehri;
+    // Mevcut global hesaplama yöntemiyle başlat; aksi halde kullanıcı bu
+    // seçiciye hiç dokunmasa bile "Kaydet" sabit "Diyanet Takvimi"
+    // varsayılanını yazıp global ayarı sessizce sıfırlıyordu.
+    _seciliYontem = context.read<AuthService>().hesaplamaYontemi;
     _fetchVakitler(_gosterilenSehir);
   }
 
@@ -89,6 +93,7 @@ class _AddCityPreviewPageState extends State<AddCityPreviewPage> {
         });
       }
     } catch (e) {
+      debugPrint("Şehir vakitleri alınamadı ($sehir): $e");
       setState(() {
         hasError = true;
         isLoading = false;

@@ -35,7 +35,23 @@ class KuranDownloadService {
     return null;
   }
 
+  /// Daha önce indirilmiş sayfaları yeniden indirir; böylece periyodik
+  /// arka plan senkronizasyonu (bkz. sync_manager.dart) çevrimdışı
+  /// önbelleği güncel/bütün tutar. Ağ yoksa mevcut yerel kopyalar
+  /// dokunulmadan kalır.
   static Future<void> refresh() async {
-    // Sync logic (optional, e.g., check for updates)
+    final db = await LocalDatabase.instance.database;
+    final downloaded =
+        await db.query('kuran_pages', where: 'is_downloaded = 1');
+    for (final row in downloaded) {
+      final pageNumber = row['page_number'] as int;
+      final pageStr = pageNumber.toString().padLeft(3, '0');
+      final url = "https://android.quran.com/data/width_1024/page$pageStr.png";
+      try {
+        await downloadPage(pageNumber, url);
+      } catch (_) {
+        // Ağ yoksa/indirme başarısız olursa mevcut yerel kopya korunur.
+      }
+    }
   }
 }

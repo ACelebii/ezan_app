@@ -121,9 +121,16 @@ class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
             Expanded(
               child: gruplanmisVeri.isEmpty
                   ? Center(
-                      child: Text("Bu yıla ait veri bulunamadı.",
+                      child: Text(
+                          provider.errorMessage ??
+                              "Bu yıla ait veri bulunamadı.",
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                              color: isDark ? Colors.white54 : Colors.black54)))
+                              color: provider.errorMessage != null
+                                  ? Colors.redAccent
+                                  : (isDark
+                                      ? Colors.white54
+                                      : Colors.black54))))
                   : ListView.builder(
                       physics: const BouncingScrollPhysics(),
                       padding: const EdgeInsets.symmetric(
