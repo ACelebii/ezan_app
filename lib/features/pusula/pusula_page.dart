@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'pusula_controller.dart';
+import '../../core/widgets/glass_button.dart';
 
 class PusulaPage extends StatelessWidget {
   final VoidCallback? onBack;
@@ -55,7 +56,24 @@ class _PusulaView extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildBeautifulBackButton(context, onBack),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16.0, top: 8.0),
+                      child: GlassButton(
+                        icon: Icons.arrow_back_ios_new_rounded,
+                        iconColor: Colors.white,
+                        size: 18,
+                        onTap: () {
+                          final backCallback = onBack;
+                          if (backCallback != null) {
+                            backCallback();
+                          } else if (context.canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/');
+                          }
+                        },
+                      ),
+                    ),
                     _buildMapButton(
                         context, controller), // YENİ HARİTA BUTONU BURADA
                   ],
@@ -88,35 +106,6 @@ class _PusulaView extends StatelessWidget {
   }
 
   // --- UI Methods ---
-  Widget _buildBeautifulBackButton(
-      BuildContext context, VoidCallback? onBack) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16.0, top: 8.0),
-      child: InkWell(
-        onTap: () {
-          if (onBack != null) {
-            onBack();
-          } else if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go('/');
-          }
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white24),
-          ),
-          child: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Colors.white, size: 18),
-        ),
-      ),
-    );
-  }
-
   // --- YENİ EKLENEN: HARİTA BUTONU ---
   Widget _buildMapButton(BuildContext context, PusulaController controller) {
     return Padding(

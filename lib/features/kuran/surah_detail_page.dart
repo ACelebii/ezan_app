@@ -6,6 +6,7 @@ import 'providers/kuran_provider.dart';
 import 'kuran_models.dart';
 import 'kuran_download_service.dart';
 import '../auth/auth_service.dart';
+import '../../core/widgets/glass_button.dart';
 
 class SearchBottomSheet extends StatefulWidget {
   final KuranProvider provider;
@@ -544,14 +545,18 @@ class SurahDetailPage extends StatelessWidget {
           leadingWidth: 100,
           leading: Row(
             children: [
-              // --- 1. GERİ BUTONU DÜZELTİLDİ ---
-              IconButton(
-                icon: Icon(Icons.arrow_back, color: txtColor),
-                onPressed: () {
-                  provider
-                      .stopAudio(); // Çıkarken sesi kapat ki arka planda çalmasın
-                  context.pop(); // Tertemiz, standart geri çıkış işlemi!
-                },
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, right: 4.0),
+                child: GlassButton(
+                  icon: Icons.arrow_back_ios_new_rounded,
+                  iconColor: txtColor,
+                  size: 18,
+                  onTap: () {
+                    provider
+                        .stopAudio(); // Çıkarken sesi kapat ki arka planda çalmasın
+                    context.pop(); // Tertemiz, standart geri çıkış işlemi!
+                  },
+                ),
               ),
               IconButton(
                 icon: Icon(

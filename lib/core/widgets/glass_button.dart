@@ -5,10 +5,19 @@ class GlassButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
+  /// Sabit/dinamik bir arkaplanı olan sayfalar (ör. Pusula'nın her zaman
+  /// koyu teması, Kuran'ın kullanıcı seçimine göre değişen arkaplan rengi)
+  /// için sistem temasından bağımsız bir ikon rengi verir. Belirtilmezse
+  /// açık/koyu sistem temasına göre otomatik seçilir.
+  final Color? iconColor;
+  final double size;
+
   const GlassButton({
     super.key,
     required this.icon,
     required this.onTap,
+    this.iconColor,
+    this.size = 20,
   });
 
   @override
@@ -26,8 +35,8 @@ class GlassButton extends StatelessWidget {
         ),
         child: Icon(
           icon,
-          color: isDark ? Colors.white : Colors.black87,
-          size: 20,
+          color: iconColor ?? (isDark ? Colors.white : Colors.black87),
+          size: size,
         ),
       ),
     );

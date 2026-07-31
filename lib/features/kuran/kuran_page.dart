@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'providers/kuran_provider.dart';
 import 'surah_detail_page.dart' show SearchBottomSheet;
+import '../../core/widgets/glass_button.dart';
 
 class KuranPage extends StatelessWidget {
   final VoidCallback? onBack;
@@ -114,31 +115,35 @@ class KuranView extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: const Color(0xFF0F4C3A),
           elevation: 0,
-          leading: IconButton(
-            icon:
-                const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-            onPressed: () {
-              // GÜVENLİ ÇIKIŞ MANTIĞI (Crash Engelleyici)
-              try {
-                final provider = context.read<KuranProvider>();
-                if (provider.isPlaying) {
-                  provider.audioPlayer
-                      .pause(); // Hata fırlatırsa yoksay (catch'e düşer)
+          leading: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: GlassButton(
+              icon: Icons.arrow_back_ios_new_rounded,
+              iconColor: Colors.white,
+              size: 18,
+              onTap: () {
+                // GÜVENLİ ÇIKIŞ MANTIĞI (Crash Engelleyici)
+                try {
+                  final provider = context.read<KuranProvider>();
+                  if (provider.isPlaying) {
+                    provider.audioPlayer
+                        .pause(); // Hata fırlatırsa yoksay (catch'e düşer)
+                  }
+                } catch (_) {
+                  // Ses motoru kapanırken oluşabilecek her türlü ANR/Crash burada engellenir.
                 }
-              } catch (_) {
-                // Ses motoru kapanırken oluşabilecek her türlü ANR/Crash burada engellenir.
-              }
 
-              if (onBack != null) {
-                onBack!(); // Alt menüdeysek ana menüye dön
-              } else {
-                if (context.canPop()) {
-                  context.pop(); // Harici açılmışsa temizce kapat
+                if (onBack != null) {
+                  onBack!(); // Alt menüdeysek ana menüye dön
                 } else {
-                  context.go('/');
+                  if (context.canPop()) {
+                    context.pop(); // Harici açılmışsa temizce kapat
+                  } else {
+                    context.go('/');
+                  }
                 }
-              }
-            },
+              },
+            ),
           ),
           title: const Text("Kuran-ı Kerim",
               style: TextStyle(

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart'
 import 'package:provider/provider.dart';
 import '../auth/auth_service.dart';
 import 'data/imsakiye_repository.dart';
+import '../../core/widgets/glass_button.dart';
 
 class ImsakiyePage extends StatefulWidget {
   final VoidCallback? onBack;
@@ -106,7 +107,10 @@ class _ImsakiyePageState extends State<ImsakiyePage> {
         automaticallyImplyLeading: false,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: InkWell(
+          child: GlassButton(
+            icon: Icons.arrow_back_ios_new_rounded,
+            iconColor: textColor,
+            size: 18,
             onTap: () {
               if (widget.onBack != null) {
                 widget.onBack!();
@@ -116,19 +120,6 @@ class _ImsakiyePageState extends State<ImsakiyePage> {
                 context.go('/'); // Alt menüden tıklandıysa ana sayfaya git
               }
             },
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(12),
-                border:
-                    Border.all(color: isDark ? Colors.white24 : Colors.black12),
-              ),
-              child: Icon(Icons.arrow_back_ios_new_rounded,
-                  color: textColor, size: 18),
-            ),
           ),
         ),
         backgroundColor: bgColor,
