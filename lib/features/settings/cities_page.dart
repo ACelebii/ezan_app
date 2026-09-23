@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/vakit/kayitli_sehir.dart';
 import 'settings_common.dart';
 
 class CitiesPage extends StatefulWidget {
@@ -62,23 +63,23 @@ class _CitiesPageState extends State<CitiesPage> {
               child: Column(
                 children: sehirler.asMap().entries.map((entry) {
                   int idx = entry.key;
-                  var sehir = entry.value;
-                  bool isSecili = sehir["secili"] == "true";
+                  final sehir = entry.value;
+                  final isSecili = sehir.secili;
 
                   return Column(
                     children: [
                       ListTile(
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
-                        leading: Icon(Icons.public,
-                            color: getSubTextColor(context)),
-                        title: Text(sehir["isim"]!,
+                        leading:
+                            Icon(Icons.public, color: getSubTextColor(context)),
+                        title: Text(sehir.isim,
                             style: TextStyle(
                                 color: getTextColor(context),
                                 fontSize: 18,
                                 fontWeight: FontWeight.w500)),
                         subtitle: Text(
-                            "${authService.translate(sehir["sehir"] ?? "Türkiye")}\n${authService.translate(sehir["tur"])}",
+                            "${authService.translate(sehir.ulke)}\n${authService.translate(sehir.tur)}",
                             style: TextStyle(
                                 color: getSubTextColor(context),
                                 fontSize: 13,
@@ -89,18 +90,9 @@ class _CitiesPageState extends State<CitiesPage> {
                                     color: Colors.redAccent),
                                 onPressed: () {
                                   if (sehirler.length > 1) {
-                                    List<dynamic> guncel = List.from(sehirler);
-                                    guncel.removeAt(idx);
-                                    // Silinen şehir seçiliyse, kalan
-                                    // şehirlerden biri seçili işaretlenmezse
-                                    // hiçbir şehir "aktif" görünmez (fallback
-                                    // olarak sessizce ilk şehre dönülür, ama
-                                    // liste bunu göstermez).
-                                    if (isSecili && guncel.isNotEmpty) {
-                                      guncel[0]["secili"] = "true";
-                                    }
-                                    authService.updateSetting(
-                                        'kayitli_sehirler', guncel);
+                                    // Seçili şehir silinirse ilk şehir seçilir.
+                                    authService.sehirleriKaydet(
+                                        sehirler.cikararak(sehir.kimlik));
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
@@ -114,13 +106,8 @@ class _CitiesPageState extends State<CitiesPage> {
                                 : null),
                         onTap: () {
                           if (!isEditing) {
-                            List<dynamic> guncelListe = List.from(sehirler);
-                            for (var s in guncelListe) {
-                              s["secili"] = "false";
-                            }
-                            guncelListe[idx]["secili"] = "true";
-                            authService.updateSetting(
-                                'kayitli_sehirler', guncelListe);
+                            authService.sehirleriKaydet(
+                                sehirler.secerek(sehir.kimlik));
                             context.pop();
                           }
                         },
@@ -142,4 +129,3 @@ class _CitiesPageState extends State<CitiesPage> {
     );
   }
 }
-

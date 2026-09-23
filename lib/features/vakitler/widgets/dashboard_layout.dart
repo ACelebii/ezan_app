@@ -1,3 +1,4 @@
+import '../../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
@@ -88,11 +89,13 @@ class DashboardLayout extends StatelessWidget {
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                               content: Text(
-                                  "${translate(item["t"] as String)} yakında eklenecek...",
+                                  context.t(
+                                      "${translate(item["t"] as String)} yakında eklenecek..."),
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white)),
-                              backgroundColor: accentColor.withValues(alpha: 0.8),
+                              backgroundColor:
+                                  accentColor.withValues(alpha: 0.8),
                               behavior: SnackBarBehavior.floating,
                               duration: const Duration(seconds: 1),
                               shape: RoundedRectangleBorder(
@@ -104,8 +107,7 @@ class DashboardLayout extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             GradientFeatureIcon(
-                              iconKey:
-                                  item["k"] as GradientFeatureIconKey,
+                              iconKey: item["k"] as GradientFeatureIconKey,
                               size: 40,
                             ),
                             const SizedBox(height: 8),

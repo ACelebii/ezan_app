@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -38,7 +39,7 @@ class HatimView extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          "Hatimler",
+          context.t("Hatimler"),
           style: TextStyle(
               color: textColor, fontSize: 24, fontWeight: FontWeight.bold),
         ),
@@ -54,8 +55,8 @@ class HatimView extends StatelessWidget {
                 context.push('/hatim/my-tasks');
               }
             },
-            child: const Text("Görevlerim",
-                style: TextStyle(
+            child: Text(context.t("Görevlerim"),
+                style: const TextStyle(
                     color: Colors.teal,
                     fontSize: 16,
                     fontWeight: FontWeight.bold)),
@@ -73,7 +74,7 @@ class HatimView extends StatelessWidget {
               children: [
                 _buildTabCard(
                   context: context,
-                  title: "Kuran-ı Kerim",
+                  title: context.t("Kuran-ı Kerim"),
                   icon: Icons.menu_book_rounded,
                   colors: [const Color(0xFF3F51B5), const Color(0xFF1A237E)],
                   isActive: provider.activeTab == 0,
@@ -82,7 +83,7 @@ class HatimView extends StatelessWidget {
                 const SizedBox(width: 16),
                 _buildTabCard(
                   context: context,
-                  title: "Cevşen",
+                  title: context.t("Cevşen"),
                   icon: Icons.brightness_auto_rounded,
                   colors: [const Color(0xFFFFB74D), const Color(0xFFF57C00)],
                   isActive: provider.activeTab == 1,
@@ -110,13 +111,12 @@ class HatimView extends StatelessWidget {
                         Text(provider.errorMessage!,
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                                color: isDark
-                                    ? Colors.white54
-                                    : Colors.black54)),
+                                color:
+                                    isDark ? Colors.white54 : Colors.black54)),
                         const SizedBox(height: 12),
                         TextButton(
                           onPressed: provider.refresh,
-                          child: const Text("Tekrar Dene"),
+                          child: Text(context.t("Tekrar Dene")),
                         ),
                       ],
                     ),
@@ -125,7 +125,7 @@ class HatimView extends StatelessWidget {
               }
               if (provider.currentHatimler.isEmpty) {
                 return Center(
-                  child: Text("Şu an aktif bir hatim bulunmuyor.",
+                  child: Text(context.t("Şu an aktif bir hatim bulunmuyor."),
                       style: TextStyle(
                           color: isDark ? Colors.white54 : Colors.black54)),
                 );
@@ -241,7 +241,7 @@ class HatimView extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text("${hatim.id}. Hatim",
+                        Text(context.t("${hatim.id}. Hatim"),
                             style: TextStyle(
                                 color: textColor,
                                 fontSize: 16,
@@ -275,13 +275,13 @@ class HatimView extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Text("Okunma %${hatim.okunmaYuzdesi}",
+                    Text(context.t("Okunma %${hatim.okunmaYuzdesi}"),
                         style: const TextStyle(
                             color: Colors.cyan,
                             fontSize: 12,
                             fontWeight: FontWeight.bold)),
                     const SizedBox(width: 12),
-                    Text("Paylaşılma %${hatim.paylasilmaYuzdesi}",
+                    Text(context.t("Paylaşılma %${hatim.paylasilmaYuzdesi}"),
                         style: const TextStyle(
                             color: Colors.redAccent,
                             fontSize: 12,

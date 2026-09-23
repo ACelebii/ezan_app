@@ -1,12 +1,16 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../../main.dart';
 import '../../core/theme/app_theme.dart';
 import 'settings_common.dart';
+import '../hatirlaticilar/data/erteleme.dart';
 import '../hatirlaticilar/data/reminder_scheduler.dart';
+import '../../core/vakit/vakit_modelleri.dart';
+import '../../core/vakit/vakit_servisi.dart';
+import '../../locator.dart';
 import '../hatirlaticilar/data/reminder_sound.dart';
 
 // ============================================================================
@@ -20,20 +24,34 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _temkinlerExpanded = false;
-  Map<String, dynamic>? _vakitZamanlari;
+
+  /// Bugünün vakit saatleri ("05:17"), seçili şehrin takvimine göre.
+  Map<Vakit, String>? _vakitZamanlari;
+
+  /// Saatlerin hesaplandığı tercih; yöntem/ikindi/temkin değişince yenilenir.
+  String? _sonTercih;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _vakitZamanlariniYukle());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _vakitZamanlariniYukle());
   }
 
   Future<void> _vakitZamanlariniYukle() async {
     final authService = context.read<AuthService>();
-    final city = authService.seciliSehir['isim'] as String? ?? 'İstanbul';
-    final timings = await ReminderScheduler.timingsFor(authService, city);
-    if (mounted && timings != null) {
-      setState(() => _vakitZamanlari = timings);
+    final konum = authService.seciliSehir.konum;
+    final servis = locator<VakitServisi>();
+    try {
+      final bugun = servis.bugun(konum);
+      final gunler =
+          await servis.vakitleriGetir(konum, authService.vakitTercihi);
+      final gun = gunler.where((g) => g.tarih == bugun).firstOrNull;
+      if (mounted && gun != null) {
+        setState(() => _vakitZamanlari = gun.saatler);
+      }
+    } on VakitHatasi {
+      // Saat gösterilemezse "--:--" kalır; ayar ekranı bundan bağımsız çalışır.
     }
   }
 
@@ -47,21 +65,13 @@ class _SettingsPageState extends State<SettingsPage> {
     "Tahran Üniversitesi",
     "ITNA Ashari, Caferi",
     "UOIF Fransa İslam Organizasyon Birliği",
-    "Mısır (BIS)",
-    "Temkinli Takvim",
     "JAKIM (Malezya)"
   ];
   final List<String> ikindiSecenekleri = [
     "Şafi, Maliki, Hanbeli, Türkiye",
     "Hanefi"
   ];
-  final List<String> dilSecenekleri = [
-    "Türkçe",
-    "English",
-    "العربية",
-    "Deutsch",
-    "Français"
-  ];
+  final List<String> dilSecenekleri = desteklenenDiller;
 
   void _showGeceModuMenu() {
     final authService = context.read<AuthService>();
@@ -88,8 +98,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           ? getAccentColor(context)
                           : getTextColor(context))),
               onPressed: () {
-                setState(() => globalGeceModu = "Otomatik");
-                themeNotifier.value = ThemeMode.system;
+                setState(() => AppTheme.mod.value = ThemeMode.system);
                 Navigator.pop(context);
               },
             ),
@@ -100,8 +109,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           ? getAccentColor(context)
                           : getTextColor(context))),
               onPressed: () {
-                setState(() => globalGeceModu = "Açık");
-                themeNotifier.value = ThemeMode.dark;
+                setState(() => AppTheme.mod.value = ThemeMode.dark);
                 Navigator.pop(context);
               },
             ),
@@ -112,8 +120,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           ? getAccentColor(context)
                           : getTextColor(context))),
               onPressed: () {
-                setState(() => globalGeceModu = "Kapalı");
-                themeNotifier.value = ThemeMode.light;
+                setState(() => AppTheme.mod.value = ThemeMode.light);
                 Navigator.pop(context);
               },
             ),
@@ -196,14 +203,19 @@ class _SettingsPageState extends State<SettingsPage> {
             ));
     if (value != null) {
       if (!mounted) return;
-      if (value == "Tarih Seç") {
-        final selectedDate = await context.push<String>('/settings/tarih-sec');
-        if (selectedDate != null) {
-          authService.updateSetting('bildirim_ertele', selectedDate);
-        }
-      } else {
-        authService.updateSetting('bildirim_ertele', value);
-      }
+      final secim = value == "Tarih Seç"
+          ? await context.push<String>('/settings/tarih-sec')
+          : value as String;
+      if (secim == null) return;
+      // Bitiş anı seçim anında saklanır; bu ana kadar hiçbir bildirim çalmaz.
+      await authService.updateSetting('bildirim_ertele', secim);
+      await authService.updateSetting(
+          'bildirim_ertele_bitis',
+          ertelemeBitisi(secim, DateTime.now(),
+                      saatDilimi: authService.seciliSehir.konum.saatDilimi)
+                  ?.millisecondsSinceEpoch ??
+              0);
+      ReminderScheduler.rescheduleAll(authService);
     }
   }
 
@@ -212,7 +224,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final authService = context.watch<AuthService>();
     final isUserLoggedIn = authService.user != null;
     final hesapBasligi = isUserLoggedIn ? authService.user!.email! : "Hesabım";
-    final seciliSehirIsmi = authService.seciliSehir['isim'] ?? "Şehir Seçin";
+    final seciliSehirIsmi = authService.seciliSehir.isim;
 
     return Directionality(
       textDirection: authService.uygulamaDili == "العربية"
@@ -338,14 +350,14 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildTile(context,
                   icon: Icons.location_on_rounded,
                   iconBgColor: Colors.blue,
-                  title: "Şehirler",
+                  title: context.t("Şehirler"),
                   trailingText: seciliSehirIsmi,
                   onTap: () => context.push('/settings/cities')),
               _buildDivider(context),
               _buildTile(context,
                   icon: Icons.mosque_rounded,
                   iconBgColor: Colors.purple,
-                  title: "Hesaplama Yöntemi",
+                  title: context.t("Hesaplama Yöntemi"),
                   subtitle: authService.hesaplamaYontemi,
                   onTap: () => _showSelectionDialog(
                       "Hesaplama Yöntemi",
@@ -357,7 +369,7 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildTile(context,
                   icon: CupertinoIcons.sun_haze_fill,
                   iconBgColor: Colors.orange,
-                  title: "İkindi Hesabı",
+                  title: context.t("İkindi Hesabı"),
                   subtitle: authService.ikindiHesabi,
                   onTap: () => _showSelectionDialog(
                       "İkindi Hesabı",
@@ -369,7 +381,7 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildTile(context,
                   icon: Icons.tune_rounded,
                   iconBgColor: Colors.redAccent,
-                  title: "Temkinler",
+                  title: context.t("Temkinler"),
                   subtitle: _temkinlerExpanded
                       ? null
                       : authService.temkinDegerleri.values.join(", "),
@@ -383,13 +395,13 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildTile(context,
                   icon: Icons.notifications_active_rounded,
                   iconBgColor: Colors.red,
-                  title: "Hatırlatıcılar",
+                  title: context.t("Hatırlatıcılar"),
                   onTap: () => context.push('/settings/hatirlaticilar')),
               _buildDivider(context, indent: 50),
               _buildTile(context,
                   icon: Icons.snooze_rounded,
                   iconBgColor: Colors.teal,
-                  title: "Bildirimleri Ertele",
+                  title: context.t("Bildirimleri Ertele"),
                   trailingText: authService.bildirimErteleDurumu,
                   hideArrow: true,
                   onTap: _showErteleMenu),
@@ -397,23 +409,23 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildTile(context,
                   icon: Icons.access_time_filled_rounded,
                   iconBgColor: Colors.green,
-                  title: "Vaktinde Kıl",
+                  title: context.t("Vaktinde Kıl"),
                   onTap: () => context.push('/settings/vaktinde-kil')),
               _buildDivider(context, indent: 50),
               _buildTile(context,
                   icon: Icons.settings_suggest_rounded,
                   iconBgColor: Colors.indigo,
-                  title: "Bildirim İzinleri", onTap: () async {
+                  title: context.t("Bildirim İzinleri"), onTap: () async {
                 await openAppSettings();
               }),
             ]),
             const SizedBox(height: 30),
-            _buildVakitAlarmSection(context, "imsak",
-                Icons.nights_stay_rounded, Colors.indigoAccent),
-            _buildVakitAlarmSection(context, "sabah",
-                Icons.wb_twilight_rounded, Colors.orangeAccent),
-            _buildVakitAlarmSection(
-                context, "ogle", Icons.wb_sunny_rounded, getAccentColor(context)),
+            _buildVakitAlarmSection(context, "imsak", Icons.nights_stay_rounded,
+                Colors.indigoAccent),
+            _buildVakitAlarmSection(context, "sabah", Icons.wb_twilight_rounded,
+                Colors.orangeAccent),
+            _buildVakitAlarmSection(context, "ogle", Icons.wb_sunny_rounded,
+                getAccentColor(context)),
             _buildVakitAlarmSection(
                 context, "ikindi", Icons.wb_twilight_rounded, Colors.amber),
             _buildVakitAlarmSection(context, "aksam",
@@ -425,7 +437,7 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildTile(context,
                   icon: Icons.language_rounded,
                   iconBgColor: Colors.cyan,
-                  title: "Uygulama Dili",
+                  title: context.t("Uygulama Dili"),
                   trailingText: authService.uygulamaDili, onTap: () {
                 showSwiperPicker(
                     context,
@@ -439,14 +451,14 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildTile(context,
                   icon: Icons.location_on_rounded,
                   iconBgColor: Colors.blue,
-                  title: "Konum İzinleri", onTap: () async {
+                  title: context.t("Konum İzinleri"), onTap: () async {
                 await openAppSettings();
               }),
               _buildDivider(context, indent: 50),
               _buildTile(context,
                   icon: Icons.dark_mode_rounded,
                   iconBgColor: Colors.grey.shade800,
-                  title: "Gece Modu",
+                  title: context.t("Gece Modu"),
                   trailingText:
                       authService.translate(globalGeceModu.split(" ")[0]),
                   onTap: _showGeceModuMenu),
@@ -454,7 +466,7 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildTile(context,
                   icon: Icons.bolt_rounded,
                   iconBgColor: Colors.deepOrange,
-                  title: "Canlı Etkinlik",
+                  title: context.t("Canlı Etkinlik"),
                   trailingText: "Başlat",
                   hideArrow: true),
             ]),
@@ -463,7 +475,7 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildTile(context,
                   icon: Icons.palette_rounded,
                   iconBgColor: Colors.pinkAccent,
-                  title: "Ana Sayfa Stili",
+                  title: context.t("Ana Sayfa Stili"),
                   trailingText:
                       authService.translate(authService.anaSayfaStili),
                   onTap: () => context.push('/settings/theme')),
@@ -489,7 +501,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         Text(authService.translate("Boyut Ayarla"),
                             style: TextStyle(
                                 color: getTextColor(context), fontSize: 16)),
-                        Text("${authService.kuranYaziBoyutu.toInt()} px",
+                        Text(
+                            context
+                                .t("${authService.kuranYaziBoyutu.toInt()} px"),
                             style: TextStyle(
                                 color: getSubTextColor(context), fontSize: 14)),
                       ],
@@ -680,23 +694,28 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildVakitAlarmSection(
       BuildContext context, String vakitKey, IconData icon, Color iconColor) {
     final authService = context.watch<AuthService>();
+    final tercihOzeti = authService.vakitTercihi.ozet;
+    if (_sonTercih != null && _sonTercih != tercihOzeti) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _vakitZamanlariniYukle());
+    }
+    _sonTercih = tercihOzeti;
     final label = ReminderScheduler.vakitLabels[vakitKey]!;
     final displayName = ReminderScheduler.vakitDisplayNames[vakitKey]!;
     final ayar = Map<String, dynamic>.from(
         authService.vakitEzanAyarlari[vakitKey] as Map);
-    final field = ReminderScheduler.vakitAladhanField[vakitKey]!;
-    final rawSaat = _vakitZamanlari?[field] as String?;
-    final saat = rawSaat != null ? rawSaat.split(' ').first : '--:--';
+    final saat =
+        _vakitZamanlari?[ReminderScheduler.vakitOf[vakitKey]!] ?? '--:--';
 
     final onceEnabled = ayar['onceEnabled'] == true;
     final onceDakika = (ayar['onceDakika'] as int?) ?? 45;
-    final onceSound = ReminderSounds.byKey(
-            (ayar['onceSound'] as String?) ?? 'uyari')
-        .displayName;
+    final onceSound =
+        ReminderSounds.byKey((ayar['onceSound'] as String?) ?? 'uyari')
+            .displayName;
     final enabled = ayar['enabled'] == true;
-    final vakitSound = ReminderSounds.byKey(
-            (ayar['sound'] as String?) ?? 'ezan_kisa')
-        .displayName;
+    final vakitSound =
+        ReminderSounds.byKey((ayar['sound'] as String?) ?? 'ezan_kisa')
+            .displayName;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

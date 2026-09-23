@@ -11,6 +11,9 @@ class FotografliLayout extends StatelessWidget {
   final Function(BuildContext, Color, Color) buildWeatherHeader;
   final Function(int) getMonthName;
   final Function(int) getDayName;
+
+  /// Gösterilecek gün (konumun takvimine göre); verilmezse telefonun tarihi.
+  final DateTime? tarih;
   final String? hicriGun;
   final String? hicriAy;
 
@@ -22,6 +25,7 @@ class FotografliLayout extends StatelessWidget {
     required this.buildWeatherHeader,
     required this.getMonthName,
     required this.getDayName,
+    this.tarih,
     this.hicriGun,
     this.hicriAy,
   });
@@ -164,20 +168,23 @@ class FotografliLayout extends StatelessWidget {
                                 ),
                                 child: Column(
                                   children: [
-                                    Text(DateTime.now().day.toString(),
+                                    Text(
+                                        (tarih ?? DateTime.now())
+                                            .day
+                                            .toString(),
                                         style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 34,
                                             fontWeight: FontWeight.w400)),
                                     Text(
-                                        authService.translate(
-                                            getMonthName(DateTime.now().month)),
+                                        authService.translate(getMonthName(
+                                            (tarih ?? DateTime.now()).month)),
                                         style: const TextStyle(
                                             color: Colors.white70,
                                             fontSize: 16)),
                                     Text(
-                                        authService.translate(
-                                            getDayName(DateTime.now().weekday)),
+                                        authService.translate(getDayName(
+                                            (tarih ?? DateTime.now()).weekday)),
                                         style: const TextStyle(
                                             color: Colors.white54,
                                             fontSize: 12)),
@@ -221,5 +228,3 @@ class FotografliLayout extends StatelessWidget {
     );
   }
 }
-
-

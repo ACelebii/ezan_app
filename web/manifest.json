@@ -1,11 +1,11 @@
 {
-    "name": "ezan_vakti_app",
-    "short_name": "ezan_vakti_app",
+    "name": "Ezan Vakti",
+    "short_name": "Ezan Vakti",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Ezan vakti takip uygulaması",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

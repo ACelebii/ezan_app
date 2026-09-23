@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -33,7 +34,7 @@ class KazalarView extends StatelessWidget {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
-            "$vakit Kazası",
+            context.t("$vakit Kazası"),
             style: TextStyle(
                 color: isDark ? Colors.white : Colors.black, fontSize: 18),
           ),
@@ -58,8 +59,8 @@ class KazalarView extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child:
-                  Text("İptal", style: TextStyle(color: Colors.grey.shade500)),
+              child: Text(context.t("İptal"),
+                  style: TextStyle(color: Colors.grey.shade500)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -72,8 +73,8 @@ class KazalarView extends StatelessWidget {
                 provider.topluDegerGir(vakit, yeniDeger);
                 Navigator.pop(context);
               },
-              child: const Text("Bitti",
-                  style: TextStyle(
+              child: Text(context.t("Bitti"),
+                  style: const TextStyle(
                       color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
@@ -112,7 +113,7 @@ class KazalarView extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          "Kazalar",
+          context.t("Kazalar"),
           style: TextStyle(
               color: textColor, fontSize: 24, fontWeight: FontWeight.bold),
         ),
@@ -148,7 +149,7 @@ class KazalarView extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Text(
-                "Toplu kaza girişi için rakamların üzerine dokununuz.\n(*) Son Kayıt Tarihi",
+                context.t("Toplu kaza girişi için rakamların üzerine dokununuz.\n(*) Son Kayıt Tarihi"),
                 style:
                     TextStyle(color: subTextColor, fontSize: 13, height: 1.4),
               ),
@@ -195,7 +196,10 @@ class KazalarView extends StatelessWidget {
                             height: 44,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [Colors.deepOrange, Colors.orangeAccent],
+                                colors: [
+                                  Colors.deepOrange,
+                                  Colors.orangeAccent
+                                ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
@@ -208,7 +212,7 @@ class KazalarView extends StatelessWidget {
                             top: -6,
                             left: -6,
                             child: Text(
-                              "Pro",
+                              context.t("Pro"),
                               style: TextStyle(
                                   color: Colors.amber.shade300,
                                   fontSize: 12,
@@ -238,7 +242,7 @@ class KazalarView extends StatelessWidget {
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: Text("Kaza sayısını iconda göster",
+                        child: Text(context.t("Kaza sayısını iconda göster"),
                             style: TextStyle(
                                 color: textColor,
                                 fontSize: 16,
@@ -259,8 +263,9 @@ class KazalarView extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 8, left: 60),
                       child: Text(
-                        "Bu cihazın ana ekranı sayısal rozetleri desteklemiyor; "
-                        "yalnızca bildirim noktası gösterilebilir.",
+                        context.t(
+                            "Bu cihazın ana ekranı sayısal rozetleri desteklemiyor; "
+                            "yalnızca bildirim noktası gösterilebilir."),
                         style: TextStyle(color: subTextColor, fontSize: 12),
                       ),
                     ),
@@ -307,7 +312,7 @@ class KazalarView extends StatelessWidget {
                             fontSize: 18,
                             fontWeight: FontWeight.w500)),
                     const SizedBox(height: 2),
-                    Text(tarih.isEmpty ? "Henüz kayıt yok" : tarih,
+                    Text(tarih.isEmpty ? context.t("Henüz kayıt yok") : tarih,
                         style: TextStyle(color: subTextColor, fontSize: 12)),
                   ],
                 ),

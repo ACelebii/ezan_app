@@ -7,6 +7,61 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:1002532399609:android:21c650931f19a6cf9df528",
+        "android_client_info": {
+          "package_name": "com.acelebi.ezanvakti"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1002532399609-6615t9p1a3fpevo2sslj033nl4639dl2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.acelebi.ezanvakti",
+            "certificate_hash": "5f354297900f3dbfcf4cb1929a31dcf4a68908da"
+          }
+        },
+        {
+          "client_id": "1002532399609-9ivsg3qhiam0178lljhpf9b174i5ivuk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.acelebi.ezanvakti",
+            "certificate_hash": "983b0fdb14bbdd0efa79cfd14efeb8167698165b"
+          }
+        },
+        {
+          "client_id": "1002532399609-8pm1o1jo4o15bk1jk2s5ntusb19mupqa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBc4D2ChNiU_158bHxeh9sk196GRNxLVCU"
+        },
+        {
+          "current_key": "AIzaSyAQYfgmJaQARDif2L2q-NPi8O1HntjSkEc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1002532399609-8pm1o1jo4o15bk1jk2s5ntusb19mupqa.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1002532399609-ev7pm44g258c09ulv2nkakioe60iluf7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.ezanVaktiApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:1002532399609:android:89f6d34937f3f1de9df528",
         "android_client_info": {
           "package_name": "com.example.ezan_app"
@@ -27,6 +82,48 @@
         }
       ],
       "api_key": [
+        {
+          "current_key": "AIzaSyBc4D2ChNiU_158bHxeh9sk196GRNxLVCU"
+        },
+        {
+          "current_key": "AIzaSyAQYfgmJaQARDif2L2q-NPi8O1HntjSkEc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1002532399609-8pm1o1jo4o15bk1jk2s5ntusb19mupqa.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1002532399609-ev7pm44g258c09ulv2nkakioe60iluf7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.ezanVaktiApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1002532399609:android:6974e762a92cd19a9df528",
+        "android_client_info": {
+          "package_name": "com.ezanapp.ezanvakti"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1002532399609-8pm1o1jo4o15bk1jk2s5ntusb19mupqa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBc4D2ChNiU_158bHxeh9sk196GRNxLVCU"
+        },
         {
           "current_key": "AIzaSyAQYfgmJaQARDif2L2q-NPi8O1HntjSkEc"
         }

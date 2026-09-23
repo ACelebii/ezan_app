@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -50,7 +51,8 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
   void initState() {
     super.initState();
     vakitKey = ReminderScheduler.vakitKeyFromLabel(widget.vakitAdi) ?? 'imsak';
-    displayName = ReminderScheduler.vakitDisplayNames[vakitKey] ?? widget.vakitAdi;
+    displayName =
+        ReminderScheduler.vakitDisplayNames[vakitKey] ?? widget.vakitAdi;
   }
 
   void _guncelle(AuthService authService,
@@ -210,13 +212,11 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
                 _buildDivider(context),
                 _buildTile(context,
                     icon: CupertinoIcons.speaker_2,
-                    title: "Ses",
-                    trailingText:
-                        ReminderSounds.byKey(vakitSesKey).displayName,
+                    title: context.t("Ses"),
+                    trailingText: ReminderSounds.byKey(vakitSesKey).displayName,
                     onTap: () async {
-                  final secilenKey = await context.push<String>(
-                      '/settings/ses-secimi',
-                      extra: vakitSesKey);
+                  final secilenKey = await context
+                      .push<String>('/settings/ses-secimi', extra: vakitSesKey);
                   if (secilenKey != null) {
                     _guncelle(authService, (m) => {...m, 'sound': secilenKey});
                   }
@@ -245,18 +245,17 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
                   context,
                   "Durumu",
                   onceDurumu,
-                  (v) => _guncelle(
-                      authService, (m) => {...m, 'onceEnabled': v})),
+                  (v) =>
+                      _guncelle(authService, (m) => {...m, 'onceEnabled': v})),
               if (onceDurumu) ...[
                 _buildDivider(context),
                 _buildTile(context,
                     icon: CupertinoIcons.speaker_2,
-                    title: "Ses",
+                    title: context.t("Ses"),
                     trailingText: ReminderSounds.byKey(onceSesKey).displayName,
                     onTap: () async {
-                  final secilenKey = await context.push<String>(
-                      '/settings/ses-secimi',
-                      extra: onceSesKey);
+                  final secilenKey = await context
+                      .push<String>('/settings/ses-secimi', extra: onceSesKey);
                   if (secilenKey != null) {
                     _guncelle(
                         authService, (m) => {...m, 'onceSound': secilenKey});
@@ -265,7 +264,7 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
                 _buildDivider(context),
                 _buildTile(context,
                     icon: CupertinoIcons.arrow_2_circlepath,
-                    title: "Uyarı Süresi",
+                    title: context.t("Uyarı Süresi"),
                     trailingWidget: Row(children: [
                       Text(authService.translate(onceSuresi),
                           style: TextStyle(
@@ -275,15 +274,14 @@ class _VakitSettingsPageState extends State<VakitSettingsPage> {
                           color: getSubTextColor(context), size: 18)
                     ]),
                     onTap: () => showSwiperPicker(
-                        context,
-                        authService.translate("Uyarı Süresi"),
-                        onceSureSecenekleri,
-                        onceSuresi, (secilen) {
-                      final dakika =
-                          int.parse(secilen.split(' ').first);
-                      _guncelle(authService,
-                          (m) => {...m, 'onceDakika': dakika});
-                    })),
+                            context,
+                            authService.translate("Uyarı Süresi"),
+                            onceSureSecenekleri,
+                            onceSuresi, (secilen) {
+                          final dakika = int.parse(secilen.split(' ').first);
+                          _guncelle(
+                              authService, (m) => {...m, 'onceDakika': dakika});
+                        })),
               ]
             ]),
             const SizedBox(height: 30),

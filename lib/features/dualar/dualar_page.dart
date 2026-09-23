@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -50,7 +51,7 @@ class DualarView extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Text(
-                "Dualar",
+                context.t("Dualar"),
                 style: TextStyle(
                     color: textColor,
                     fontSize: 32,
@@ -88,7 +89,7 @@ class DualarView extends StatelessWidget {
     }
 
     if (provider.categories.isEmpty) {
-      return const Center(child: Text("Gösterilecek dua bulunamadı."));
+      return Center(child: Text(context.t("Gösterilecek dua bulunamadı.")));
     }
 
     return ListView.builder(
@@ -132,8 +133,8 @@ class DualarView extends StatelessWidget {
               ),
             ),
           ),
-          ...category.dualar.map((dua) => _buildDuaItem(
-              context, dua, isDark, dua == category.dualar.last)),
+          ...category.dualar.map((dua) =>
+              _buildDuaItem(context, dua, isDark, dua == category.dualar.last)),
         ],
       ),
     );

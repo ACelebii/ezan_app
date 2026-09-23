@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ezan_vakti_uygulamasi/core/theme/app_theme.dart';
@@ -51,7 +52,9 @@ class _MultimediaPageState extends State<MultimediaPage> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade200,
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : Colors.grey.shade200,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -65,7 +68,9 @@ class _MultimediaPageState extends State<MultimediaPage> {
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: selected
-                      ? (isDark ? Colors.white.withValues(alpha: 0.16) : Colors.white)
+                      ? (isDark
+                          ? Colors.white.withValues(alpha: 0.16)
+                          : Colors.white)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: selected && !isDark
@@ -165,7 +170,7 @@ class _MultimediaPageState extends State<MultimediaPage> {
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 32.0),
                             child: Text(
-                              "Sunucuya bağlanılamadı.\nLütfen internet bağlantınızı kontrol edip sayfayı aşağı çekerek yenileyin.",
+                              context.t("Sunucuya bağlanılamadı.\nLütfen internet bağlantınızı kontrol edip sayfayı aşağı çekerek yenileyin."),
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                   color: textColor.withValues(alpha: 0.6),
@@ -185,7 +190,7 @@ class _MultimediaPageState extends State<MultimediaPage> {
                               color: Colors.grey.withValues(alpha: 0.5)),
                           const SizedBox(height: 16),
                           Text(
-                            "Henüz multimedya içeriği eklenmemiş.",
+                            context.t("Henüz multimedya içeriği eklenmemiş."),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                                 color: textColor.withValues(alpha: 0.6),

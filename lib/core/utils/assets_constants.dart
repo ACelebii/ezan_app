@@ -6,17 +6,11 @@ class Assets {
   static const String aksam = '$imagesPath/aksam.jpg';
   static const String appIcon = '$imagesPath/app_icon.png';
   static const String fotografCamiteMa = '$imagesPath/fotografcamitema.jpg';
-  static const String fotografCamiteMaKapak =
-      '$imagesPath/fotografcamitemakapak.jpg';
   static const String ikindi = '$imagesPath/ikindi.jpg';
   static const String imsak = '$imagesPath/imsak.jpg';
-  static const String kiblePusula = '$imagesPath/kiblepusula.jpg';
   static const String kuranOruc = '$imagesPath/kuran_oruc.jpg';
   static const String ogle = '$imagesPath/ogle.jpg';
-  static const String orucBilgi = '$imagesPath/oruc_bilgi.jpg';
-  static const String orucMahiyet = '$imagesPath/oruc_mahiyet.jpg';
   static const String orucNiyet = '$imagesPath/oruc_niyet.jpg';
-  static const String pusulaKabe = '$imagesPath/pusulakabe.png';
   static const String yatsi = '$imagesPath/yatsi.jpg';
   static const String duaKapak =
       '$imagesPath/dua_kapak.jpg'; // Need to add if it exists

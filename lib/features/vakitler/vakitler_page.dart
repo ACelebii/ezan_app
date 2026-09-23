@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../auth/auth_service.dart';
 import '../../core/utils/assets_constants.dart';
-import '../../core/models/city_list.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/vakit/il_kodlari.dart';
+import '../../core/vakit/vakit_modelleri.dart';
+import '../../core/vakit/vakit_servisi.dart';
+import '../../locator.dart';
 import 'widgets/dairesel_layout.dart';
+import 'widgets/gokyuzu_layout.dart';
 import 'widgets/analog_saat_layout.dart';
 import 'widgets/fotografli_layout.dart';
 import 'widgets/timeline_layout.dart';
@@ -23,7 +26,8 @@ class EzanVaktiPage extends StatefulWidget {
   State<EzanVaktiPage> createState() => _EzanVaktiPageState();
 }
 
-class _EzanVaktiPageState extends State<EzanVaktiPage> {
+class _EzanVaktiPageState extends State<EzanVaktiPage>
+    with WidgetsBindingObserver {
   late Timer _timer;
   Duration _remainingTime = Duration.zero;
   String _siradakiVakit = "Hesaplanıyor...";
@@ -33,13 +37,41 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
   bool _isLoading = true;
 
   String _lastCity = "";
-  int _lastMethod = -1;
-  String? _temporaryCity;
+
+  /// Aramayla önizlenen geçici yer (Türkiye'deki il ya da yurt dışı); kayıtlı
+  /// şehir değildir. null ise kayıtlı şehir gösterilir.
+  Konum? _geciciKonum;
+  String? get _temporaryCity => _geciciKonum?.ad;
+
+  /// Kayıtlı şehrin ve gösterilen şehrin kimliği ([KayitliSehir.kimlik]); değişimi
+  /// ad değil bunlar algılar (aynı adlı iki yer olabilir).
   String? _lastRealCity;
+  String? _sonKimlik;
   bool _hasData = false;
+
+  final _servis = locator<VakitServisi>();
+  Konum? _konum;
+
+  /// Dünden itibaren, Diyanet'ten (olmazsa Aladhan'dan) gelen günlük vakitler.
+  List<GunlukVakit> _gunler = [];
+
+  /// Ekranda gösterilen gün: konumun takvimine göre bugün. Telefonun saat
+  /// diliminden bağımsızdır; gece yarısı geçince değişir ve vakitler yenilenir.
+  DateTime? _bugun;
+
+  /// Son başlatılan yüklemenin numarası: şehir hızlıca değişirse eski
+  /// yüklemenin sonucu yok sayılır.
+  int _istek = 0;
+  bool _yukleniyor = false;
+
+  /// Vakitlerin hesaplandığı tercih (yöntem, ikindi, temkin); değişince
+  /// vakitler ve bildirimler yenilenir.
+  String? _sonTercih;
+  DateTime _sonYenileme = DateTime.fromMillisecondsSinceEpoch(0);
 
   String? _hicriGun;
   String? _hicriAy;
+  String? _hicriYil;
 
   double _timeProgress = 0.0;
 
@@ -55,295 +87,203 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _calculateNextVakit();
-      _calculateTimeProgress();
-    });
+    WidgetsBinding.instance.addObserver(this);
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tikla());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Uygulama öne gelince vakitler yenilenir: gece yarısı geçmiş ya da veri
+    // bayatlamış olabilir. Önbellek tazeyse ağa gidilmez.
+    if (state == AppLifecycleState.resumed && _konum != null) {
+      _vakitleriYukle(_konum!);
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final authService = context.watch<AuthService>();
-    final realCity = authService.seciliSehir['isim'] ?? "İstanbul";
-    final currentMethod = authService.apiMethod;
+    final realCity = authService.seciliSehir.isim;
+    final realKimlik = authService.seciliSehir.kimlik;
 
-    // Kullanıcı Ayarlar'dan gerçek şehrini ya da hesaplama yöntemini
-    // değiştirdiyse: arama ile önizlenen geçici şehri terk et ve zaten
-    // planlanmış ezan/hatırlatıcı bildirimlerini yeni vakitlere göre
-    // yeniden zamanla (aksi halde eski şehrin saatleriyle çalmaya devam ederler).
-    if (_lastRealCity != null &&
-        (_lastRealCity != realCity || _lastMethod != currentMethod)) {
-      _temporaryCity = null;
+    // Kullanıcı Ayarlar'dan gerçek şehrini değiştirdiyse: arama ile önizlenen
+    // geçici şehri terk et ve zaten planlanmış ezan/hatırlatıcı bildirimlerini
+    // yeni vakitlere göre yeniden zamanla (aksi halde eski şehrin saatleriyle
+    // çalmaya devam ederler).
+    if (_lastRealCity != null && _lastRealCity != realKimlik) {
+      _geciciKonum = null;
       ReminderScheduler.rescheduleAll(authService);
     }
-    _lastRealCity = realCity;
+    _lastRealCity = realKimlik;
+
+    // Hesaplama yöntemi, ikindi hesabı ya da temkin değiştiyse: vakitler ve
+    // zaten planlanmış bildirimler yeni hesaba göre yenilenir.
+    final tercihOzeti = authService.vakitTercihi.ozet;
+    if (_sonTercih != null && _sonTercih != tercihOzeti) {
+      ReminderScheduler.rescheduleAll(authService);
+      final konum = _konum;
+      if (konum != null) _vakitleriYukle(konum);
+    }
+    _sonTercih = tercihOzeti;
 
     final currentCity = _temporaryCity ?? realCity;
-
-    if (_lastCity != currentCity || _lastMethod != currentMethod) {
+    final currentKimlik =
+        _geciciKonum != null ? 'gecici-${_geciciKonum!.anahtar}' : realKimlik;
+    if (_sonKimlik != currentKimlik) {
+      _sonKimlik = currentKimlik;
       _lastCity = currentCity;
-      _lastMethod = currentMethod;
-      _fetchData(currentCity, currentMethod);
+      _sehriYukle(currentCity);
     }
   }
 
   void _gercekSehreDon() {
-    final authService = context.read<AuthService>();
-    final realCity = authService.seciliSehir['isim'] ?? "İstanbul";
+    final secili = context.read<AuthService>().seciliSehir;
+    final realCity = secili.isim;
     setState(() {
-      _temporaryCity = null;
+      _geciciKonum = null;
       _lastCity = realCity;
-      _lastMethod = authService.apiMethod;
+      _sonKimlik = secili.kimlik;
     });
-    _fetchData(realCity, authService.apiMethod);
+    _sehriYukle(realCity);
   }
 
-  // authService.cachePrayerTimes yalnızca düz `timings` haritasını
-  // saklıyor (ReminderScheduler de bunu bekliyor); Hicri tarihi bozmadan
-  // ayrı bir anahtarda tutuyoruz.
-  Future<void> _cacheHicriTarih(String city, dynamic hicri) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('cached_hicri_$city',
-        json.encode({'day': hicri['day'], 'month': hicri['month']?['en']}));
+  /// Yeni bir şehre geçildiğinde: hava durumunu ve o şehrin vakitlerini yükler.
+  /// Eski şehrin vakitleri yeni şehrin adıyla görünmesin diye ekran temizlenir.
+  void _sehriYukle(String city) {
+    final authService = context.read<AuthService>();
+
+    // Kayıtlı şehrin kaydı koordinat da taşıyabilir; önizlenen (geçici) şehir
+    // yalnızca adıyla aranır.
+    final konum = _geciciKonum ?? authService.seciliSehir.konum;
+    _havaDurumunuGetir(city, authService.apiKey, konum);
+
+    _istek++; // önceki şehrin yarım kalan yüklemesini yok say
+    setState(() {
+      _konum = konum;
+      _gunler = [];
+      _hasData = false;
+      _isLoading = true;
+    });
+    _vakitleriYukle(konum);
   }
 
-  Future<Map<String, String>?> _getCachedHicriTarih(String city) async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('cached_hicri_$city');
-    if (raw == null) return null;
-    final decoded = json.decode(raw) as Map<String, dynamic>;
-    return {
-      'day': decoded['day']?.toString() ?? '',
-      'month': decoded['month']?.toString() ?? '',
-    };
-  }
-
-  Future<void> _fetchData(String city, int method) async {
-    if (!mounted) return;
-    if (vakitler[0]['saat'] == "--:--") {
-      setState(() => _isLoading = true);
-    }
-
+  Future<void> _havaDurumunuGetir(
+      String city, String? apiKey, Konum? konum) async {
+    // Hava durumu vakitleri beklemez: geç yanıt verirse ya da hata verirse
+    // akışı bozmadan devam edilir.
     try {
-      final authService = context.read<AuthService>();
-      final apiKey = authService.apiKey;
-
-      // 1. Hava Durumu İsteği (8 Saniye sınır korumalı)
-      try {
-        final weatherUrl =
-            "https://api.openweathermap.org/data/2.5/weather?q=$city,TR&units=metric&appid=$apiKey&lang=tr";
-        final weatherRes = await http
-            .get(Uri.parse(weatherUrl))
-            .timeout(const Duration(seconds: 8));
-        if (weatherRes.statusCode == 200) {
-          final wData = json.decode(weatherRes.body);
-          if (mounted) {
-            setState(() {
-              _derece = "${wData['main']['temp'].toInt()}°C";
-              _sehir = city;
-              _havaDurumuIcon = wData['weather'][0]['icon'];
-            });
-          }
-        }
-      } catch (_) {
-        // Hava durumu geç yanıt verirse akışı bozmadan devam et
-      }
-
-      // 2. Vakitler İsteği (8 Saniye sınır korumalı)
-      final timingsUrl =
-          "https://api.aladhan.com/v1/timingsByCity?city=$city&country=Turkey&method=$method";
-      final timingsRes = await http
-          .get(Uri.parse(timingsUrl))
+      // Koordinat varsa (yabancı yerler) ona göre; adla arama belirsizdir ve
+      // yalnızca Türkiye içindir.
+      final yer = konum != null && konum.koordinatVar
+          ? "lat=${konum.enlem}&lon=${konum.boylam}"
+          : "q=$city,TR";
+      final weatherUrl =
+          "https://api.openweathermap.org/data/2.5/weather?$yer&units=metric&appid=$apiKey&lang=tr";
+      final weatherRes = await http
+          .get(Uri.parse(weatherUrl))
           .timeout(const Duration(seconds: 8));
-
-      if (timingsRes.statusCode == 200) {
-        final responseData = json.decode(timingsRes.body)['data'];
-        final tData = responseData['timings'];
-        authService.cachePrayerTimes(city, tData);
-        final hicri = responseData['date']?['hijri'];
-        if (hicri != null) await _cacheHicriTarih(city, hicri);
-        if (mounted) {
-          setState(() {
-            vakitler[0]['saat'] = tData['Fajr'].split(' ')[0];
-            vakitler[1]['saat'] = tData['Sunrise'].split(' ')[0];
-            vakitler[2]['saat'] = tData['Dhuhr'].split(' ')[0];
-            vakitler[3]['saat'] = tData['Asr'].split(' ')[0];
-            vakitler[4]['saat'] = tData['Maghrib'].split(' ')[0];
-            vakitler[5]['saat'] = tData['Isha'].split(' ')[0];
-            _isLoading = false;
-            _hasData = true;
-            if (hicri != null) {
-              _hicriGun = hicri['day']?.toString();
-              _hicriAy = hicri['month']?['en']?.toString();
-            }
-          });
-        }
-        _calculateNextVakit();
-        _calculateTimeProgress();
-      } else {
-        throw Exception("API Error: ${timingsRes.statusCode}");
-      }
-    } catch (e) {
-      if (!mounted) return;
-      final cached =
-          await context.read<AuthService>().getCachedPrayerTimes(city);
-      if (cached != null && mounted) {
-        final cachedHicri = await _getCachedHicriTarih(city);
+      if (weatherRes.statusCode == 200 && mounted && _lastCity == city) {
+        final wData = json.decode(weatherRes.body);
         setState(() {
-          vakitler[0]['saat'] = cached['Fajr'].split(' ')[0];
-          vakitler[1]['saat'] = cached['Sunrise'].split(' ')[0];
-          vakitler[2]['saat'] = cached['Dhuhr'].split(' ')[0];
-          vakitler[3]['saat'] = cached['Asr'].split(' ')[0];
-          vakitler[4]['saat'] = cached['Maghrib'].split(' ')[0];
-          vakitler[5]['saat'] = cached['Isha'].split(' ')[0];
-          _isLoading = false;
-          _hasData = true;
-          if (cachedHicri != null) {
-            _hicriGun = cachedHicri['day'];
-            _hicriAy = cachedHicri['month'];
-          }
+          _derece = "${wData['main']['temp'].toInt()}°C";
+          _havaDurumuIcon = wData['weather'][0]['icon'];
         });
-        _calculateNextVakit();
-        _calculateTimeProgress();
-        _showSnackBar("Bağlantı hatası: Önbellekten gösteriliyor.");
-      } else if (mounted) {
+      }
+    } catch (_) {}
+  }
+
+  /// [konum] için vakitleri servisten alır (önbellek tazeyse ağa gitmez).
+  /// Ekranda zaten veri varsa yükleme sırasında yerinde kalır; alınamazsa
+  /// eldeki veriyle devam edilir.
+  Future<void> _vakitleriYukle(Konum konum) async {
+    final istek = ++_istek;
+    _yukleniyor = true;
+    _sonYenileme = DateTime.now();
+
+    final tercih = context.read<AuthService>().vakitTercihi;
+    List<GunlukVakit>? gunler;
+    try {
+      gunler = await _servis.vakitleriGetir(konum, tercih);
+    } catch (e) {
+      // VakitHatasi (veri yok) ve beklenmedik hatalar aynı şekilde ele alınır:
+      // ekran sonsuza kadar "Yükleniyor" kalmasın, hata ekranı çıksın.
+      debugPrint('Vakitler yüklenemedi: $e');
+      gunler = null;
+    }
+    if (!mounted || istek != _istek) return;
+    _yukleniyor = false;
+
+    final bugun = _servis.bugun(konum);
+    final gun = gunler?.where((g) => g.tarih == bugun).firstOrNull;
+    if (gunler == null || gun == null) {
+      setState(() => _isLoading = false);
+      if (!_hasData) {
         // Ne canlı ne önbellek veri var: sahte "--:--" değerleriyle normal
         // ekranı göstermek yerine _hasData false kalır ve build() bunun
         // yerine gerçek bir hata ekranı render eder.
-        setState(() => _isLoading = false);
         _showSnackBar("Veri alınamadı. İnternet bağlantınızı kontrol edin.");
       }
+      return;
     }
+
+    // Diyanet hicri tarihi "8 Rebiulahir 1448" biçiminde verir.
+    final hicri = gun.hicriTarih?.split(' ');
+    final hicriVar = hicri != null && hicri.length >= 3;
+    setState(() {
+      _gunler = gunler!;
+      _bugun = bugun;
+      _sehir = konum.ad;
+      for (var i = 0; i < Vakit.values.length; i++) {
+        vakitler[i]['saat'] = gun.saatler[Vakit.values[i]]!;
+      }
+      _hicriGun = hicriVar ? hicri.first : null;
+      _hicriAy = hicriVar ? hicri.sublist(1, hicri.length - 1).join(' ') : null;
+      _hicriYil = hicriVar ? hicri.last : null;
+      _isLoading = false;
+      _hasData = true;
+    });
+    _tikla();
   }
 
-  bool _gecerliSaat(String? saat) =>
-      saat != null && saat != "--:--" && saat.contains(':');
+  /// Her saniye: sıradaki vakti, kalan süreyi ve ilerlemeyi hesaplar. Hepsi
+  /// mutlak anlarla yapılır; telefonun saat dilimi sonucu etkilemez.
+  void _tikla() {
+    final konum = _konum;
+    if (!mounted || !_hasData || konum == null) return;
 
-  void _calculateTimeProgress() {
-    if (_isLoading || !_hasData || !mounted) return;
+    final simdi = DateTime.now();
+    final durum = vakitDurumu(_gunler, simdi);
 
-    DateTime now = DateTime.now();
-    DateTime? startTime, endTime;
-    String currentVakitName = "";
-
-    for (int i = 0; i < vakitler.length; i++) {
-      if (!_gecerliSaat(vakitler[i]['saat'])) continue;
-      final parts = vakitler[i]['saat']!.split(':');
-      final vTime = DateTime(now.year, now.month, now.day, int.parse(parts[0]),
-          int.parse(parts[1]));
-
-      if (vTime.isAfter(now)) {
-        currentVakitName = i == 0
-            ? vakitler[vakitler.length - 1]['vakit']!
-            : vakitler[i - 1]['vakit']!;
-        endTime = vTime;
-        break;
-      }
+    // Konumun takvimine göre gün değiştiyse (gece yarısı) ya da elimizdeki veri
+    // bittiyse vakitleri yeniden oku; ağ yoksa dakikada iki kereden fazla deneme.
+    if ((_servis.bugun(konum) != _bugun || durum == null) &&
+        !_yukleniyor &&
+        simdi.difference(_sonYenileme) > const Duration(seconds: 30)) {
+      _vakitleriYukle(konum);
     }
+    if (durum == null) return;
 
-    if (endTime == null) {
-      final parts = vakitler[0]['saat']!.split(':');
-      currentVakitName = vakitler[vakitler.length - 1]['vakit']!;
-      endTime = DateTime(now.year, now.month, now.day + 1, int.parse(parts[0]),
-          int.parse(parts[1]));
-    }
+    // Sıradaki vakitin günü: yatsıdan sonra sıradaki vakit yarının imsakıdır.
+    final siradakiGun = _gunler.firstWhere(
+        (g) => g.anlar[durum.siradaki]!.isAtSameMomentAs(durum.siradakiAn));
+    final bugunGun = _gunler.where((g) => g.tarih == _bugun).firstOrNull;
 
-    for (int i = 0; i < vakitler.length; i++) {
-      if (vakitler[i]['vakit'] == currentVakitName) {
-        if (!_gecerliSaat(vakitler[i]['saat'])) continue;
-        final parts = vakitler[i]['saat']!.split(':');
-
-        DateTime vTime = DateTime(now.year, now.month, now.day,
-            int.parse(parts[0]), int.parse(parts[1]));
-        if (currentVakitName == 'Yatsı') {
-          // Yatsı'dan sonra gece yarısını geçip henüz bugünkü İmsak'a
-          // ulaşılmadıysa, hâlâ dünkü Yatsı'nın içindeyiz. Sabit "saat 3"
-          // sezgisi yerine gerçek İmsak saatiyle kıyaslanır; böylece İmsak'ın
-          // 03:00'ten önce olduğu bölgelerde/mevsimlerde yanlış sıfırlanmaz.
-          if (_gecerliSaat(vakitler[0]['saat'])) {
-            final imsakParts = vakitler[0]['saat']!.split(':');
-            final imsakTime = DateTime(now.year, now.month, now.day,
-                int.parse(imsakParts[0]), int.parse(imsakParts[1]));
-            if (now.isBefore(imsakTime)) {
-              vTime = vTime.subtract(const Duration(days: 1));
-            }
-          } else if (now.hour < 3) {
-            vTime = vTime.subtract(const Duration(days: 1));
-          }
+    setState(() {
+      _remainingTime = durum.kalan(simdi);
+      _siradakiVakit = durum.siradaki.ad;
+      _timeProgress = durum.ilerleme(simdi);
+      if (bugunGun != null) {
+        for (var i = 0; i < Vakit.values.length; i++) {
+          vakitler[i]['saat'] = bugunGun.saatler[Vakit.values[i]]!;
         }
-        startTime = vTime;
-        break;
+        // Sıradaki vakit yarına düşüyorsa kartında yarının saati görünür:
+        // geri sayım ve bildirimle aynı olsun (bugünün imsakı 05:17 iken
+        // yarınınki 05:18 olabilir).
+        vakitler[Vakit.values.indexOf(durum.siradaki)]['saat'] =
+            siradakiGun.saatler[durum.siradaki]!;
       }
-    }
-
-    if (startTime != null) {
-      final totalDuration = endTime.difference(startTime).inSeconds;
-      final elapsedDuration = now.difference(startTime).inSeconds;
-      if (totalDuration <= 0) {
-        if (mounted) {
-          setState(() => _timeProgress = 0.0);
-        }
-        return;
-      }
-
-      if (mounted) {
-        setState(() {
-          _timeProgress = elapsedDuration / totalDuration;
-          if (_timeProgress > 1.0) _timeProgress = 1.0;
-          if (_timeProgress < 0.0) _timeProgress = 0.0;
-        });
-      }
-    }
-  }
-
-  void _calculateNextVakit() {
-    if (!_hasData) return;
-    final now = DateTime.now();
-    DateTime? nextVakitTime;
-    String nextVakitName = "";
-
-    if (vakitler.isEmpty) return;
-
-    for (var v in vakitler) {
-      if (!_gecerliSaat(v['saat'])) continue;
-
-      final parts = v['saat']!.split(':');
-
-      int saat = int.tryParse(parts[0].trim()) ?? 0;
-      int dakika = int.tryParse(parts[1].trim()) ?? 0;
-
-      final vTime = DateTime(now.year, now.month, now.day, saat, dakika);
-
-      if (vTime.isAfter(now)) {
-        nextVakitTime = vTime;
-        nextVakitName = v['vakit'] ?? "";
-        break;
-      }
-    }
-
-    if (nextVakitTime == null) {
-      if (_gecerliSaat(vakitler[0]['saat'])) {
-        final parts = vakitler[0]['saat']!.split(':');
-
-        int saat = int.tryParse(parts[0].trim()) ?? 0;
-        int dakika = int.tryParse(parts[1].trim()) ?? 0;
-
-        nextVakitTime =
-            DateTime(now.year, now.month, now.day + 1, saat, dakika);
-        nextVakitName = vakitler[0]['vakit'] ?? "";
-      } else {
-        nextVakitTime = now.add(const Duration(hours: 1));
-        nextVakitName = "Yükleniyor...";
-      }
-    }
-
-    if (mounted) {
-      setState(() {
-        _remainingTime = nextVakitTime!.difference(now);
-        _siradakiVakit = nextVakitName;
-      });
-    }
+    });
   }
 
   void _showSnackBar(String message) {
@@ -396,6 +336,7 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer.cancel();
     super.dispose();
   }
@@ -422,7 +363,7 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
     }
 
     if (!_hasData) {
-      final city = _temporaryCity ?? authService.seciliSehir['isim'] ?? "İstanbul";
+      final city = _temporaryCity ?? authService.seciliSehir.isim;
       return Scaffold(
           backgroundColor: AppTheme.getBgColor(context),
           body: Center(
@@ -441,7 +382,7 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
                     style: TextStyle(color: AppTheme.getTextColor(context))),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () => _fetchData(city, authService.apiMethod),
+                  onPressed: () => _sehriYukle(city),
                   child: Text(authService.translate("Tekrar Dene")),
                 ),
               ],
@@ -451,6 +392,29 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
 
     Widget seciliLayout;
     switch (stil) {
+      case 'Gökyüzü':
+        seciliLayout = GokyuzuLayout(
+          gunler: _gunler,
+          simdi: DateTime.now(),
+          siradakiVakit: _siradakiVakit,
+          remainingTime: _remainingTime,
+          formatDuration: format,
+          vakitler: vakitler,
+          buildWeatherHeader: _buildWeatherHeader,
+          translate: authService.translate,
+          tarihMetni: _bugun == null
+              ? null
+              : "${authService.translate(_getDayName(_bugun!.weekday))}, "
+                  "${_bugun!.day} "
+                  "${authService.translate(_getMonthName(_bugun!.month))} "
+                  "${_bugun!.year}",
+          hicriMetni: _hicriGun != null && _hicriAy != null
+              ? "$_hicriGun ${authService.translate(_hicriAy!)} "
+                      "${_hicriYil ?? ''}"
+                  .trim()
+              : null,
+        );
+        break;
       case 'Analog Saat':
       case 'Minimal Kutu':
         seciliLayout = AnalogSaatLayout(
@@ -471,6 +435,7 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
           buildWeatherHeader: _buildWeatherHeader,
           getMonthName: _getMonthName,
           getDayName: _getDayName,
+          tarih: _bugun,
           hicriGun: _hicriGun,
           hicriAy: _hicriAy,
         );
@@ -533,7 +498,7 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
 
   Widget _buildCountdown(Color titleColor) {
     final authService = context.read<AuthService>();
-    final now = DateTime.now();
+    final now = _bugun ?? DateTime.now();
     bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     Color timerColor = isDark ? Colors.white : const Color(0xFF2C3E50);
@@ -615,7 +580,6 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
 
   Widget _buildWeatherHeader(
       BuildContext context, Color textColor, Color accentColor) {
-    bool isDark = Theme.of(context).brightness == Brightness.dark;
     final authService = context.watch<AuthService>();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -636,8 +600,8 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
                 onTap: _gercekSehreDon,
                 child: Tooltip(
                   message: authService.translate("Kayıtlı şehrime dön"),
-                  child: Icon(Icons.close_rounded,
-                      color: accentColor, size: 18),
+                  child:
+                      Icon(Icons.close_rounded, color: accentColor, size: 18),
                 ),
               ),
             ],
@@ -663,16 +627,21 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
           IconButton(
             icon: Icon(Icons.search, color: accentColor, size: 28),
             onPressed: () async {
-              final cityName = await context.push<String?>(
-                  '/vakitler/city-search',
-                  extra: isDark);
+              final sonuc =
+                  await context.push<Object>('/settings/cities/search');
               if (!context.mounted) return;
-              if (cityName != null && cityName.isNotEmpty) {
+              final konum = switch (sonuc) {
+                Konum k => k,
+                String ad when ad.isNotEmpty => kayittanKonum({'isim': ad}),
+                _ => null,
+              };
+              if (konum != null) {
                 setState(() {
-                  _temporaryCity = cityName;
-                  _lastCity = cityName;
+                  _geciciKonum = konum;
+                  _lastCity = konum.ad;
+                  _sonKimlik = 'gecici-${konum.anahtar}';
                 });
-                _fetchData(cityName, context.read<AuthService>().apiMethod);
+                _sehriYukle(konum.ad);
               }
             },
           ),
@@ -724,125 +693,6 @@ class _EzanVaktiPageState extends State<EzanVaktiPage> {
                 ]),
           ),
         ]),
-      ),
-    );
-  }
-}
-
-Color getSubTextColor(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-        ? Colors.white54
-        : Colors.black54;
-
-class VakitlerCitySearchPage extends StatefulWidget {
-  final bool isDark;
-  const VakitlerCitySearchPage({super.key, required this.isDark});
-  @override
-  State<VakitlerCitySearchPage> createState() =>
-      _VakitlerCitySearchPageState();
-}
-
-class _VakitlerCitySearchPageState extends State<VakitlerCitySearchPage> {
-  final TextEditingController _searchController = TextEditingController();
-  String query = "";
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    Color accentColor = AppTheme.getAccentColor(context);
-
-    final List<String> list = query.isEmpty
-        ? []
-        : CityData.allCities
-            .where((c) => c.toLowerCase().startsWith(query.toLowerCase()))
-            .toList();
-
-    final authService = context.watch<AuthService>();
-
-    return Directionality(
-      textDirection: authService.uygulamaDili == "العربية"
-          ? TextDirection.rtl
-          : TextDirection.ltr,
-      child: Scaffold(
-        backgroundColor: AppTheme.getBgColor(context),
-        appBar: AppBar(
-          backgroundColor: AppTheme.getCardColor(context),
-          elevation: 0,
-          leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios,
-                  color: AppTheme.getTextColor(context), size: 20),
-              onPressed: () => context.pop()),
-          title: TextField(
-            controller: _searchController,
-            autofocus: false,
-            style:
-                TextStyle(color: AppTheme.getTextColor(context), fontSize: 18),
-            decoration: InputDecoration(
-                hintText: authService.translate("Ara"),
-                hintStyle: TextStyle(
-                    color: AppTheme.getSubTextColor(context), fontSize: 18),
-                border: InputBorder.none),
-            onChanged: (val) => setState(() => query = val),
-          ),
-          actions: [
-            if (query.isNotEmpty)
-              IconButton(
-                  icon: Icon(Icons.clear,
-                      color: AppTheme.getSubTextColor(context)),
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() => query = "");
-                  })
-          ],
-        ),
-        body: ListView.separated(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          itemCount: list.length,
-          separatorBuilder: (context, index) =>
-              Divider(color: AppTheme.getDividerColor(context), height: 1),
-          itemBuilder: (context, index) {
-            final city = list[index];
-            return ListTile(
-              contentPadding:
-                  const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-              leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                      color: accentColor.withValues(alpha: 0.15),
-                      shape: BoxShape.circle),
-                  child: Icon(Icons.location_on_outlined,
-                      color: accentColor, size: 18)),
-              title: RichText(
-                  text: TextSpan(children: [
-                if (query.isNotEmpty &&
-                    city.toLowerCase().startsWith(query.toLowerCase())) ...[
-                  TextSpan(
-                      text: city.substring(0, query.length),
-                      style: TextStyle(
-                          color: AppTheme.getTextColor(context),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 17)),
-                  TextSpan(
-                      text: city.substring(query.length),
-                      style: TextStyle(
-                          color: AppTheme.getSubTextColor(context),
-                          fontSize: 17)),
-                ] else ...[
-                  TextSpan(
-                      text: city,
-                      style: TextStyle(
-                          color: AppTheme.getTextColor(context), fontSize: 17)),
-                ]
-              ])),
-              onTap: () => context.pop(city),
-            );
-          },
-        ),
       ),
     );
   }

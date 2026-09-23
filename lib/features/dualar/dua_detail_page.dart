@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
@@ -45,7 +46,7 @@ class DuaDetailPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     if (dua.arapca.isNotEmpty) ...[
-                      Text("Arapça Okunuşu",
+                      Text(context.t("Arapça Okunuşu"),
                           style: TextStyle(
                               color: Colors.teal.shade400,
                               fontSize: 16,
@@ -61,7 +62,7 @@ class DuaDetailPage extends StatelessWidget {
                       const SizedBox(height: 24),
                     ],
                     if (dua.okunus.isNotEmpty) ...[
-                      Text("Türkçe Okunuşu",
+                      Text(context.t("Türkçe Okunuşu"),
                           style: TextStyle(
                               color: Colors.teal.shade400,
                               fontSize: 16,
@@ -76,7 +77,7 @@ class DuaDetailPage extends StatelessWidget {
                       const SizedBox(height: 24),
                     ],
                     if (dua.anlam.isNotEmpty) ...[
-                      Text("Anlamı",
+                      Text(context.t("Anlamı"),
                           style: TextStyle(
                               color: Colors.teal.shade400,
                               fontSize: 16,
@@ -88,7 +89,7 @@ class DuaDetailPage extends StatelessWidget {
                     ],
                     if (dua.kaynak.isNotEmpty) ...[
                       const SizedBox(height: 24),
-                      Text("Kaynak",
+                      Text(context.t("Kaynak"),
                           style: TextStyle(
                               color: Colors.teal.shade400,
                               fontSize: 16,

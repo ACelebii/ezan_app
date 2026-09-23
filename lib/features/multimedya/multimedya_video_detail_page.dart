@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:share_plus/share_plus.dart';
@@ -16,7 +17,7 @@ class VideoDetailPage extends StatelessWidget {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Video linki açılamadı.")),
+        SnackBar(content: Text(context.t("Video linki açılamadı."))),
       );
     }
   }
@@ -103,8 +104,8 @@ class VideoDetailPage extends StatelessWidget {
                             : DecorationImage(
                                 image: NetworkImage(item.displayThumbnail),
                                 fit: BoxFit.cover,
-                                onError: (exception, stackTrace) =>
-                                    debugPrint("Kapak görseli yüklenemedi: $exception"),
+                                onError: (exception, stackTrace) => debugPrint(
+                                    "Kapak görseli yüklenemedi: $exception"),
                               ),
                       ),
                       child: const Center(
@@ -119,8 +120,7 @@ class VideoDetailPage extends StatelessWidget {
             Container(
               width: double.infinity,
               color: Colors.black,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: SafeArea(
                 top: false,
                 child: Row(
@@ -140,13 +140,13 @@ class VideoDetailPage extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text("İzlemek için: ",
-                                style: TextStyle(color: Colors.white70)),
+                            Text(context.t("İzlemek için: "),
+                                style: const TextStyle(color: Colors.white70)),
                             SvgPicture.asset('assets/icons/youtube.svg',
                                 width: 20, height: 20),
                             const SizedBox(width: 4),
-                            const Text("YouTube",
-                                style: TextStyle(
+                            Text(context.t("YouTube"),
+                                style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold)),
                           ],

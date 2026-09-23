@@ -23,13 +23,12 @@ import 'features/kuran/providers/kuran_provider.dart';
 import 'features/pusula/pusula_page.dart';
 import 'features/pusula/qibla_map_page.dart';
 
-import 'features/vakitler/vakitler_page.dart' show VakitlerCitySearchPage;
-
 import 'features/imsakiye/imsakiye_page.dart';
 import 'features/camiler/cami_page.dart';
 import 'features/ajanda/ajanda_timeline_page.dart';
 import 'features/Kazalar/kazalar_page.dart';
 
+import 'features/zikirmatik/zikir.dart';
 import 'features/zikirmatik/zikirmatik_page.dart';
 import 'features/hutbe/hutbe_page.dart';
 
@@ -47,6 +46,7 @@ import 'features/settings/theme_selector_page.dart';
 import 'features/settings/cities_page.dart';
 import 'features/settings/city_search_page.dart';
 import 'features/settings/add_city_preview_page.dart';
+import 'features/settings/dunya_yer_sec_page.dart';
 import 'features/settings/hatirlaticilar_page.dart';
 import 'features/settings/vaktinde_kil_page.dart';
 import 'features/settings/vaktinde_kil_detay_page.dart';
@@ -116,12 +116,6 @@ final GoRouter appRouter = GoRouter(
         path: '/pusula/qibla-map',
         builder: (context, state) => const QiblaMapPage()),
 
-    // --- Vakitler (şehir arama) ---
-    GoRoute(
-        path: '/vakitler/city-search',
-        builder: (context, state) => VakitlerCitySearchPage(
-            isDark: state.extra as bool)),
-
     // --- İmsakiye / Camiler / Ajanda / Kazalar ---
     GoRoute(
         path: '/imsakiye', builder: (context, state) => const ImsakiyePage()),
@@ -133,15 +127,17 @@ final GoRouter appRouter = GoRouter(
 
     // --- Zikirmatik ---
     GoRoute(
-        path: '/zikirmatik', builder: (context, state) => const ZikirmatikPage()),
+        path: '/zikirmatik',
+        builder: (context, state) => const ZikirmatikPage()),
     GoRoute(
         path: '/zikirmatik/sayac',
-        builder: (context, state) => ZikirmatikSayacPage(
-            zikirData: state.extra as Map<String, dynamic>)),
+        builder: (context, state) =>
+            ZikirmatikSayacPage(zikir: state.extra as Zikir)),
 
     // --- Hutbe ---
     GoRoute(
-        path: '/hutbe', builder: (context, state) => const HaftaninHutbesiPage()),
+        path: '/hutbe',
+        builder: (context, state) => const HaftaninHutbesiPage()),
     GoRoute(
         path: '/hutbe/pdf',
         builder: (context, state) =>
@@ -149,7 +145,8 @@ final GoRouter appRouter = GoRouter(
 
     // --- Multimedya ---
     GoRoute(
-        path: '/multimedya', builder: (context, state) => const MultimediaPage()),
+        path: '/multimedya',
+        builder: (context, state) => const MultimediaPage()),
     GoRoute(
         path: '/multimedya/video',
         builder: (context, state) =>
@@ -215,6 +212,9 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
         path: '/settings/cities/search',
         builder: (context, state) => const CitySearchPage()),
+    GoRoute(
+        path: '/settings/cities/dunya',
+        builder: (context, state) => const DunyaYerSecPage()),
     GoRoute(
         path: '/settings/cities/add-preview',
         builder: (context, state) =>

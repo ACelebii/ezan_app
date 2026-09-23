@@ -13,16 +13,25 @@ class Cami {
     this.address,
   });
 
+  /// Places API (New) `places` dizisindeki bir kayıttan üretir.
   factory Cami.fromJson(Map<String, dynamic> json) {
-    final location = json['geometry']?['location'] as Map<String, dynamic>?;
+    final location = json['location'] as Map<String, dynamic>?;
+    final lat = location?['latitude'] as num?;
+    final lon = location?['longitude'] as num?;
+    // Konumsuz kayıt haritada 0,0'a (okyanus) düşerdi; fırlatılan hata
+    // CamiService'te yakalanır ve kayıt atlanır.
+    if (lat == null || lon == null) {
+      throw const FormatException('Cami kaydında konum yok');
+    }
+    final adi = (json['displayName'] as Map<String, dynamic>?)?['text']?.toString();
     return Cami(
-      id: json['place_id']?.toString() ?? '',
-      name: json['name']?.toString() ?? 'Cami',
-      // Places API tam sayı bir koordinat döndürürse dart:convert bunu int
-      // olarak çözer; doğrudan double alana atarsak TypeError fırlatır.
-      lat: (location?['lat'] as num?)?.toDouble() ?? 0.0,
-      lon: (location?['lng'] as num?)?.toDouble() ?? 0.0,
-      address: json['vicinity']?.toString(),
+      id: json['id']?.toString() ?? '',
+      name: adi == null || adi.isEmpty ? 'Cami' : adi,
+      // Tam sayı bir koordinat dart:convert'te int olarak çözülür; doğrudan
+      // double alana atarsak TypeError fırlatır.
+      lat: lat.toDouble(),
+      lon: lon.toDouble(),
+      address: json['shortFormattedAddress']?.toString(),
     );
   }
 }

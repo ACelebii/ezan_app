@@ -89,8 +89,29 @@ service cloud.firestore {
             resource.data.userId == request.auth.uid &&
             request.resource.data.status == 'completed')
         );
+        // Hesap silinirken (AuthService.deleteAccount): tamamlanmış bir
+        // görevde kalan görünen ad, kişisel veri kalmasın diye anonimleştirilir.
+        // Yalnız userName alanı, yalnız sabit bir değere, yalnız kendi (artık
+        // silinen) userId'in olduğu ve zaten tamamlanmış kayıtta.
+        allow update: if request.auth != null &&
+          resource.data.userId == request.auth.uid &&
+          resource.data.status == 'completed' &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['userName']) &&
+          request.resource.data.userName == 'Silinmiş Kullanıcı';
         allow create, delete: if false; // Görev tanımları Console'dan oluşturulur.
       }
+    }
+
+    // --- Yukarıdaki iç içe (nested) `hatimler/{hatimId}/assignments/{itemId}`
+    // kuralı COLLECTION GROUP sorgularını KAPSAMAZ (Firestore'un bilinen bir
+    // kısıtı: nested match yalnız doğrudan path erişimine uygulanır). Telefonda
+    // gerçekten denendi: bu joker kural OLMADAN AuthService.deleteAccount()'ın
+    // `collectionGroup('assignments').where('userId', ...)` sorgusu
+    // PERMISSION_DENIED veriyordu. Yalnız okuma; güncelleme yukarıdaki dar
+    // kuralda kalıyor (update her zaman TAM path referansıyla yapılıyor,
+    // collection group değil).
+    match /{path=**}/assignments/{itemId} {
+      allow read: if true;
     }
   }
 }

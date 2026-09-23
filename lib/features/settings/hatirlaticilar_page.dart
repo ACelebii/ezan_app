@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +17,12 @@ class HatirlaticilarPage extends StatefulWidget {
 class _HatirlaticilarPageState extends State<HatirlaticilarPage>
     with WidgetsBindingObserver {
   PermissionStatus? _bildirimIzni;
+
+  /// Android 12+ "Alarmlar ve hatırlatıcılar" izni; null = henüz okunmadı.
+  bool? _tamZamanliIzin;
+
+  /// Pil optimizasyonu bu uygulamayı kısıtlamıyor mu; null = henüz okunmadı.
+  bool? _pilIzni;
   bool _ramazanVerisiYok = false;
 
   @override
@@ -50,7 +57,37 @@ class _HatirlaticilarPageState extends State<HatirlaticilarPage>
 
   Future<void> _izinDurumunuYenile() async {
     final durum = await NotificationService.instance.permissionStatus();
-    if (mounted) setState(() => _bildirimIzni = durum);
+    final tamZamanli =
+        await NotificationService.instance.tamZamanliBildirimIzniVar();
+    final pil =
+        await NotificationService.instance.pilOptimizasyonuYoksayiliyorMu();
+    if (mounted) {
+      setState(() {
+        _bildirimIzni = durum;
+        _tamZamanliIzin = tamZamanli;
+        _pilIzni = pil;
+      });
+    }
+  }
+
+  // Sistemin "Alarmlar ve hatırlatıcılar" ekranını açar; kullanıcı dönünce
+  // bildirimler tam zamanlı olarak yeniden kurulsun diye zamanlayıcı çalışır.
+  // Reddederse bildirimler yaklaşık modda kalır (birkaç dakika gecikebilir).
+  Future<void> _tamZamanliIzinIste(AuthService authService) async {
+    final verildi =
+        await NotificationService.instance.tamZamanliBildirimIzniIste();
+    if (!mounted) return;
+    setState(() => _tamZamanliIzin = verildi);
+    if (verildi) ReminderScheduler.rescheduleAll(authService);
+  }
+
+  // Sistemin "Pil optimizasyonunu yoksay" ekranını açar. Reddederse arka
+  // plan bildirim yenilemesi (12 saatte bir) Android tarafından geciktirilebilir
+  // ya da hiç çalışmayabilir; ezan bildirimlerinin kendisi bundan etkilenmez.
+  Future<void> _pilIzinIste() async {
+    final verildi =
+        await NotificationService.instance.pilOptimizasyonuYoksaymayiIste();
+    if (mounted) setState(() => _pilIzni = verildi);
   }
 
   Future<void> _izinIste() async {
@@ -197,46 +234,97 @@ class _HatirlaticilarPageState extends State<HatirlaticilarPage>
 
   Widget _buildPermissionBanner(AuthService authService) {
     final durum = _bildirimIzni;
-    if (durum == null || durum.isGranted) return const SizedBox.shrink();
+    if (durum == null) return const SizedBox.shrink();
 
-    final kaliciReddedildi = durum.isPermanentlyDenied;
+    if (!durum.isGranted) {
+      return _izinKarti(
+        authService,
+        icon: Icons.notifications_off_rounded,
+        baslik: context.t("Bildirim izni verilmedi"),
+        aciklama: "Hatırlatıcıların çalabilmesi için bildirim izni gerekir.",
+        dugme: durum.isPermanentlyDenied ? "Ayarları Aç" : "İzin Ver",
+        onTap: _izinIste,
+      );
+    }
+    // Bildirim izni var ama tam zamanlı alarm izni yok: ezanlar çalar, ancak
+    // Android bunları birkaç dakika geciktirebilir.
+    if (_tamZamanliIzin == false) {
+      return _izinKarti(
+        authService,
+        icon: Icons.alarm_off_rounded,
+        baslik: context.t("Ezanlar tam vaktinde çalmayabilir"),
+        aciklama:
+            "Android, \"Alarmlar ve hatırlatıcılar\" izni olmadan bildirimleri "
+            "birkaç dakika geciktirebilir. Ezanın tam vaktinde çalması için "
+            "bu izni verin.",
+        dugme: "İzin Ver",
+        onTap: () => _tamZamanliIzinIste(authService),
+      );
+    }
+    // Ezan bildirimleri (tam zamanlı alarm) zaten tam vaktinde çalıyor; bu
+    // yalnızca arka plan bildirim YENİLEMESİNİ (uygulama günlerce açılmasa
+    // bile bildirimlerin bitmemesi için) etkiler, o yüzden daha az acil
+    // (turuncu değil, mavi) bir kart.
+    if (_pilIzni == false) {
+      return _izinKarti(
+        authService,
+        icon: Icons.battery_alert_rounded,
+        baslik: context.t("Arka plan yenilemesi gecikebilir"),
+        aciklama: "Telefonunuzun pil tasarrufu, uygulama uzun süre "
+            "açılmadığında bildirimlerin arka planda yenilenmesini "
+            "geciktirebilir. Ezanların kendisi bundan etkilenmez; yine de "
+            "\"Pil optimizasyonunu yoksay\" izni verirseniz yenileme daha "
+            "güvenilir çalışır.",
+        dugme: "İzin Ver",
+        renk: Colors.blue,
+        onTap: _pilIzinIste,
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _izinKarti(
+    AuthService authService, {
+    required IconData icon,
+    required String baslik,
+    required String aciklama,
+    required String dugme,
+    required VoidCallback onTap,
+    Color renk = Colors.orange,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: isDark(context) ? 0.15 : 0.1),
+        color: renk.withValues(alpha: isDark(context) ? 0.15 : 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+        border: Border.all(color: renk.withValues(alpha: 0.4)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.notifications_off_rounded, color: Colors.orange),
+          Icon(icon, color: renk),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(authService.translate("Bildirim izni verilmedi"),
+                Text(authService.translate(baslik),
                     style: TextStyle(
                         color: getTextColor(context),
                         fontWeight: FontWeight.bold,
                         fontSize: 15)),
                 const SizedBox(height: 4),
-                Text(
-                    authService.translate(
-                        "Hatırlatıcıların çalabilmesi için bildirim izni gerekir."),
+                Text(authService.translate(aciklama),
                     style: TextStyle(
                         color: getSubTextColor(context),
                         fontSize: 13,
                         height: 1.3)),
                 const SizedBox(height: 10),
                 InkWell(
-                  onTap: _izinIste,
+                  onTap: onTap,
                   borderRadius: BorderRadius.circular(8),
-                  child: Text(
-                      authService.translate(
-                          kaliciReddedildi ? "Ayarları Aç" : "İzin Ver"),
+                  child: Text(authService.translate(dugme),
                       style: TextStyle(
                           color: getAccentColor(context),
                           fontWeight: FontWeight.bold,
@@ -322,9 +410,8 @@ class _HatirlaticilarPageState extends State<HatirlaticilarPage>
             Divider(color: getDividerColor(context), height: 1, indent: 16),
             InkWell(
               onTap: () async {
-                final secilenKey = await context.push<String>(
-                    '/settings/ses-secimi',
-                    extra: soundKey);
+                final secilenKey = await context
+                    .push<String>('/settings/ses-secimi', extra: soundKey);
                 if (secilenKey != null) onSoundSelect(secilenKey);
               },
               child: Padding(

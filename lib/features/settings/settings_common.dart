@@ -2,37 +2,37 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../core/theme/app_theme.dart';
 import '../auth/auth_service.dart';
 
 export 'package:provider/provider.dart';
 export '../auth/auth_service.dart';
 
 // ============================================================================
-// GLOBAL DEĞİŞKENLER VE TEMA YARDIMCILARI
+// TEMA YARDIMCILARI
 // ============================================================================
-String globalGeceModu = "Otomatik";
+// Tek kaynak `AppTheme` (Theme.of(context)). Bu adlar, onları çağıran yüzlerce
+// yer değişmesin diye korundu; hepsi AppTheme'e yönlenir.
 
-bool isDark(BuildContext context) {
-  if (globalGeceModu == "Açık") return true;
-  if (globalGeceModu == "Kapalı") return false;
-  return MediaQuery.of(context).platformBrightness == Brightness.dark;
-}
+/// Gece modu seçiminin adı (Otomatik / Açık / Kapalı); yalnızca okunur, seçimi
+/// `AppTheme.mod` tutar.
+String get globalGeceModu => switch (AppTheme.mod.value) {
+      ThemeMode.dark => "Açık",
+      ThemeMode.light => "Kapalı",
+      ThemeMode.system => "Otomatik",
+    };
 
-Color getBgColor(BuildContext context) =>
-    isDark(context) ? Colors.black : const Color(0xFFF2F2F7);
-Color getCardColor(BuildContext context) =>
-    isDark(context) ? const Color(0xFF151517) : Colors.white;
-Color getTextColor(BuildContext context) =>
-    isDark(context) ? Colors.white : Colors.black87;
+bool isDark(BuildContext context) => AppTheme.isDark(context);
+Color getBgColor(BuildContext context) => AppTheme.getBgColor(context);
+Color getCardColor(BuildContext context) => AppTheme.getCardColor(context);
+Color getTextColor(BuildContext context) => AppTheme.getTextColor(context);
 Color getSubTextColor(BuildContext context) =>
-    isDark(context) ? Colors.white54 : Colors.black54;
-Color getDividerColor(BuildContext context) => isDark(context)
-    ? Colors.white.withValues(alpha: 0.05)
-    : Colors.black.withValues(alpha: 0.08);
-Color getAccentColor(BuildContext context) =>
-    isDark(context) ? Colors.yellow : Colors.orange.shade700;
+    AppTheme.getSubTextColor(context);
+Color getDividerColor(BuildContext context) =>
+    AppTheme.getDividerColor(context);
+Color getAccentColor(BuildContext context) => AppTheme.getAccentColor(context);
 Color getTextFieldColor(BuildContext context) =>
-    isDark(context) ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA);
+    AppTheme.getTextFieldColor(context);
 
 // Ozel Tasarim Geri Butonu
 Widget buildBeautifulBackButton(BuildContext context,
@@ -61,8 +61,8 @@ Widget buildBeautifulBackButton(BuildContext context,
 // ============================================================================
 // ORTAK SWIPER MOTORU
 // ============================================================================
-void showSwiperPicker(BuildContext context, String title,
-    List<String> options, String currentValue, Function(String) onSelected) {
+void showSwiperPicker(BuildContext context, String title, List<String> options,
+    String currentValue, Function(String) onSelected) {
   int selectedIndex = options.indexOf(currentValue);
   if (selectedIndex == -1) selectedIndex = 0;
   final authService = context.read<AuthService>();

@@ -17,15 +17,23 @@ val localProperties = Properties().apply {
 }
 val mapsApiKey: String = localProperties.getProperty("MAPS_API_KEY", "")
 
+val keystoreProperties = Properties().apply {
+    val keystorePropertiesFile = rootProject.file("key.properties")
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
+
 android {
-    namespace = "com.example.ezan_app"
+    namespace = "com.acelebi.ezanvakti"
     ndkVersion = "28.2.13676358"
     compileSdk = 36  // <--- BURAYI TEKRAR 36 YAPIYORUZ
 
     defaultConfig {
-        applicationId = "com.example.ezan_app"
+        applicationId = "com.acelebi.ezanvakti"
         minSdk = 24      // async_wallpaper paketi minSdk 24 istiyor (Multimedya/Duvar Kağıdı özelliği)
-        targetSdk = 33   // Burası 33 kalıyor (Konum/Pusula servisinin çökmemsi için)
+        targetSdk = 36   // 22.09.2026: geolocator 14.0.2'ye güncellenmiş; Konum/Pusula/"Konumumu
+                         // Kullan" üçü de telefonda çökmeden test edildi (eskiden 33'te tutuluyordu)
         versionCode = 1
         versionName = "1.0"
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
@@ -35,8 +43,17 @@ android {
         getByName("debug") {
         }
         create("release") {
-            // Debug sertifikasını release için kopyalıyoruz
-            initWith(getByName("debug"))
+            // 22.09.2026: gerçek imza anahtarı (android/key.properties, git'e
+            // eklenmez). Dosya yoksa (ör. CI/başka bilgisayar) derleme debug
+            // anahtarına düşer, sessizce yanlış anahtarla imzalamaz.
+            if (keystoreProperties.isEmpty) {
+                initWith(getByName("debug"))
+            } else {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
         }
     }
 

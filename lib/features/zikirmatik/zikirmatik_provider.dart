@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'zikir.dart';
+
 /// Kullanıcının zikir listesini (aktif + hazır) ve her zikrin sayacını
 /// SharedPreferences'a kalıcı olarak yazar. Kök seviyede (main.dart) tek
 /// örnek olarak tutulur ki `/zikirmatik` ve `/zikirmatik/sayac` aynı veriyi
@@ -15,44 +17,42 @@ class ZikirmatikProvider extends ChangeNotifier {
   int gorunumTuru = 1;
   int tesbihRengi = 3;
 
-  List<Map<String, dynamic>> aktifZikirler = [
-    {"ad": "Zikirmatik", "sayi": 0, "hedef": 99, "imame": 33, "isDefault": true},
-  ];
+  static Zikir _varsayilanZikir() => Zikir(
+        ad: 'Zikirmatik',
+        hedef: 99,
+        imame: 33,
+        varsayilan: true,
+      );
 
-  List<Map<String, dynamic>> hazirZikirler = [
-    {
-      "ad": "100 Sübhânellâhi",
-      "sayi": 0,
-      "hedef": 100,
-      "imame": 100,
-      "arapca": "سُبْحَانَ اللّٰهِ وَبِحَمْدِهِ سُبْحَانَ اللّٰهِ الْعَظِيمِ",
-      "okunusu": "Sübhânellâhi ve bi hamdihî sübhânellâhil azîm",
-      "anlami": "Allah'ü Teala'yı tesbih ederim, hamd O'na mahsustur.",
-      "isDefault": false
-    },
-    {
-      "ad": "99 Lâ havle",
-      "sayi": 0,
-      "hedef": 99,
-      "imame": 99,
-      "arapca":
-          "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللّٰهِ الْعَلِيِّ الْعَظِيمِ",
-      "okunusu": "Lâ havle ve lâ kuvvete illâ billâhil aliyyil azîm",
-      "anlami": "Bütün kudret ve kuvvet, Aliyy ve Azîm olan Allah'a aittir.",
-      "isDefault": false
-    },
-    {
-      "ad": "Salavat",
-      "sayi": 0,
-      "hedef": 100,
-      "imame": 25,
-      "arapca":
-          "اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ وَعَلٰى اٰلِ سَيِّدِنَا مُحَمَّدٍ",
-      "okunusu":
-          "Allahümme Salli Ala Seyyidina Muhammedin ve Ala Ali Seyyidina Muhammed",
-      "anlami": "Allah'ım, efendimiz Hz. Muhammed'e ve aline salat eyle.",
-      "isDefault": false
-    },
+  List<Zikir> aktifZikirler = [_varsayilanZikir()];
+
+  List<Zikir> hazirZikirler = [
+    Zikir(
+      ad: '100 Sübhânellâhi',
+      hedef: 100,
+      imame: 100,
+      arapca: 'سُبْحَانَ اللّٰهِ وَبِحَمْدِهِ سُبْحَانَ اللّٰهِ الْعَظِيمِ',
+      okunusu: 'Sübhânellâhi ve bi hamdihî sübhânellâhil azîm',
+      anlami: "Allah'ü Teala'yı tesbih ederim, hamd O'na mahsustur.",
+    ),
+    Zikir(
+      ad: '99 Lâ havle',
+      hedef: 99,
+      imame: 99,
+      arapca: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللّٰهِ الْعَلِيِّ الْعَظِيمِ',
+      okunusu: 'Lâ havle ve lâ kuvvete illâ billâhil aliyyil azîm',
+      anlami: "Bütün kudret ve kuvvet, Aliyy ve Azîm olan Allah'a aittir.",
+    ),
+    Zikir(
+      ad: 'Salavat',
+      hedef: 100,
+      imame: 25,
+      arapca:
+          'اَللّٰهُمَّ صَلِّ عَلٰى سَيِّدِنَا مُحَمَّدٍ وَعَلٰى اٰلِ سَيِّدِنَا مُحَمَّدٍ',
+      okunusu:
+          'Allahümme Salli Ala Seyyidina Muhammedin ve Ala Ali Seyyidina Muhammed',
+      anlami: "Allah'ım, efendimiz Hz. Muhammed'e ve aline salat eyle.",
+    ),
   ];
 
   bool _yuklendi = false;
@@ -62,25 +62,31 @@ class ZikirmatikProvider extends ChangeNotifier {
     _yukle();
   }
 
+  /// Bozuk kayıtlar atlanır; hiçbiri okunamazsa [yedek] kalır.
+  static List<Zikir>? _oku(String? metin) {
+    if (metin == null) return null;
+    final liste = json.decode(metin) as List;
+    return [
+      for (final e in liste)
+        if (Zikir.fromJson(e) case final Zikir z) z,
+    ];
+  }
+
   Future<void> _yukle() async {
     final prefs = await SharedPreferences.getInstance();
     try {
-      final aktifJson = prefs.getString(_aktifKey);
-      final hazirJson = prefs.getString(_hazirKey);
-      if (aktifJson != null) {
-        aktifZikirler = (json.decode(aktifJson) as List)
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
-      }
-      if (hazirJson != null) {
-        hazirZikirler = (json.decode(hazirJson) as List)
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
-      }
+      final aktif = _oku(prefs.getString(_aktifKey));
+      final hazir = _oku(prefs.getString(_hazirKey));
+      if (aktif != null) aktifZikirler = aktif;
+      if (hazir != null) hazirZikirler = hazir;
     } catch (e) {
       // Bozuk/uyumsuz bir JSON blobu tüm sayfayı çökertmesin; varsayılan
       // zikir listeleriyle devam edilir.
-      debugPrint("Zikirmatik verisi okunamadı, varsayılanlara dönülüyor: $e");
+      debugPrint('Zikirmatik verisi okunamadı, varsayılanlara dönülüyor: $e');
+    }
+    // Varsayılan sayaç her zaman listenin başında olmalı (silinemez).
+    if (!aktifZikirler.any((z) => z.varsayilan)) {
+      aktifZikirler.insert(0, _varsayilanZikir());
     }
     gorunumTuru = prefs.getInt(_gorunumKey) ?? gorunumTuru;
     tesbihRengi = prefs.getInt(_tesbihRengiKey) ?? tesbihRengi;
@@ -90,61 +96,68 @@ class ZikirmatikProvider extends ChangeNotifier {
 
   Future<void> _kaydet() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_aktifKey, json.encode(aktifZikirler));
-    await prefs.setString(_hazirKey, json.encode(hazirZikirler));
+    await prefs.setString(
+        _aktifKey, json.encode(aktifZikirler.map((z) => z.toJson()).toList()));
+    await prefs.setString(
+        _hazirKey, json.encode(hazirZikirler.map((z) => z.toJson()).toList()));
   }
 
   void setGorunumTuru(int v) {
     gorunumTuru = v;
-    SharedPreferences.getInstance()
-        .then((p) => p.setInt(_gorunumKey, v));
+    SharedPreferences.getInstance().then((p) => p.setInt(_gorunumKey, v));
     notifyListeners();
   }
 
   void setTesbihRengi(int v) {
     tesbihRengi = v;
-    SharedPreferences.getInstance()
-        .then((p) => p.setInt(_tesbihRengiKey, v));
+    SharedPreferences.getInstance().then((p) => p.setInt(_tesbihRengiKey, v));
     notifyListeners();
   }
 
-  void zikirEkle(Map<String, dynamic> zikir) {
+  void zikirEkle(Zikir zikir) {
     aktifZikirler.add(zikir);
     _kaydet();
     notifyListeners();
   }
 
-  void zikirGuncelle(Map<String, dynamic> eski, Map<String, dynamic> yeni) {
+  /// [eski] zikri [yeni] ile değiştirir; sayaç ve tur korunur (hedef sayının
+  /// altına düşürüldüyse ilerleme sıfırlanır: halka %100'ü aşmasın).
+  void zikirGuncelle(Zikir eski, Zikir yeni) {
     final index = aktifZikirler.indexOf(eski);
     if (index == -1) return;
-    final eskiSayi = (eski['sayi'] as int?) ?? 0;
-    final yeniHedef = (yeni['hedef'] as int?) ?? 99;
-    // Hedef, mevcut sayının altına düşürüldüyse ilerlemeyi sıfırla; aksi
-    // halde halka %100'ü aşan bir ilerleme gösterir.
-    yeni['sayi'] = eskiSayi > yeniHedef ? 0 : eskiSayi;
-    yeni['loop'] = eski['loop'] ?? 0;
+    yeni.sayi = eski.sayi >= yeni.hedef ? 0 : eski.sayi;
+    yeni.tur = eski.tur;
     aktifZikirler[index] = yeni;
     _kaydet();
     notifyListeners();
   }
 
-  void aktiftenKaldir(Map<String, dynamic> zikir) {
+  void aktiftenKaldir(Zikir zikir) {
     aktifZikirler.remove(zikir);
     hazirZikirler.add(zikir);
     _kaydet();
     notifyListeners();
   }
 
-  void hazirdanEkle(Map<String, dynamic> zikir) {
+  void hazirdanEkle(Zikir zikir) {
     hazirZikirler.remove(zikir);
     aktifZikirler.add(zikir);
     _kaydet();
     notifyListeners();
   }
 
-  void sayaciGuncelle(Map<String, dynamic> zikir, int yeniSayi, {int? loop}) {
-    zikir['sayi'] = yeniSayi;
-    if (loop != null) zikir['loop'] = loop;
+  /// "Hazır" listesindeki, kullanıcının kendi eklediği zikri kalıcı siler.
+  /// Uygulamanın hazır zikirleri `id` taşımaz ve silinemez.
+  void hazirdanSil(Zikir zikir) {
+    if (!zikir.kendiEkledigim) return;
+    hazirZikirler.remove(zikir);
+    _kaydet();
+    notifyListeners();
+  }
+
+  void sayaciGuncelle(Zikir zikir, int yeniSayi, {int? tur}) {
+    zikir.sayi = yeniSayi;
+    if (tur != null) zikir.tur = tur;
     _kaydet();
     notifyListeners();
   }

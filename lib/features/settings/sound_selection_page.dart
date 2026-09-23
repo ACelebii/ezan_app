@@ -82,8 +82,7 @@ class _SoundSelectionPageState extends State<SoundSelectionPage> {
                     Padding(
                       padding:
                           const EdgeInsets.only(left: 16, top: 16, bottom: 8),
-                      child: Text(
-                          authService.translate("Sesler"),
+                      child: Text(authService.translate("Sesler"),
                           style: TextStyle(
                               color: getSubTextColor(context), fontSize: 14)),
                     ),
@@ -125,8 +124,7 @@ class _SoundSelectionPageState extends State<SoundSelectionPage> {
                                         child: Text(
                                             authService.translate("Yakında"),
                                             style: TextStyle(
-                                                color:
-                                                    getSubTextColor(context),
+                                                color: getSubTextColor(context),
                                                 fontSize: 12)),
                                       )
                                     : null,

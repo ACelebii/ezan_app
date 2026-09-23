@@ -1,9 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../auth/auth_service.dart';
+import '../../core/vakit/vakit_modelleri.dart';
+import '../../core/vakit/vakit_servisi.dart';
+import '../../locator.dart';
 import 'ajanda_provider.dart';
 
 // 1. ADIM: SAYFA SARICI (PROVIDER BURADA OLUŞTURULUYOR)
@@ -31,16 +32,21 @@ class AjandaTimelineView extends StatefulWidget {
 class _AjandaTimelineViewState extends State<AjandaTimelineView> {
   final double hourHeight = 60.0;
 
-  // Aynı gün/şehir/yöntem için tekrar ağ isteği atmamak adına basit bellek içi önbellek.
+  final _servis = locator<VakitServisi>();
+
+  // Aynı gün/şehir için tekrar okumamak adına basit bellek içi önbellek.
   final Map<String, List<Map<String, dynamic>>> _cache = {};
 
   List<Map<String, dynamic>>? _vakitler;
   bool _isLoading = true;
   bool _hasError = false;
 
+  Konum? _konum;
   DateTime? _sonCekilenTarih;
   String? _sonCekilenSehir;
-  int? _sonCekilenYontem;
+
+  /// Vakitlerin hesaplandığı tercih; yöntem/ikindi/temkin değişince yenilenir.
+  String? _sonTercih;
 
   // Kullanıcı gün değiştirme okuna hızlı basarsa eski bir isteğin geç gelen
   // yanıtı, daha yeni bir isteğin sonucunun üzerine yazmasın diye.
@@ -51,26 +57,41 @@ class _AjandaTimelineViewState extends State<AjandaTimelineView> {
     super.didChangeDependencies();
     final provider = context.watch<AjandaProvider>();
     final authService = context.watch<AuthService>();
-    final sehir = authService.seciliSehir['isim'] as String? ?? 'İstanbul';
-    final yontem = authService.apiMethod;
+    // Değişimi ad değil kimlik algılar (aynı adlı iki yer olabilir).
+    final sehir = authService.seciliSehir.kimlik;
 
+    final sehirDegisti = _sonCekilenSehir != sehir;
+    if (sehirDegisti) {
+      _konum = authService.seciliSehir.konum;
+      // "Bugün" şehrin takvimine göre; telefonun tarihine göre değil.
+      final konum = _konum;
+      if (konum != null) provider.bugunuAyarla(_servis.bugun(konum));
+    }
+
+    final tercihDegisti = _sonTercih != authService.vakitTercihi.ozet;
     if (_sonCekilenTarih != provider.seciliTarih ||
-        _sonCekilenSehir != sehir ||
-        _sonCekilenYontem != yontem) {
+        sehirDegisti ||
+        tercihDegisti) {
       _sonCekilenTarih = provider.seciliTarih;
       _sonCekilenSehir = sehir;
-      _sonCekilenYontem = yontem;
-      _vakitleriGetir(provider.seciliTarih, sehir, yontem);
+      _sonTercih = authService.vakitTercihi.ozet;
+      _vakitleriGetir(provider.seciliTarih);
     }
   }
 
-  String _cacheAnahtari(DateTime tarih, String sehir, int yontem) =>
-      '${tarih.year}-${tarih.month}-${tarih.day}_${sehir}_$yontem';
-
-  Future<void> _vakitleriGetir(
-      DateTime tarih, String sehir, int yontem) async {
-    final anahtar = _cacheAnahtari(tarih, sehir, yontem);
+  Future<void> _vakitleriGetir(DateTime tarih) async {
+    final konum = _konum;
     final istekNo = ++_istekSayaci;
+    if (konum == null) {
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+      });
+      return;
+    }
+
+    final tercih = context.read<AuthService>().vakitTercihi;
+    final anahtar = '${gunAnahtari(tarih)}_${konum.anahtar}_${tercih.ozet}';
     final onbellek = _cache[anahtar];
     if (onbellek != null) {
       setState(() {
@@ -87,17 +108,11 @@ class _AjandaTimelineViewState extends State<AjandaTimelineView> {
     });
 
     try {
-      final tarihStr = '${tarih.day.toString().padLeft(2, '0')}-'
-          '${tarih.month.toString().padLeft(2, '0')}-${tarih.year}';
-      final url = Uri.parse(
-          'https://api.aladhan.com/v1/timingsByCity/$tarihStr?city=${Uri.encodeComponent(sehir)}&country=Turkey&method=$yontem');
-      final response = await http.get(url).timeout(const Duration(seconds: 8));
-      if (response.statusCode != 200) {
-        throw Exception('HTTP ${response.statusCode}');
-      }
-      final timings =
-          json.decode(response.body)['data']['timings'] as Map<String, dynamic>;
-      final vakitler = _timingsToList(timings);
+      final gunler =
+          await _servis.ayVakitleri(konum, tarih.year, tarih.month, tercih);
+      final gun = gunler.where((g) => g.tarih == tarih).firstOrNull;
+      if (gun == null) throw VakitHatasi('$tarih için vakit yok.');
+      final vakitler = _gunuListeye(gun);
       _cache[anahtar] = vakitler;
       // Bu istek beklerken kullanıcı başka bir güne geçmiş olabilir; sadece
       // hâlâ en güncel istek buysa sonucu uygula.
@@ -115,40 +130,36 @@ class _AjandaTimelineViewState extends State<AjandaTimelineView> {
     }
   }
 
-  ({int saat, int dakika}) _saatParcala(Map<String, dynamic> timings, String key) {
-    final raw = (timings[key] as String).split(' ').first;
-    final parcalar = raw.split(':');
-    return (saat: int.parse(parcalar[0]), dakika: int.parse(parcalar[1]));
-  }
-
   ({int saat, int dakika}) _dakikaEkle(({int saat, int dakika}) t, int dakika) {
     final toplam = ((t.saat * 60 + t.dakika + dakika) % 1440 + 1440) % 1440;
     return (saat: toplam ~/ 60, dakika: toplam % 60);
   }
 
-  List<Map<String, dynamic>> _timingsToList(Map<String, dynamic> timings) {
+  List<Map<String, dynamic>> _gunuListeye(GunlukVakit gun) {
     Map<String, dynamic> girdi(String isim, ({int saat, int dakika}) t) => {
           "isim": isim,
           "saat": t.saat,
           "dakika": t.dakika,
           "renk": Colors.redAccent,
         };
+    ({int saat, int dakika}) saatOf(Vakit vakit) =>
+        saatDakikaCoz(gun.saatler[vakit]!)!;
 
-    final gunes = _saatParcala(timings, 'Sunrise');
-    // Aladhan İşrak/Duha döndürmez; bu iki vakit yaygın kabul edilen sabit
-    // ofsetlerle Güneş vaktinden türetilir (İşrak: +45 dk, Duha: +65 dk).
+    final gunes = saatOf(Vakit.gunes);
+    // Diyanet de Aladhan da İşrak/Duha vermez; bu iki vakit yaygın kabul edilen
+    // sabit ofsetlerle Güneş vaktinden türetilir (İşrak: +45 dk, Duha: +65 dk).
     final israk = _dakikaEkle(gunes, 45);
     final duha = _dakikaEkle(gunes, 65);
 
     return [
-      girdi("İmsak", _saatParcala(timings, 'Fajr')),
+      girdi("İmsak", saatOf(Vakit.imsak)),
       girdi("Güneş", gunes),
       girdi("İşrak", israk),
       girdi("Duha", duha),
-      girdi("Öğle", _saatParcala(timings, 'Dhuhr')),
-      girdi("İkindi", _saatParcala(timings, 'Asr')),
-      girdi("Akşam", _saatParcala(timings, 'Maghrib')),
-      girdi("Yatsı", _saatParcala(timings, 'Isha')),
+      girdi("Öğle", saatOf(Vakit.ogle)),
+      girdi("İkindi", saatOf(Vakit.ikindi)),
+      girdi("Akşam", saatOf(Vakit.aksam)),
+      girdi("Yatsı", saatOf(Vakit.yatsi)),
     ];
   }
 
@@ -219,8 +230,7 @@ class _AjandaTimelineViewState extends State<AjandaTimelineView> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.wifi_off_rounded,
-                        size: 56, color: subTextColor),
+                    Icon(Icons.wifi_off_rounded, size: 56, color: subTextColor),
                     const SizedBox(height: 16),
                     Text(
                       authService.translate(

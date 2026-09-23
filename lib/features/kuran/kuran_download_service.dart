@@ -1,25 +1,22 @@
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:ezan_vakti_uygulamasi/core/local_db.dart';
 
-class KuranDownloadService {
-  static Future<void> downloadPage(int pageNumber, String url) async {
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      final appDir = await getApplicationDocumentsDirectory();
-      final file = File('${appDir.path}/kuran_page_$pageNumber.png');
-      await file.writeAsBytes(response.bodyBytes);
+import 'data/sayfa_indirici.dart';
 
-      final db = await LocalDatabase.instance.database;
-      await db.update(
-        'kuran_pages',
-        {'local_path': file.path, 'is_downloaded': 1},
-        where: 'page_number = ?',
-        whereArgs: [pageNumber],
-      );
-    }
-  }
+/// Mushaf sayfa görsellerinin cihaz önbelleği. Asıl iş [SayfaIndirici]dedir
+/// (doğrulama, atomik yazma, toplu indirme); bu sınıf uygulamanın tek örneğini
+/// ve eski statik çağrıları (ekran, senkron yöneticisi, arka plan görevi) tutar.
+class KuranDownloadService {
+  static final SayfaIndirici varsayilan = SayfaIndirici(
+    istemci: http.Client(),
+    klasor: getApplicationDocumentsDirectory,
+    kayitlar: SqfliteSayfaKayitlari(),
+  );
+
+  /// Tek sayfayı indirir; görsel değilse ya da HTTP hatasında fırlatır.
+  static Future<void> downloadPage(int pageNumber, String url) =>
+      varsayilan.indir(pageNumber, adres: url);
 
   static Future<String?> getPagePath(int pageNumber) async {
     final db = await LocalDatabase.instance.database;
@@ -35,23 +32,8 @@ class KuranDownloadService {
     return null;
   }
 
-  /// Daha önce indirilmiş sayfaları yeniden indirir; böylece periyodik
-  /// arka plan senkronizasyonu (bkz. sync_manager.dart) çevrimdışı
-  /// önbelleği güncel/bütün tutar. Ağ yoksa mevcut yerel kopyalar
-  /// dokunulmadan kalır.
-  static Future<void> refresh() async {
-    final db = await LocalDatabase.instance.database;
-    final downloaded =
-        await db.query('kuran_pages', where: 'is_downloaded = 1');
-    for (final row in downloaded) {
-      final pageNumber = row['page_number'] as int;
-      final pageStr = pageNumber.toString().padLeft(3, '0');
-      final url = "https://android.quran.com/data/width_1024/page$pageStr.png";
-      try {
-        await downloadPage(pageNumber, url);
-      } catch (_) {
-        // Ağ yoksa/indirme başarısız olursa mevcut yerel kopya korunur.
-      }
-    }
-  }
+  /// Periyodik arka plan senkronizasyonu (bkz. sync_manager.dart): yalnızca
+  /// dosyası silinmiş/bozulmuş sayfaları yeniden indirir. Sağlam sayfalara
+  /// dokunmaz, ağ kullanmaz.
+  static Future<void> refresh() => varsayilan.yenile();
 }

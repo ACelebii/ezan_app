@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../core/services/konum_servisi.dart';
 
 class PusulaController extends ChangeNotifier {
   double _cumulativeHeading = 0;
@@ -58,54 +59,21 @@ class PusulaController extends ChangeNotifier {
     });
   }
 
+  final _konumServisi = KonumServisi();
+
   Future<void> _updateLocationAndQibla() async {
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        _errorMessage = "Konum servisleri kapalı.";
-        notifyListeners();
-        return;
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          _errorMessage = "Konum izni reddedildi.";
-          notifyListeners();
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        _errorMessage = "Konum izni kalıcı olarak reddedildi.";
-        notifyListeners();
-        return;
-      }
-
-      Position? pos = await Geolocator.getLastKnownPosition();
-      if (pos == null) {
-        try {
-          pos = await Geolocator.getCurrentPosition(
-            locationSettings:
-                const LocationSettings(accuracy: LocationAccuracy.high),
-          );
-        } catch (e) {
-          debugPrint("Konum hatası: $e");
-        }
-      }
-
-      if (pos != null) {
-        _currentPosition = pos;
-        _qiblaAngle = _calculateTrueBearing(pos.latitude, pos.longitude);
-        notifyListeners();
-      } else {
-        _errorMessage = "Konum alınamadı. Lütfen tekrar deneyin.";
-        notifyListeners();
-      }
-    } catch (e) {
-      debugPrint("Konum hatası: $e");
-      _errorMessage = "Konum alınamadı. Lütfen tekrar deneyin.";
+      final pos = await _konumServisi.konumAl(
+        sonBilineniTercihEt: true,
+        ayar: const LocationSettings(accuracy: LocationAccuracy.high),
+      );
+      _currentPosition = pos;
+      _qiblaAngle = _calculateTrueBearing(pos.latitude, pos.longitude);
+      notifyListeners();
+    } on KonumHatasi catch (h) {
+      _errorMessage = h.sorun == KonumSorunu.alinamadi
+          ? "Konum alınamadı. Lütfen tekrar deneyin."
+          : h.mesaj;
       notifyListeners();
     }
   }

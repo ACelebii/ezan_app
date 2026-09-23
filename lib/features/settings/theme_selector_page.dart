@@ -1,9 +1,12 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../auth/auth_service.dart';
 import '../../core/utils/assets_constants.dart';
 import '../../core/widgets/gradient_feature_icon.dart';
+import '../../core/vakit/vakit_modelleri.dart';
+import '../vakitler/gokyuzu_hesabi.dart';
 
 class ThemeSelectorPage extends StatefulWidget {
   const ThemeSelectorPage({super.key});
@@ -14,6 +17,12 @@ class ThemeSelectorPage extends StatefulWidget {
 
 class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
   final List<Map<String, dynamic>> stiller = [
+    {
+      'isim': 'Gökyüzü',
+      'renk': Colors.lightBlueAccent,
+      'ikon': Icons.wb_twilight_rounded,
+      'tip': 'ikon'
+    },
     {
       'isim': 'Listeli',
       'renk': Colors.pinkAccent,
@@ -90,8 +99,8 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
         Row(children: [
           Icon(Icons.location_on_outlined, color: accentColor, size: 14),
           const SizedBox(width: 4),
-          const Text("İstanbul",
-              style: TextStyle(
+          Text(context.t("İstanbul"),
+              style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.bold)),
@@ -224,6 +233,32 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
                   );
                 }),
           )
+        ],
+      ),
+    );
+  }
+
+  /// Öğle gökyüzü, ufukta yay ve güneş: gerçek ekranın küçük bir taslağı.
+  Widget _buildPreviewGokyuzu() {
+    final (ust, ufuk) = gokyuzuRenkleri[Vakit.ogle]!;
+    final authService = context.watch<AuthService>();
+    return Container(
+      decoration: BoxDecoration(
+          gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [ust, ufuk])),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.wb_sunny_rounded,
+              color: Color(0xFFFFF1B8), size: 56),
+          const SizedBox(height: 12),
+          Text(authService.translate("Gökyüzü"),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -442,8 +477,8 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 4, mainAxisSpacing: 12, crossAxisSpacing: 12),
               itemCount: 8,
-              itemBuilder: (c, i) => GradientFeatureIcon(
-                  iconKey: miniIcons[i], size: 18)),
+              itemBuilder: (c, i) =>
+                  GradientFeatureIcon(iconKey: miniIcons[i], size: 18)),
           const Spacer(),
           _buildMiniGrid(accentColor),
         ],
@@ -589,9 +624,9 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
                           decoration: BoxDecoration(
                               color: Colors.black.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(8)),
-                          child: const Center(
-                              child: Text("9 Şevval\n1447",
-                                  style: TextStyle(
+                          child: Center(
+                              child: Text(context.t("9 Şevval\n1447"),
+                                  style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 9,
                                       fontWeight: FontWeight.bold,
@@ -715,7 +750,8 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
                           boxShadow: _currentIndex == index
                               ? [
                                   BoxShadow(
-                                      color: stil['renk'].withValues(alpha: 0.2),
+                                      color:
+                                          stil['renk'].withValues(alpha: 0.2),
                                       blurRadius: 15,
                                       spreadRadius: 1)
                                 ]
@@ -728,6 +764,8 @@ class _ThemeSelectorPageState extends State<ThemeSelectorPage> {
                             height: double.infinity,
                             child: Builder(builder: (context) {
                               switch (stil['isim']) {
+                                case 'Gökyüzü':
+                                  return _buildPreviewGokyuzu();
                                 case 'Listeli':
                                   return _buildPreviewListeli(stil['renk']);
                                 case 'Dairesel':

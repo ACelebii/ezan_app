@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -129,9 +130,10 @@ class _KutuphanePdfPageState extends State<KutuphanePdfPage> {
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(24)),
                   child: widget.item.pdfUrl.isEmpty
-                      ? const Center(
-                          child: Text("Bu kitap için PDF henüz eklenmedi.",
-                              style: TextStyle(color: Colors.black)))
+                      ? Center(
+                          child: Text(
+                              context.t("Bu kitap için PDF henüz eklenmedi."),
+                              style: const TextStyle(color: Colors.black)))
                       : Stack(
                           children: [
                             SfPdfViewer.network(
@@ -144,8 +146,9 @@ class _KutuphanePdfPageState extends State<KutuphanePdfPage> {
                                 setState(() {
                                   _isLoading = false;
                                 });
-                                final kaldigiSayfa = await KutuphaneSonOkunan
-                                    .pageFor(widget.item.id);
+                                final kaldigiSayfa =
+                                    await KutuphaneSonOkunan.pageFor(
+                                        widget.item.id);
                                 if (kaldigiSayfa != null &&
                                     kaldigiSayfa > 1 &&
                                     kaldigiSayfa <=
@@ -159,10 +162,9 @@ class _KutuphanePdfPageState extends State<KutuphanePdfPage> {
                                 setState(() {
                                   _isLoading = false;
                                 });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text(
-                                            "PDF yüklenirken hata oluştu! Linki kontrol edin.")));
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                    content: Text(context.t(
+                                        "PDF yüklenirken hata oluştu! Linki kontrol edin."))));
                               },
                               onPageChanged: (PdfPageChangedDetails details) {
                                 KutuphaneSonOkunan.save(

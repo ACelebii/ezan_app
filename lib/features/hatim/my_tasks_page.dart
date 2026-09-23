@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -38,10 +39,10 @@ class MyTasksPage extends StatelessWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                "İlgili görevi\nokuduğunuzu\nonaylıyormusunuz?",
+              Text(
+                context.t("İlgili görevi\nokuduğunuzu\nonaylıyormusunuz?"),
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white, fontSize: 18),
+                style: const TextStyle(color: Colors.white, fontSize: 18),
               ),
               const SizedBox(height: 24),
               Divider(color: Colors.white.withValues(alpha: 0.1), height: 1),
@@ -53,7 +54,7 @@ class MyTasksPage extends StatelessWidget {
                   } catch (e) {
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text("İşlem başarısız: $e"),
+                        content: Text(context.t("İşlem başarısız: $e")),
                         backgroundColor: Colors.redAccent));
                   }
                 },
@@ -61,8 +62,8 @@ class MyTasksPage extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   alignment: Alignment.center,
-                  child: const Text("EVET",
-                      style: TextStyle(
+                  child: Text(context.t("EVET"),
+                      style: const TextStyle(
                           color: Color(0xFFFF3B30),
                           fontSize: 16,
                           fontWeight: FontWeight.bold)),
@@ -93,10 +94,10 @@ class MyTasksPage extends StatelessWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                "Onaylıyormusunuz?",
+              Text(
+                context.t("Onaylıyormusunuz?"),
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white, fontSize: 18),
+                style: const TextStyle(color: Colors.white, fontSize: 18),
               ),
               const SizedBox(height: 24),
               Divider(color: Colors.white.withValues(alpha: 0.1), height: 1),
@@ -108,7 +109,7 @@ class MyTasksPage extends StatelessWidget {
                   } catch (e) {
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text("İşlem başarısız: $e"),
+                        content: Text(context.t("İşlem başarısız: $e")),
                         backgroundColor: Colors.redAccent));
                   }
                 },
@@ -116,8 +117,8 @@ class MyTasksPage extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   alignment: Alignment.center,
-                  child: const Text("EVET",
-                      style: TextStyle(
+                  child: Text(context.t("EVET"),
+                      style: const TextStyle(
                           color: Color(0xFFFF3B30),
                           fontSize: 16,
                           fontWeight: FontWeight.bold)),
@@ -158,8 +159,9 @@ class MyTasksPage extends StatelessWidget {
           ),
           onPressed: () => context.pop(),
         ),
-        title: const Text("Görevlerim",
-            style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+        title: Text(context.t("Görevlerim"),
+            style:
+                const TextStyle(color: textColor, fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -169,13 +171,14 @@ class MyTasksPage extends StatelessWidget {
           children: [
             // --- SON KALDIĞIM YER PANELİ ---
             if (provider.lastReadTask != null) ...[
-              const Padding(
-                padding: EdgeInsets.only(left: 16.0, top: 16, bottom: 8),
-                child: Text("Son Kaldığım Yer",
-                    style: TextStyle(color: subTextColor, fontSize: 12)),
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0, top: 16, bottom: 8),
+                child: Text(context.t("Son Kaldığım Yer"),
+                    style: const TextStyle(color: subTextColor, fontSize: 12)),
               ),
               ListTile(
-                title: Text("${provider.lastReadTask!.hatimId}. Hatim",
+                title: Text(
+                    context.t("${provider.lastReadTask!.hatimId}. Hatim"),
                     style: const TextStyle(
                         color: textColor, fontWeight: FontWeight.bold)),
                 subtitle: Text(
@@ -205,7 +208,7 @@ class MyTasksPage extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16.0, vertical: 12),
-                    child: Text("${entry.key}. Hatim",
+                    child: Text(context.t("${entry.key}. Hatim"),
                         style:
                             const TextStyle(color: subTextColor, fontSize: 14)),
                   ),
@@ -231,8 +234,8 @@ class MyTasksPage extends StatelessWidget {
                               margin: const EdgeInsets.symmetric(
                                   horizontal: 4, vertical: 8),
                               alignment: Alignment.center,
-                              child: const Text("Okudum",
-                                  style: TextStyle(
+                              child: Text(context.t("Okudum"),
+                                  style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w500)),
                             ),
@@ -250,8 +253,8 @@ class MyTasksPage extends StatelessWidget {
                               margin: const EdgeInsets.symmetric(
                                   horizontal: 4, vertical: 8),
                               alignment: Alignment.center,
-                              child: const Text("Vazgeç",
-                                  style: TextStyle(
+                              child: Text(context.t("Vazgeç"),
+                                  style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w500)),
                             ),
@@ -266,12 +269,12 @@ class MyTasksPage extends StatelessWidget {
                                 horizontal: 16, vertical: 4),
                             leading: const Icon(Icons.circle_outlined,
                                 color: Colors.white54, size: 22),
-                            title: Text(
-                                "${myTask.title} ${myTask.subtitle}",
+                            title: Text("${myTask.title} ${myTask.subtitle}",
                                 style: const TextStyle(
                                     color: textColor, fontSize: 16)),
                             subtitle: Text(
-                                "Alındı: ${_relativeTimeLabel(myTask.takenAt)}",
+                                context.t(
+                                    "Alındı: ${_relativeTimeLabel(myTask.takenAt)}"),
                                 style: const TextStyle(
                                     color: subTextColor, fontSize: 12)),
                             trailing: IconButton(
@@ -294,8 +297,7 @@ class MyTasksPage extends StatelessWidget {
                                     myTask.taskTitle == "Sure") {
                                   final kuranProvider = KuranProvider();
                                   if (myTask.taskTitle == "Sayfa") {
-                                    kuranProvider
-                                        .loadPageDetails(myTask.value);
+                                    kuranProvider.loadPageDetails(myTask.value);
                                   } else if (myTask.taskTitle == "Cüz") {
                                     kuranProvider.loadJuzDetails(myTask.value);
                                   } else if (myTask.taskTitle == "Sure") {
@@ -339,11 +341,12 @@ class MyTasksPage extends StatelessWidget {
             }),
 
             if (provider.myTasks.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(32.0),
+              Padding(
+                padding: const EdgeInsets.all(32.0),
                 child: Center(
-                  child: Text("Henüz alınmış bir göreviniz bulunmuyor.",
-                      style: TextStyle(color: subTextColor)),
+                  child: Text(
+                      context.t("Henüz alınmış bir göreviniz bulunmuyor."),
+                      style: const TextStyle(color: subTextColor)),
                 ),
               )
           ],

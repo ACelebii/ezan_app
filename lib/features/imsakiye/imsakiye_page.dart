@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart'
-    hide TextDirection; // intl çakışma hatası çözüldü
 import 'package:provider/provider.dart';
 import '../auth/auth_service.dart';
-import 'data/imsakiye_repository.dart';
+import '../../core/vakit/vakit_modelleri.dart';
+import '../../core/vakit/vakit_servisi.dart';
 import '../../core/widgets/glass_button.dart';
+import '../../locator.dart';
 
 class ImsakiyePage extends StatefulWidget {
   final VoidCallback? onBack;
@@ -15,27 +15,50 @@ class ImsakiyePage extends StatefulWidget {
 }
 
 class _ImsakiyePageState extends State<ImsakiyePage> {
-  List data = [];
+  final _servis = locator<VakitServisi>();
+
+  List<GunlukVakit> data = [];
   bool loading = true;
   String? errorMessage;
   String _lastCity = "";
-  int _lastMethod = -1;
+  String? _sonKimlik;
+  Konum? _konum;
 
+  /// Konumun takvimine göre bugün; "bugün" vurgusu ve açılış ayı buna göre.
+  DateTime? _bugun;
   int _seciliAy = DateTime.now().month;
   int _seciliYil = DateTime.now().year;
+
+  /// Şehir ya da ay hızlıca değişirse eski isteğin geç gelen yanıtı yok sayılır.
+  int _istek = 0;
+
+  /// Vakitlerin hesaplandığı tercih; yöntem/ikindi/temkin değişince yenilenir.
+  String? _sonTercih;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final authService = context.watch<AuthService>();
-    final currentCity = authService.seciliSehir['isim'] ?? "İstanbul";
-    final currentMethod = authService.apiMethod;
+    final secili = authService.seciliSehir;
 
-    if (_lastCity != currentCity || _lastMethod != currentMethod) {
-      _lastCity = currentCity;
-      _lastMethod = currentMethod;
+    // Değişimi ad değil kimlik algılar (aynı adlı iki yer olabilir).
+    if (_sonKimlik != secili.kimlik) {
+      _sonKimlik = secili.kimlik;
+      _lastCity = secili.isim;
+      _konum = secili.konum;
+      final konum = _konum;
+      if (konum != null) {
+        // Açılış ayı: telefonun değil konumun bulunduğu ay.
+        _bugun = _servis.bugun(konum);
+        _seciliAy = _bugun!.month;
+        _seciliYil = _bugun!.year;
+      }
+      _fetchMonth();
+    } else if (_sonTercih != null &&
+        _sonTercih != authService.vakitTercihi.ozet) {
       _fetchMonth();
     }
+    _sonTercih = authService.vakitTercihi.ozet;
   }
 
   void _oncekiAy() {
@@ -64,16 +87,21 @@ class _ImsakiyePageState extends State<ImsakiyePage> {
 
   Future<void> _fetchMonth() async {
     if (!mounted) return;
+    final konum = _konum;
+    if (konum == null) {
+      setState(() {
+        loading = false;
+        errorMessage = "$_lastCity için imsakiye bulunamadı.";
+      });
+      return;
+    }
+    final istek = ++_istek;
     setState(() => loading = true);
     try {
-      final repo = ImsakiyeRepository(
-        city: _lastCity,
-        method: _lastMethod,
-        month: _seciliAy,
-        year: _seciliYil,
-      );
-      final result = await repo.getData();
-      if (mounted) {
+      final tercih = context.read<AuthService>().vakitTercihi;
+      final result =
+          await _servis.ayVakitleri(konum, _seciliYil, _seciliAy, tercih);
+      if (mounted && istek == _istek) {
         setState(() {
           data = result;
           loading = false;
@@ -81,13 +109,21 @@ class _ImsakiyePageState extends State<ImsakiyePage> {
         });
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && istek == _istek) {
         setState(() {
           loading = false;
-          errorMessage = "İmsakiye yüklenemedi. İnternet bağlantınızı kontrol edin.";
+          errorMessage =
+              "İmsakiye yüklenemedi. İnternet bağlantınızı kontrol edin.";
         });
       }
     }
+  }
+
+  /// Diyanet hicri tarihi "9 Rebiulahir 1448" → "9 Rebiulahir" (yıl gösterilmez).
+  String? _hicri(GunlukVakit gun) {
+    final parcalar = gun.hicriTarih?.split(' ');
+    if (parcalar == null || parcalar.length < 3) return null;
+    return parcalar.sublist(0, parcalar.length - 1).join(' ');
   }
 
   @override
@@ -100,6 +136,11 @@ class _ImsakiyePageState extends State<ImsakiyePage> {
     Color subTextColor = isDark ? Colors.white54 : Colors.black54;
 
     final authService = context.watch<AuthService>();
+    // Kullanıcı bir hesaplama yöntemi seçtiyse bütün günler zaten o yöntemle
+    // hesaplanmıştır; "Diyanet dışı" ayrımı yalnızca Diyanet Takvimi'nde anlamlı.
+    final yontemSecili = authService.vakitTercihi.aladhanYontemi != null;
+    final hesaplananVar =
+        !yontemSecili && data.any((g) => g.kaynak != VakitKaynagi.diyanet);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -163,6 +204,15 @@ class _ImsakiyePageState extends State<ImsakiyePage> {
               ],
             ),
           ),
+          if (!loading && errorMessage == null && hesaplananVar)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+              child: Text(
+                  authService.translate(
+                      "Soluk yazılı günler Diyanet'ten değil, hesaplanmış vakitlerdir (1-2 dakika sapabilir)."),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: subTextColor, fontSize: 11)),
+            ),
           Expanded(
             child: loading
                 ? const Center(
@@ -181,77 +231,81 @@ class _ImsakiyePageState extends State<ImsakiyePage> {
                               const SizedBox(height: 12),
                               ElevatedButton(
                                 onPressed: _fetchMonth,
-                                child: Text(authService.translate("Tekrar Dene")),
+                                child:
+                                    Text(authService.translate("Tekrar Dene")),
                               ),
                             ],
                           ),
                         ),
                       )
                     : ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              itemCount: data.length,
-              itemBuilder: (context, index) {
-                var dayData = data[index];
-                var date = dayData['date'];
-                var timings = dayData['timings'];
-                bool isToday = date['gregorian']['date'] ==
-                    DateFormat('dd-MM-yyyy').format(DateTime.now());
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.all(16),
+                        itemCount: data.length,
+                        itemBuilder: (context, index) {
+                          final gun = data[index];
+                          final isToday = gun.tarih == _bugun;
+                          final hicri = _hicri(gun);
+                          // Diyanet dışı (hesaplanmış) günler soluk gösterilir.
+                          final soluk = !yontemSecili &&
+                              gun.kaynak != VakitKaynagi.diyanet;
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      border: isToday
-                          ? Border.all(color: Colors.orange, width: 2)
-                          : null,
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4))
-                      ]),
-                  child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(children: [
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                  "${date['gregorian']['day']} ${authService.translate(_getMonthName(date['gregorian']['month']['number']))}",
-                                  style: TextStyle(
-                                      color: textColor,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16)),
-                              Text(
-                                  "${date['hijri']['day']} ${authService.translate(date['hijri']['month']['en'])}",
-                                  style: TextStyle(
-                                      color: subTextColor, fontSize: 13)),
-                            ]),
-                        Divider(
-                            color: isDark ? Colors.white12 : Colors.black12,
-                            height: 24),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _vSutun(authService.translate("İmsak"),
-                                  timings['Fajr'], isDark),
-                              _vSutun(authService.translate("Güneş"),
-                                  timings['Sunrise'], isDark),
-                              _vSutun(authService.translate("Öğle"),
-                                  timings['Dhuhr'], isDark),
-                              _vSutun(authService.translate("İkindi"),
-                                  timings['Asr'], isDark),
-                              _vSutun(authService.translate("Akşam"),
-                                  timings['Maghrib'], isDark),
-                              _vSutun(authService.translate("Yatsı"),
-                                  timings['Isha'], isDark),
-                            ]),
-                      ])),
-                );
-              },
-            ),
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                                color: cardColor,
+                                borderRadius: BorderRadius.circular(16),
+                                border: isToday
+                                    ? Border.all(color: Colors.orange, width: 2)
+                                    : null,
+                                boxShadow: [
+                                  BoxShadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4))
+                                ]),
+                            child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(children: [
+                                  Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                            "${gun.tarih.day} ${authService.translate(_getMonthName(gun.tarih.month))}",
+                                            style: TextStyle(
+                                                color: textColor,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16)),
+                                        if (hicri != null)
+                                          Text(hicri,
+                                              style: TextStyle(
+                                                  color: subTextColor,
+                                                  fontSize: 13)),
+                                      ]),
+                                  Divider(
+                                      color: isDark
+                                          ? Colors.white12
+                                          : Colors.black12,
+                                      height: 24),
+                                  Opacity(
+                                    opacity: soluk ? 0.55 : 1,
+                                    child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          for (final vakit in Vakit.values)
+                                            _vSutun(
+                                                authService.translate(vakit.ad),
+                                                gun.saatler[vakit]!,
+                                                isDark),
+                                        ]),
+                                  ),
+                                ])),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
@@ -263,7 +317,7 @@ class _ImsakiyePageState extends State<ImsakiyePage> {
             style: TextStyle(
                 color: isDark ? Colors.white60 : Colors.black54, fontSize: 11)),
         const SizedBox(height: 6),
-        Text(s.split(' ')[0],
+        Text(s,
             style: TextStyle(
                 color: isDark ? Colors.white : Colors.black87,
                 fontWeight: FontWeight.bold,

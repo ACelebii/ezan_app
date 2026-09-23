@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -156,7 +157,7 @@ class _HaftaninHutbesiPageState extends State<HaftaninHutbesiPage> {
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 32.0),
                             child: Text(
-                              "Sunucuya bağlanılamadı.\nLütfen internet bağlantınızı kontrol edip sayfayı aşağı çekerek yenileyin.",
+                              context.t("Sunucuya bağlanılamadı.\nLütfen internet bağlantınızı kontrol edip sayfayı aşağı çekerek yenileyin."),
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                   color: textColor.withValues(alpha: 0.6),
@@ -178,7 +179,7 @@ class _HaftaninHutbesiPageState extends State<HaftaninHutbesiPage> {
                               color: Colors.grey.withValues(alpha: 0.5)),
                           const SizedBox(height: 16),
                           Text(
-                            "Henüz hutbe eklenmemiş.",
+                            context.t("Henüz hutbe eklenmemiş."),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                                 color: textColor.withValues(alpha: 0.6),
@@ -324,8 +325,7 @@ class _HaftaninHutbesiPageState extends State<HaftaninHutbesiPage> {
                                                 ? Colors.white24
                                                 : Colors.grey.shade300,
                                             size: 14),
-                                        onTap: () => context.push(
-                                            '/hutbe/pdf',
+                                        onTap: () => context.push('/hutbe/pdf',
                                             extra: hutbe),
                                       ),
                                       if (!isLast)
@@ -392,7 +392,7 @@ class _HutbePdfPageState extends State<HutbePdfPage> {
                   _buildGlassButton(context, icon: Icons.info_outline_rounded,
                       onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: const Text("Bu PDF resmi yayındır."),
+                      content: Text(context.t("Bu PDF resmi yayındır.")),
                       backgroundColor: Colors.teal.withValues(alpha: 0.9),
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
@@ -436,16 +436,16 @@ class _HutbePdfPageState extends State<HutbePdfPage> {
                             setState(() {
                               _isLoading = false;
                             });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text(
-                                        "PDF yüklenirken hata oluştu! Linki kontrol edin.")));
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(context.t(
+                                    "PDF yüklenirken hata oluştu! Linki kontrol edin."))));
                           },
                         )
                       else
-                        const Center(
-                            child: Text("Geçerli bir PDF linki bulunamadı.",
-                                style: TextStyle(color: Colors.black))),
+                        Center(
+                            child: Text(
+                                context.t("Geçerli bir PDF linki bulunamadı."),
+                                style: const TextStyle(color: Colors.black))),
 
                       // İndiriliyor Animasyonu
                       if (_isLoading && widget.hutbe.pdfUrl.isNotEmpty)
@@ -458,7 +458,7 @@ class _HutbePdfPageState extends State<HutbePdfPage> {
                                 const CircularProgressIndicator(
                                     color: Colors.teal),
                                 const SizedBox(height: 16),
-                                Text("Hutbe İndiriliyor...",
+                                Text(context.t("Hutbe İndiriliyor..."),
                                     style: TextStyle(
                                         color: Colors.grey.shade600,
                                         fontSize: 16,

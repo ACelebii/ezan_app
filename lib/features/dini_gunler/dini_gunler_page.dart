@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -34,6 +35,9 @@ class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
   Widget build(BuildContext context) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     final authService = context.watch<AuthService>();
+    // Metinler (başlık, ay, gün, hicri, açıklama) verinin kendi çevirisiyle
+    // gösterilir; dil seçicide yalnızca Türkçe ve English var.
+    final en = authService.uygulamaDili == 'English';
     final provider = context.watch<DiniGunlerProvider>();
     Color bgColor = AppTheme.getBgColor(context);
     Color textColor = AppTheme.getTextColor(context);
@@ -123,7 +127,7 @@ class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
                   ? Center(
                       child: Text(
                           provider.errorMessage ??
-                              "Bu yıla ait veri bulunamadı.",
+                              context.t("Bu yıla ait veri bulunamadı."),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               color: provider.errorMessage != null
@@ -149,7 +153,7 @@ class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
                               padding: const EdgeInsets.only(
                                   top: 16.0, bottom: 12.0),
                               child: Text(
-                                authService.translate(ayAdi),
+                                DiniGunlerModel.ayAdi(ayAdi, en),
                                 style: TextStyle(
                                     color: isDark
                                         ? Colors.white54
@@ -209,8 +213,7 @@ class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
                                                             height: 1.0)),
                                                     const SizedBox(height: 4),
                                                     Text(
-                                                        authService.translate(
-                                                            gun.gunAd),
+                                                        '${gun.ayFor(en)}\n${gun.haftaGunuFor(en)}',
                                                         textAlign:
                                                             TextAlign.center,
                                                         style: TextStyle(
@@ -241,18 +244,21 @@ class _DiniGunlerPageState extends State<_DiniGunlerPageContent> {
                                                   crossAxisAlignment:
                                                       CrossAxisAlignment.start,
                                                   children: [
-                                                    Text(
-                                                        authService.translate(
-                                                            gun.baslik),
-                                                        style: const TextStyle(
-                                                            color: Color(
-                                                                0xFF6B4C7A),
+                                                    Text(gun.baslikFor(en),
+                                                        // Koyu mor siyah zeminde
+                                                        // okunmuyordu: koyu temada açık mor.
+                                                        style: TextStyle(
+                                                            color: isDark
+                                                                ? const Color(
+                                                                    0xFFCDB4DB)
+                                                                : const Color(
+                                                                    0xFF6B4C7A),
                                                             fontSize: 16,
                                                             fontWeight:
                                                                 FontWeight
                                                                     .w600)),
                                                     const SizedBox(height: 4),
-                                                    Text(gun.hicri,
+                                                    Text(gun.hicriFor(en),
                                                         style: TextStyle(
                                                             color: isDark
                                                                 ? Colors.white54
@@ -309,6 +315,7 @@ class DiniGunDetayPage extends StatelessWidget {
   Widget build(BuildContext context) {
     bool isDark = Theme.of(context).brightness == Brightness.dark;
     final authService = context.watch<AuthService>();
+    final en = authService.uygulamaDili == 'English';
     Color bgColor = isDark ? Colors.black : const Color(0xFFF2F2F7);
     Color textColor = isDark ? Colors.white : Colors.black87;
 
@@ -329,7 +336,7 @@ class DiniGunDetayPage extends StatelessWidget {
                   Expanded(
                     child: Center(
                       child: Text(
-                        authService.translate(gunData.baslik),
+                        gunData.baslikFor(en),
                         style: TextStyle(
                             color: textColor,
                             fontSize: 18,
@@ -367,7 +374,27 @@ class DiniGunDetayPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        authService.translate(gunData.detay),
+                        '${gunData.tarihFor(en)}  ·  ${gunData.hicriFor(en)}',
+                        style: TextStyle(
+                          color: isDark
+                              ? const Color(0xFFCDB4DB)
+                              : const Color(0xFF6B4C7A),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (gunData.geceNotu(en) != null) ...[
+                        const SizedBox(height: 4),
+                        Text(gunData.geceNotu(en)!,
+                            style: TextStyle(
+                                color: isDark
+                                    ? Colors.white54
+                                    : Colors.grey.shade600,
+                                fontSize: 13)),
+                      ],
+                      const SizedBox(height: 16),
+                      Text(
+                        gunData.detayFor(en),
                         style: TextStyle(
                           color: isDark ? Colors.white70 : Colors.grey.shade800,
                           fontSize: 16,

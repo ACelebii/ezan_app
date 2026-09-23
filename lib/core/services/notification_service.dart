@@ -1,16 +1,15 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../features/hatirlaticilar/data/reminder_sound.dart';
+import '../vakit/zaman_dilimi.dart';
 
 /// Yerel bildirimleri (hatırlatıcılar) zamanlayan ince sarmalayıcı.
 ///
-/// Uygulama şu an sadece Türkiye şehirleriyle çalıştığından (bkz.
-/// vakitler_page.dart'taki sabit `country=Turkey`), saat dilimi
-/// `Europe/Istanbul` olarak sabitlenir; ayrı bir cihaz saat dilimi
-/// paketine ihtiyaç yoktur.
+/// Bildirimler mutlak anlarla ([scheduleAt]) kurulur; hangi saat diliminde
+/// olunduğu önemli değildir. `tz.local` yalnızca `initialize` içinde
+/// Europe/Istanbul'a ayarlanır ve zamanlama tarafından kullanılmaz.
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
@@ -22,15 +21,14 @@ class NotificationService {
   Future<void> initialize() async {
     if (_initialized) return;
 
-    tz_data.initializeTimeZones();
+    zamanDilimleriniHazirla();
     tz.setLocalLocation(tz.getLocation('Europe/Istanbul'));
 
     const androidSettings =
         AndroidInitializationSettings('@mipmap/launcher_icon');
     const iosSettings = DarwinInitializationSettings();
     await _plugin.initialize(
-      const InitializationSettings(
-          android: androidSettings, iOS: iosSettings),
+      const InitializationSettings(android: androidSettings, iOS: iosSettings),
     );
 
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
@@ -61,87 +59,98 @@ class NotificationService {
     );
   }
 
-  /// Haftalık, belirli bir güne (ör. Cuma) sabitlenmiş tekrarlayan hatırlatıcı.
-  Future<void> scheduleWeekly({
-    required int id,
-    required String title,
-    required String body,
-    required int weekday,
-    required int hour,
-    required int minute,
-    required String soundKey,
-  }) async {
-    final scheduled = _nextInstanceOfWeekday(weekday, hour, minute);
-    await _plugin.zonedSchedule(
-      id,
-      title,
-      body,
-      scheduled,
-      _detailsFor(soundKey),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-    );
+  AndroidFlutterLocalNotificationsPlugin? get _android =>
+      _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+
+  /// Android 12+ "Alarmlar ve hatırlatıcılar" izni verilmiş mi? Android 14'ten
+  /// itibaren yeni kurulumlarda varsayılan olarak kapalıdır. Eski Android'de ve
+  /// iOS'ta bu izin gerekmez, true döner.
+  Future<bool> tamZamanliBildirimIzniVar() async =>
+      await _android?.canScheduleExactNotifications() ?? true;
+
+  /// Kullanıcıyı sistemin "Alarmlar ve hatırlatıcılar" ekranına götürür ve
+  /// izin durumunu döner. Kullanıcıya bu iznin neden gerektiğini (ezanın
+  /// dakikasında çalması) bu çağrıdan ÖNCE açıklayın.
+  Future<bool> tamZamanliBildirimIzniIste() async =>
+      await _android?.requestExactAlarmsPermission() ?? true;
+
+  /// Android'in pil optimizasyonu bu uygulamayı kısıtlamıyor mu (yoksayma
+  /// izni verilmiş mi)? Kısıtlanmışsa sistem, arka plan bildirim yenilemesini
+  /// (WorkManager, 12 saatte bir) geciktirebilir ya da hiç çalıştırmayabilir;
+  /// tam zamanlı alarmlar (ezan bildirimleri) bundan etkilenmez. iOS'ta ve bu
+  /// izni bilmeyen eski Android'de true döner (kart gösterilmez).
+  Future<bool> pilOptimizasyonuYoksayiliyorMu() async {
+    try {
+      return await Permission.ignoreBatteryOptimizations.isGranted;
+    } catch (_) {
+      return true;
+    }
   }
 
-  /// Her gün aynı saatte tekrarlayan hatırlatıcı (ör. Teheccüt).
-  Future<void> scheduleDaily({
-    required int id,
-    required String title,
-    required String body,
-    required int hour,
-    required int minute,
-    required String soundKey,
-  }) async {
-    final scheduled = _nextInstanceOfTime(hour, minute);
-    await _plugin.zonedSchedule(
-      id,
-      title,
-      body,
-      scheduled,
-      _detailsFor(soundKey),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+  /// Kullanıcıyı sistemin "Pil optimizasyonunu yoksay" iznine götürür.
+  Future<bool> pilOptimizasyonuYoksaymayiIste() async {
+    try {
+      return (await Permission.ignoreBatteryOptimizations.request())
+          .isGranted;
+    } catch (_) {
+      return true;
+    }
   }
 
-  /// Tek seferlik, belirli bir tarih+saatte hatırlatıcı (ör. Ramazan'ın belirli bir günü).
-  /// Geçmişte kalan bir zaman verilirse sessizce hiçbir şey planlamaz.
-  Future<void> scheduleOnce({
+  /// Verilen anda tek seferlik bildirim (ör. bir günün ezan vakti).
+  ///
+  /// [tamZamanli] doğruysa `exactAllowWhileIdle` kullanılır: bildirim dakikasında
+  /// çalar. Yanlışsa (izin yok) `inexactAllowWhileIdle`: Android bildirimi birkaç
+  /// dakika geciktirebilir. Toplu kurulumda değeri bir kez
+  /// [tamZamanliBildirimIzniVar] ile alıp bütün çağrılara verin.
+  ///
+  /// Geçmişte kalan bir an verilirse hiçbir şey kurulmaz ve aynı id'li eski
+  /// bildirim iptal edilir. Yalnızca mutlak anı kullanır; `tz.local`'a bağlı değildir.
+  ///
+  /// [payload], bildirimle birlikte saklanır ve [bekleyenler] ile geri okunur;
+  /// zamanlayıcı bununla "bu bildirim zaten doğru kurulu mu" diye bakar.
+  Future<void> scheduleAt({
     required int id,
     required String title,
     required String body,
-    required DateTime dateTime,
+    required tz.TZDateTime zaman,
     required String soundKey,
+    required bool tamZamanli,
+    String? payload,
   }) async {
-    final scheduled = tz.TZDateTime.from(dateTime, tz.local);
-    if (scheduled.isBefore(tz.TZDateTime.now(tz.local))) return;
+    if (!zaman.isAfter(DateTime.now())) {
+      await cancel(id);
+      return;
+    }
     await _plugin.zonedSchedule(
       id,
       title,
       body,
-      scheduled,
+      zaman,
       _detailsFor(soundKey),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: tamZamanli
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
+      payload: payload,
     );
   }
 
   Future<void> cancel(int id) => _plugin.cancel(id);
 
-  Future<void> cancelRange(int startId, int endIdInclusive) async {
-    for (var id = startId; id <= endIdInclusive; id++) {
-      await _plugin.cancel(id);
-    }
-  }
+  /// Henüz çalmamış, sistemde kayıtlı bildirimler: id → payload. Uygulama
+  /// zorla durdurulup alarmlar silinirse, zamanlayıcı bunu buradan fark eder.
+  Future<Map<int, String?>> bekleyenler() async => {
+        for (final n in await _plugin.pendingNotificationRequests())
+          n.id: n.payload,
+      };
 
   NotificationDetails _detailsFor(String soundKey) {
     final requested = ReminderSounds.byKey(soundKey);
-    final effective = requested.isAvailable ? requested : ReminderSounds.varsayilan;
+    final effective =
+        requested.isAvailable ? requested : ReminderSounds.varsayilan;
     return NotificationDetails(
       android: AndroidNotificationDetails(
         'reminder_${effective.key}',
@@ -154,23 +163,5 @@ class NotificationService {
         sound: effective.assetPath == null ? null : '${effective.key}.caf',
       ),
     );
-  }
-
-  tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
-    final now = tz.TZDateTime.now(tz.local);
-    var scheduled =
-        tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
-    if (scheduled.isBefore(now)) {
-      scheduled = scheduled.add(const Duration(days: 1));
-    }
-    return scheduled;
-  }
-
-  tz.TZDateTime _nextInstanceOfWeekday(int weekday, int hour, int minute) {
-    var scheduled = _nextInstanceOfTime(hour, minute);
-    while (scheduled.weekday != weekday) {
-      scheduled = scheduled.add(const Duration(days: 1));
-    }
-    return scheduled;
   }
 }

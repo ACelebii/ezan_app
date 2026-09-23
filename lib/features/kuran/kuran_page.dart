@@ -1,9 +1,12 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'providers/kuran_provider.dart';
 import 'surah_detail_page.dart' show SearchBottomSheet;
+import 'kuran_kayit_sayfalari.dart';
 import '../../core/widgets/glass_button.dart';
+import '../auth/auth_service.dart';
 
 class KuranPage extends StatelessWidget {
   final VoidCallback? onBack;
@@ -12,7 +15,10 @@ class KuranPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => KuranProvider(),
+      create: (_) {
+        final auth = context.read<AuthService>();
+        return KuranProvider(ingilizceMi: () => auth.uygulamaDili == 'English');
+      },
       child: KuranView(onBack: onBack),
     );
   }
@@ -23,6 +29,7 @@ class KuranView extends StatelessWidget {
   const KuranView({super.key, this.onBack});
 
   void _showMainMenu(BuildContext context, KuranProvider provider) {
+    final sayfa = context;
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF202020),
@@ -34,9 +41,9 @@ class KuranView extends StatelessWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.arrow_back, color: Colors.white),
-              title: const Center(
-                  child: Text("Menü",
-                      style: TextStyle(
+              title: Center(
+                  child: Text(context.t("Menü"),
+                      style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 18))),
@@ -44,18 +51,19 @@ class KuranView extends StatelessWidget {
               onTap: () => Navigator.pop(context),
             ),
             const Divider(color: Colors.white12, height: 1),
-            _buildMenuTile(Icons.menu_book, "Sureler", context,
+            _buildMenuTile(Icons.menu_book, context.t("Sureler"), context,
                 onTap: () => Navigator.pop(context)),
-            _buildMenuTile(Icons.library_books, "Cüzler", context,
+            _buildMenuTile(Icons.library_books, context.t("Cüzler"), context,
                 onTap: () => Navigator.pop(context)),
-            _buildMenuTile(Icons.list, "Fihrist", context,
-                onTap: () => _showComingSoon(context, "Fihrist")),
+            _buildMenuTile(Icons.list, context.t("Fihrist"), context,
+                onTap: () => _ozellikAc(
+                    sayfa, context, provider, KuranOzelligi.fihrist)),
             const Divider(color: Colors.white12, height: 24),
             _buildMenuTile(
                 Icons.bookmark_border,
-                provider.savedBookmarkTitle != null
+                context.t(provider.savedBookmarkTitle != null
                     ? "Yer İmi (${provider.savedBookmarkTitle})"
-                    : "Yer İmi",
+                    : "Yer İmi"),
                 context, onTap: () async {
               Navigator.pop(context);
               bool success = await provider.goToBookmark();
@@ -64,22 +72,27 @@ class KuranView extends StatelessWidget {
                 context.push('/kuran/surah-detail', extra: provider);
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Kaydedilmiş bir yer imi bulunamadı.",
-                        style: TextStyle(color: Colors.white)),
-                    backgroundColor: Color(0xFF2C2C2C),
-                    duration: Duration(seconds: 2),
+                  SnackBar(
+                    content: Text(
+                        context.t("Kaydedilmiş bir yer imi bulunamadı."),
+                        style: const TextStyle(color: Colors.white)),
+                    backgroundColor: const Color(0xFF2C2C2C),
+                    duration: const Duration(seconds: 2),
                   ),
                 );
               }
             }),
-            _buildMenuTile(Icons.favorite_border, "Favori", context,
-                onTap: () => _showComingSoon(context, "Favori")),
-            _buildMenuTile(Icons.edit_outlined, "Not", context,
-                onTap: () => _showComingSoon(context, "Not")),
+            _buildMenuTile(Icons.favorite_border, context.t("Favori"), context,
+                onTap: () =>
+                    _ozellikAc(sayfa, context, provider, KuranOzelligi.favori)),
+            _buildMenuTile(Icons.edit_outlined, context.t("Not"), context,
+                onTap: () =>
+                    _ozellikAc(sayfa, context, provider, KuranOzelligi.not)),
             const Divider(color: Colors.white12, height: 24),
-            _buildMenuTile(Icons.playlist_play, "Okuma Listesi", context,
-                onTap: () => _showComingSoon(context, "Okuma Listesi")),
+            _buildMenuTile(
+                Icons.playlist_play, context.t("Okuma Listesi"), context,
+                onTap: () => _ozellikAc(
+                    sayfa, context, provider, KuranOzelligi.okumaListesi)),
           ],
         );
       },
@@ -96,18 +109,16 @@ class KuranView extends StatelessWidget {
     );
   }
 
-  void _showComingSoon(BuildContext context, String feature) {
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text("$feature özelliği yakında eklenecek.",
-          style: const TextStyle(color: Colors.white)),
-      backgroundColor: const Color(0xFF2C2C2C),
-      duration: const Duration(seconds: 2),
-    ));
+  /// Menüyü kapatıp [ozellik]i açar ([sayfa]: menüyü açan sayfanın context'i).
+  void _ozellikAc(BuildContext sayfa, BuildContext menu, KuranProvider provider,
+      KuranOzelligi ozellik) {
+    Navigator.pop(menu);
+    kuranOzelligiAc(sayfa, provider, ozellik, detayAcik: false);
   }
 
   @override
   Widget build(BuildContext context) {
+    context.dilIzle();
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -145,8 +156,8 @@ class KuranView extends StatelessWidget {
               },
             ),
           ),
-          title: const Text("Kuran-ı Kerim",
-              style: TextStyle(
+          title: Text(context.t("Kuran-ı Kerim"),
+              style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 18)),
@@ -174,15 +185,20 @@ class KuranView extends StatelessWidget {
                   context, Provider.of<KuranProvider>(context, listen: false)),
             ),
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             indicatorColor: Colors.amber,
             indicatorWeight: 3,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white60,
-            labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            labelStyle:
+                const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
             tabs: [
-              Tab(icon: Icon(Icons.menu_book), text: "SURELER"),
-              Tab(icon: Icon(Icons.library_books), text: "CÜZLER"),
+              Tab(
+                  icon: const Icon(Icons.menu_book),
+                  text: context.t("SURELER")),
+              Tab(
+                  icon: const Icon(Icons.library_books),
+                  text: context.t("CÜZLER")),
             ],
           ),
         ),
@@ -199,7 +215,8 @@ class KuranView extends StatelessWidget {
                 final msg = provider.errorMessage;
                 if (msg == null) return;
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(msg), backgroundColor: Colors.redAccent));
+                    content: Text(context.t(msg)),
+                    backgroundColor: Colors.redAccent));
                 provider.clearError();
               });
             }
@@ -242,8 +259,8 @@ class KuranView extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text("Kaldığım Yer",
-                                    style: TextStyle(
+                                Text(context.t("Kaldığım Yer"),
+                                    style: const TextStyle(
                                         color: Colors.white70,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500)),
@@ -289,12 +306,13 @@ class KuranView extends StatelessWidget {
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13)),
                             ),
-                            title: Text(surah.nameSimple,
+                            title: Text(provider.sureAdi(surah),
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
                                     color: Colors.black87)),
-                            subtitle: Text("${surah.versesCount} Ayet",
+                            subtitle: Text(
+                                context.t("${surah.versesCount} Ayet"),
                                 style: const TextStyle(
                                     color: Colors.grey, fontSize: 12)),
                             trailing: const Icon(Icons.chevron_right,
@@ -335,7 +353,7 @@ class KuranView extends StatelessWidget {
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13)),
                             ),
-                            title: Text("$juz. Cüz",
+                            title: Text(context.t("$juz. Cüz"),
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,

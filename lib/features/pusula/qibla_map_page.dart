@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -65,9 +66,9 @@ class _QiblaMapPageState extends State<QiblaMapPage> {
     } catch (e) {
       debugPrint("Konum alınamadı: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text(
-                'Konumunuz alınamadı, harita Kâbe merkezli gösteriliyor.'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(context
+                .t('Konumunuz alınamadı, harita Kâbe merkezli gösteriliyor.')),
             backgroundColor: Colors.orange));
       }
     }
@@ -81,13 +82,13 @@ class _QiblaMapPageState extends State<QiblaMapPage> {
         markerId: const MarkerId('user'),
         position: _userPosition!,
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        infoWindow: const InfoWindow(title: 'Konumunuz'),
+        infoWindow: InfoWindow(title: context.t('Konumunuz')),
       ),
       Marker(
         markerId: const MarkerId('kaaba'),
         position: _kaabaPosition,
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-        infoWindow: const InfoWindow(title: 'Kâbe'),
+        infoWindow: InfoWindow(title: context.t('Kâbe')),
       ),
     };
 
@@ -199,7 +200,7 @@ class _QiblaMapPageState extends State<QiblaMapPage> {
                                       : Colors.white54,
                                   size: 20),
                               const SizedBox(width: 12),
-                              Text('Uydu',
+                              Text(context.t('Uydu'),
                                   style: TextStyle(
                                       color:
                                           _currentMapType == MapType.satellite
@@ -227,7 +228,7 @@ class _QiblaMapPageState extends State<QiblaMapPage> {
                                       : Colors.white54,
                                   size: 20),
                               const SizedBox(width: 12),
-                              Text('Standart',
+                              Text(context.t('Standart'),
                                   style: TextStyle(
                                       color: _currentMapType == MapType.normal
                                           ? Colors.white
@@ -244,15 +245,16 @@ class _QiblaMapPageState extends State<QiblaMapPage> {
                           ),
                         ),
                         const PopupMenuDivider(height: 1),
-                        const PopupMenuItem<String>(
+                        PopupMenuItem<String>(
                           value: 'konumum',
                           child: Row(
                             children: [
-                              Icon(Icons.near_me,
+                              const Icon(Icons.near_me,
                                   color: Colors.white54, size: 20),
-                              SizedBox(width: 12),
-                              Text('Konumum',
-                                  style: TextStyle(color: Colors.white54)),
+                              const SizedBox(width: 12),
+                              Text(context.t('Konumum'),
+                                  style:
+                                      const TextStyle(color: Colors.white54)),
                             ],
                           ),
                         ),

@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -40,8 +41,7 @@ class _KutuphanePageContentState extends State<_KutuphanePageContent> {
   }
 
   Future<void> _openItem(LibraryNode kitap) async {
-    await context.push(
-        kitap.isKitap ? '/kutuphane/pdf' : '/kutuphane/icerik',
+    await context.push(kitap.isKitap ? '/kutuphane/pdf' : '/kutuphane/icerik',
         extra: kitap);
     // Bir PDF okunmuş olabileceğinden, dönüşte "Son Okunan" kartını
     // güncel tut.
@@ -64,7 +64,7 @@ class _KutuphanePageContentState extends State<_KutuphanePageContent> {
     return Scaffold(
       backgroundColor: AppTheme.getBgColor(context),
       appBar: AppBar(
-        title: Text("Kütüphane",
+        title: Text(context.t("Kütüphane"),
             style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
         backgroundColor: AppTheme.getBgColor(context),
         elevation: 0,
@@ -170,15 +170,15 @@ class _KutuphanePageContentState extends State<_KutuphanePageContent> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Son Okunan",
+                  Text(context.t("Son Okunan"),
                       style: TextStyle(
                           color: textColor.withValues(alpha: 0.5),
                           fontSize: 12)),
                   const SizedBox(height: 4),
                   Text(
                       sonOkunan != null
-                          ? "${sonOkunan.item.title}\n${sonOkunan.page}. Sayfa"
-                          : "Henüz bir kitap okumadınız.",
+                          ? context.t("${sonOkunan.item.title}\n${sonOkunan.page}. Sayfa")
+                          : context.t("Henüz bir kitap okumadınız."),
                       style: TextStyle(
                           color: textColor,
                           fontSize: 16,
@@ -203,7 +203,7 @@ class _KutuphanePageContentState extends State<_KutuphanePageContent> {
   Widget _buildIconBtn(BuildContext context, IconData icon, String label) {
     return InkWell(
       onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("$label özelliği yakında eklenecek."),
+        content: Text(context.t("$label özelliği yakında eklenecek.")),
         duration: const Duration(seconds: 2),
       )),
       child: Row(

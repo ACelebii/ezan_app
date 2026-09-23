@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -46,7 +47,7 @@ class HatimSelectionPage extends StatelessWidget {
           ),
         ),
         body: Center(
-          child: Text("Görev bulunamadı.",
+          child: Text(context.t("Görev bulunamadı."),
               style: TextStyle(color: subTextColor)),
         ),
       );
@@ -71,8 +72,8 @@ class HatimSelectionPage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(20.0),
             child: Text(
-              "Lütfen seçtiğiniz görevleri yerine getirirken Kuran Okuma Adabı ve Kurallarına uyarak okuyalım.\n"
-              "Seçtiğiniz sayfayı program haricinde bir yerden okuyacaksanız, aynı sayfa olmasına dikkat ediniz.",
+              context.t("Lütfen seçtiğiniz görevleri yerine getirirken Kuran Okuma Adabı ve Kurallarına uyarak okuyalım.\n"
+              "Seçtiğiniz sayfayı program haricinde bir yerden okuyacaksanız, aynı sayfa olmasına dikkat ediniz."),
               style: TextStyle(color: subTextColor, fontSize: 13, height: 1.4),
             ),
           ),
@@ -116,7 +117,7 @@ class HatimSelectionPage extends StatelessWidget {
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                            content: Text("İşlem başarısız: $e"),
+                            content: Text(context.t("İşlem başarısız: $e")),
                             backgroundColor: Colors.redAccent),
                       );
                       return;

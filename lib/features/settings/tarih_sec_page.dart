@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:timezone/timezone.dart' as tz;
+import '../../core/vakit/zaman_dilimi.dart';
 import 'settings_common.dart';
 
 // ============================================================================
@@ -12,7 +14,18 @@ class TarihSecPage extends StatefulWidget {
 }
 
 class _TarihSecPageState extends State<TarihSecPage> {
-  DateTime _selectedDate = DateTime.now();
+  late DateTime _selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    // Cihazın bulunduğu yer değil, seçili şehrin "bugün"ü: erteleme de o
+    // şehrin saat dilimine göre hesaplanıyor (ertelemeBitisi).
+    zamanDilimleriniHazirla();
+    final authService = Provider.of<AuthService>(context, listen: false);
+    _selectedDate = tz.TZDateTime.now(
+        tz.getLocation(authService.seciliSehir.konum.saatDilimi));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +76,7 @@ class _TarihSecPageState extends State<TarihSecPage> {
               ),
               child: CalendarDatePicker(
                 initialDate: _selectedDate,
-                firstDate: DateTime.now(),
+                firstDate: _selectedDate,
                 lastDate: DateTime(2030),
                 onDateChanged: (date) => setState(() => _selectedDate = date),
               ),

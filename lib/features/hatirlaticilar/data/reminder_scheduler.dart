@@ -1,37 +1,67 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../auth/auth_service.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/vakit/vakit_modelleri.dart';
+import '../../../core/vakit/vakit_servisi.dart';
+import '../../../core/vakit/zaman_dilimi.dart';
+import '../../../locator.dart';
+import 'bildirim_girdisi.dart';
 
-/// Hatırlatıcı ayarlarını (Cuma/Oruç/Teheccüt/Ramazan) gerçek namaz
-/// vakitleriyle birleştirip [NotificationService] üzerinden zamanlar.
+/// Kurulacak tek bir bildirim.
+class PlanliBildirim {
+  const PlanliBildirim(this.id, this.baslik, this.govde, this.an, this.ses);
+
+  final int id;
+  final String baslik;
+  final String govde;
+
+  /// Bildirimin çalacağı mutlak an (UTC).
+  final DateTime an;
+  final String ses;
+
+  /// Bildirimin içeriğinin özeti; sistemdeki kayıtla aynıysa yeniden
+  /// kurmaya gerek yoktur. İzin durumu da içindedir: tam zamanlı alarm izni
+  /// sonradan verilirse bildirimler tam zamanlı olarak yeniden kurulur.
+  String parmakIzi(bool tamZamanli) =>
+      '${an.millisecondsSinceEpoch}|$baslik|$govde|$ses|$tamZamanli';
+}
+
+/// Hatırlatıcı ayarlarını (vakit ezanları, vaktinden önce uyarı, Vaktinde Kıl,
+/// Cuma, oruç, Teheccüt, Ramazan) gerçek namaz vakitleriyle birleştirip
+/// [NotificationService] üzerinden zamanlar.
 ///
-/// Vakitler `AuthService`'in önbelleğinden okunur (yoksa vakitler_page.dart
-/// ile aynı Aladhan uç noktasından çekilip önbelleğe alınır). Bilinçli
-/// basitleştirme: dakika bazında ofset düşülürken gece yarısını geriye
-/// doğru geçme ihtimali yok sayıldı — Türkiye'de İmsak vakti hiçbir zaman
-/// gece 01:10'dan önce olmadığından (en uzun ofset 70 dakika), bu senaryo
-/// pratikte hiç oluşmaz.
+/// Vakitler her gün 1-2 dakika kaydığı için hiçbir bildirim "her gün aynı
+/// saatte" ya da "her hafta" diye tekrarlanmaz. Onun yerine önümüzdeki
+/// [gunSayisi] günün her biri için, o günün gerçek vaktine göre ayrı bir tek
+/// seferlik bildirim kurulur. Kural hesabı [planla]da (saf, testli), sisteme
+/// kurma [uygula]dadır.
+///
+/// ponytail: bildirimler uygulama açıldıkça yenilenir; uygulama [gunSayisi]
+/// gün hiç açılmazsa biter. Gerekirse arka plan yenilemesi (WorkManager)
+/// eklenir.
 class ReminderScheduler {
   ReminderScheduler._();
 
-  static const cumaId = 101;
-  static const orucPazartesiId = 102;
-  static const orucPersembeId = 103;
-  static const teheccutId = 104;
-  static const ramazanBaseId = 200;
-  static const ramazanMaxDays = 30;
+  /// Kaç gün ileriye bildirim kurulduğu. Tüm bildirim türleri açıkken en
+  /// fazla ~315 alarm eder; Android'in uygulama başına 500 alarm sınırının
+  /// altında. Yeni bildirim türü eklenirse bu sayı yeniden hesaplanmalı.
+  static const gunSayisi = 14;
 
-  /// 6 vakit x 7 gün = 42 id (300-341): asıl ezan alarmı.
-  static const vakitEzanBaseId = 300;
-
-  /// 6 vakit x 1 id = 6 id (350-355): vaktinden önce uyarı.
-  static const vakitOnceBaseId = 350;
-
-  /// 4 vakit x 2 hatırlatma = 8 id (400-407): "Vaktinde Kıl".
-  static const vaktindeKilBaseId = 400;
+  // Her tür için id aralığı: taban + (vakit sırası * gunSayisi) + gün dilimi.
+  // Gün dilimi = takvim gününün 14'e bölümünden kalan; bir bildirim yenilemeler
+  // arasında hep aynı id'yi taşır, 14 ardışık günün id'leri çakışmaz.
+  static const _ezanTaban = 1000; // 6 vakit x 14 = 1000-1083
+  static const _onceTaban = 1100; // 6 x 14 = 1100-1183
+  static const _kilTaban = 1200; // 4 vakit x 2 uyarı x 14 = 1200-1311
+  static const _teheccutTaban = 1400; // 1400-1413
+  static const _cumaTaban = 1420; // 1420-1433
+  static const _orucTaban = 1440; // Pazartesi/Perşembe, 1440-1453
+  static const _ramazanTaban = 200; // 200-213 (eski aralıkla aynı)
 
   static const vakitKeys = [
     'imsak',
@@ -41,6 +71,17 @@ class ReminderScheduler {
     'aksam',
     'yatsi',
   ];
+
+  /// Ayar anahtarlarının vakit çekirdeğindeki karşılığı. "Sabah" Güneş
+  /// vaktidir.
+  static const vakitOf = {
+    'imsak': Vakit.imsak,
+    'sabah': Vakit.gunes,
+    'ogle': Vakit.ogle,
+    'ikindi': Vakit.ikindi,
+    'aksam': Vakit.aksam,
+    'yatsi': Vakit.yatsi,
+  };
 
   /// Ayarlar sayfalarında kullanılan görünen etiketler (vakit_settings_page
   /// ve settings_page'deki vakit alarm bölümü aynı etiketleri kullanır).
@@ -60,16 +101,6 @@ class ReminderScheduler {
     'ikindi': 'İkindi',
     'aksam': 'Akşam',
     'yatsi': 'Yatsı',
-  };
-
-  /// Vakit anahtarlarının Aladhan API'deki karşılık gelen alan adları.
-  static const vakitAladhanField = {
-    'imsak': 'Fajr',
-    'sabah': 'Sunrise',
-    'ogle': 'Dhuhr',
-    'ikindi': 'Asr',
-    'aksam': 'Maghrib',
-    'yatsi': 'Isha',
   };
 
   static const vaktindeKilKeys = ['ogle', 'ikindi', 'aksam', 'yatsi'];
@@ -96,79 +127,336 @@ class ReminderScheduler {
     'Aralık': 12,
   };
 
-  static Future<void> rescheduleAll(AuthService authService) async {
-    final ayarlar = authService.hatirlaticiAyarlari;
-    final city = authService.seciliSehir['isim'] as String? ?? 'İstanbul';
+  static Future<void>? _calisan;
+  static bool _yenidenIstendi = false;
 
-    final timings = await timingsFor(authService, city);
-    if (timings == null) return;
-
-    final imsak = parseMinutesOfDay(timings['Fajr']);
-    final ogle = parseMinutesOfDay(timings['Dhuhr']);
-    if (imsak == null || ogle == null) return;
-
-    await _rescheduleCuma(_ayar(ayarlar, 'cuma'), ogle);
-    await _rescheduleOruc(_ayar(ayarlar, 'oruc'), imsak);
-    await _rescheduleTeheccut(_ayar(ayarlar, 'teheccut'), imsak);
-    await _rescheduleRamazan(_ayar(ayarlar, 'ramazan'), imsak);
-    await _rescheduleVakitEzanlari(authService, timings);
-    await _rescheduleVaktindeKil(authService, timings);
+  /// Ayarlara ve seçili şehrin vakitlerine göre bildirimleri günceller.
+  ///
+  /// Ayar değişince ve uygulama öne gelince çağrılır. Aynı anda birden çok
+  /// çağrı gelirse çalışan tur bitince güncel ayarlarla bir tur daha yapılır.
+  static Future<void> rescheduleAll(AuthService authService) {
+    final calisan = _calisan;
+    if (calisan != null) {
+      _yenidenIstendi = true;
+      return calisan;
+    }
+    return _calisan = _turlariCalistir(authService);
   }
 
-  static Future<void> _rescheduleVakitEzanlari(
-      AuthService authService, Map<String, dynamic> timings) async {
-    final ayarlar = authService.vakitEzanAyarlari;
-    for (var i = 0; i < vakitKeys.length; i++) {
-      final key = vakitKeys[i];
-      final ayar = _ayar(ayarlar, key);
-      final field = vakitAladhanField[key]!;
-      final minutes = parseMinutesOfDay(timings[field]);
-      final displayName = vakitDisplayNames[key]!;
-      final gunler = _gunlerOf(ayar);
+  static Future<void> _turlariCalistir(AuthService authService) async {
+    try {
+      do {
+        _yenidenIstendi = false;
+        await _kur(authService);
+      } while (_yenidenIstendi);
+    } finally {
+      _calisan = null;
+    }
+  }
 
-      final ezanBase = vakitEzanBaseId + i * 7;
-      if (ayar['enabled'] != true || minutes == null) {
-        await NotificationService.instance
-            .cancelRange(ezanBase, ezanBase + 6);
-      } else {
-        final sound = (ayar['sound'] as String?) ?? 'ezan_kisa';
-        for (var weekday = DateTime.monday;
-            weekday <= DateTime.sunday;
-            weekday++) {
-          final id = ezanBase + (weekday - DateTime.monday);
-          if (!gunler[weekday % 7]) {
-            await NotificationService.instance.cancel(id);
-            continue;
-          }
-          await NotificationService.instance.scheduleWeekly(
-            id: id,
-            title: '$displayName Ezanı',
-            body: '$displayName vakti girdi.',
-            weekday: weekday,
-            hour: minutes ~/ 60,
-            minute: minutes % 60,
-            soundKey: sound,
-          );
+  static Future<void> _kur(AuthService authService) async {
+    // Zaten hazırsa hemen döner; timezone verisinin yüklü olmasını da sağlar.
+    await NotificationService.instance.initialize();
+
+    final konum = authService.seciliSehir.konum;
+
+    final hatirlaticilar = authService.hatirlaticiAyarlari;
+    final girdi = BildirimGirdisi(
+      konum: konum,
+      tercih: authService.vakitTercihi,
+      hatirlaticilar: hatirlaticilar,
+      vakitEzanAyarlari: authService.vakitEzanAyarlari,
+      vaktindeKilAyarlari: authService.vaktindeKilAyarlari,
+      ramazan: _ayar(hatirlaticilar, 'ramazan')['enabled'] == true
+          ? await currentRamadanWindow()
+          : null,
+      ertelemeBitisi: authService.bildirimErteleBitis,
+    );
+    // Arka plan görevi bu kayıttan çalışır (uygulama açılmasa da).
+    await girdiyiKaydet(girdi);
+    await girdiyiUygula(girdi, locator<VakitServisi>());
+  }
+
+  /// WorkManager görevinin adı (hem benzersiz ad hem görev adı).
+  static const arkaPlanGorevi = 'bildirimYenile';
+  static const _girdiAnahtari = 'bildirim_girdisi_v1';
+
+  static Future<void> girdiyiKaydet(BildirimGirdisi girdi) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_girdiAnahtari, jsonEncode(girdi.toJson()));
+    } catch (e) {
+      debugPrint('Bildirim girdisi kaydedilemedi: $e');
+    }
+  }
+
+  static Future<BildirimGirdisi?> girdiyiOku() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final metin = prefs.getString(_girdiAnahtari);
+      if (metin == null) return null;
+      return BildirimGirdisi.fromJson(
+          jsonDecode(metin) as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('Bildirim girdisi okunamadı: $e');
+      return null;
+    }
+  }
+
+  /// [girdi]ye göre vakitleri alır, planlar ve sisteme uygular. Vakit yoksa (ağ
+  /// da önbellek de yok) null döner ve mevcut bildirimlere dokunmaz.
+  static Future<({int kurulan, int iptal})?> girdiyiUygula(
+      BildirimGirdisi girdi, VakitServisi servis) async {
+    await NotificationService.instance.initialize();
+    final List<GunlukVakit> gunler;
+    try {
+      gunler = await servis.vakitleriGetir(girdi.konum, girdi.tercih);
+    } on VakitHatasi {
+      return null;
+    }
+    final plan = planla(
+      gunler: gunler,
+      bugun: servis.bugun(girdi.konum),
+      simdi: DateTime.now(),
+      hatirlaticilar: girdi.hatirlaticilar,
+      vakitEzanAyarlari: girdi.vakitEzanAyarlari,
+      vaktindeKilAyarlari: girdi.vaktindeKilAyarlari,
+      ramazan: girdi.ramazan,
+      ertelemeBitisi: girdi.ertelemeBitisi,
+    );
+    return uygula(plan, girdi.konum);
+  }
+
+  /// WorkManager'ın periyodik görevi: uygulama açılmasa da bildirimleri yeni
+  /// güne göre yeniler. Böylece uygulama günlerce açılmayan kullanıcıda ileriye
+  /// kurulu bildirimler bitmez ([gunSayisi] ufku kayar).
+  ///
+  /// true: iş bitti (ya da yapacak bir şey yok, uygulama hiç planlamadı);
+  /// false: vakit alınamadı, WorkManager daha sonra yeniden dener.
+  static Future<bool> arkaPlandaYenile({VakitServisi? servis}) async {
+    final girdi = await girdiyiOku();
+    if (girdi == null) return true;
+    final sonuc = await girdiyiUygula(girdi, servis ?? VakitServisi());
+    if (sonuc == null) {
+      debugPrint(
+          'Arka plan bildirim yenilemesi: vakit alınamadı, tekrar denenecek.');
+      return false;
+    }
+    debugPrint('Arka plan bildirim yenilemesi: '
+        '${sonuc.kurulan} kuruldu, ${sonuc.iptal} iptal edildi.');
+    return true;
+  }
+
+  /// Ayarlardan ve vakitlerden, kurulması gereken bütün bildirimleri hesaplar.
+  ///
+  /// [bugun], konumun takvimine göre bugündür (`DateTime.utc(y, a, g)`);
+  /// yalnızca [bugun] ve sonraki [gunSayisi] - 1 gün için, ve yalnızca
+  /// [simdi]den sonraki anlar için bildirim üretilir. [ertelemeBitisi]
+  /// doluysa ("Bildirimleri Ertele") o andan önceki hiçbir bildirim
+  /// üretilmez; sonrakiler normal kurulur, yani erteleme bitince bildirimler
+  /// uygulama açılmasa bile kendiliğinden devam eder.
+  static List<PlanliBildirim> planla({
+    required List<GunlukVakit> gunler,
+    required DateTime bugun,
+    required DateTime simdi,
+    required Map<String, dynamic> hatirlaticilar,
+    required Map<String, dynamic> vakitEzanAyarlari,
+    required Map<String, dynamic> vaktindeKilAyarlari,
+    ({DateTime start, DateTime end})? ramazan,
+    DateTime? ertelemeBitisi,
+  }) {
+    final plan = <PlanliBildirim>[];
+    void ekle(int id, String baslik, String govde, DateTime an, String ses) {
+      if (an.isAfter(simdi) &&
+          (ertelemeBitisi == null || !an.isBefore(ertelemeBitisi))) {
+        plan.add(PlanliBildirim(id, baslik, govde, an.toUtc(), ses));
+      }
+    }
+
+    final cuma = _ayar(hatirlaticilar, 'cuma');
+    final oruc = _ayar(hatirlaticilar, 'oruc');
+    final teheccut = _ayar(hatirlaticilar, 'teheccut');
+    final ramazanAyar = _ayar(hatirlaticilar, 'ramazan');
+
+    for (final gun in gunler) {
+      final fark = gun.tarih.difference(bugun).inDays;
+      if (fark < 0 || fark >= gunSayisi) continue;
+      final slot = gun.tarih.difference(DateTime.utc(1970)).inDays % gunSayisi;
+      final imsak = gun.anlar[Vakit.imsak]!;
+      final ogle = gun.anlar[Vakit.ogle]!;
+
+      for (var i = 0; i < vakitKeys.length; i++) {
+        final key = vakitKeys[i];
+        final ayar = _ayar(vakitEzanAyarlari, key);
+        final ad = vakitDisplayNames[key]!;
+        final an = gun.anlar[vakitOf[key]!]!;
+
+        if (ayar['enabled'] == true && _gunlerOf(ayar)[gun.tarih.weekday % 7]) {
+          ekle(
+              _ezanTaban + i * gunSayisi + slot,
+              '$ad Ezanı',
+              '$ad vakti girdi.',
+              an,
+              (ayar['sound'] as String?) ?? 'ezan_kisa');
+        }
+        if (ayar['onceEnabled'] == true) {
+          final dakika = _dakika(ayar, 'onceDakika', 45);
+          ekle(
+              _onceTaban + i * gunSayisi + slot,
+              '$ad Vaktine Yaklaşıyor',
+              '$ad vaktine yaklaşık $dakika dakika kaldı.',
+              an.subtract(Duration(minutes: dakika)),
+              (ayar['onceSound'] as String?) ?? 'uyari');
         }
       }
 
-      final onceId = vakitOnceBaseId + i;
-      if (ayar['onceEnabled'] != true || minutes == null) {
-        await NotificationService.instance.cancel(onceId);
-      } else {
-        final onceDakika = (ayar['onceDakika'] as int?) ?? 45;
-        final t = triggerTime(minutes, onceDakika);
-        await NotificationService.instance.scheduleDaily(
-          id: onceId,
-          title: '$displayName Vaktine Yaklaşıyor',
-          body: '$displayName vaktine yaklaşık $onceDakika dakika kaldı.',
-          hour: t.hour,
-          minute: t.minute,
-          soundKey: (ayar['onceSound'] as String?) ?? 'uyari',
-        );
+      // Vakit girdikten ilkUyari dakika sonra "Haydi kalk!", siklik dakika
+      // sonra da "Hatırlatma".
+      for (var k = 0; k < vaktindeKilKeys.length; k++) {
+        final key = vaktindeKilKeys[k];
+        final ayar = _ayar(vaktindeKilAyarlari, key);
+        if (ayar['enabled'] != true) continue;
+        final ad = vakitDisplayNames[key]!;
+        final an = gun.anlar[vakitOf[key]!]!;
+        final ilk = _dakika(ayar, 'ilkUyariDakika', 30);
+        final siklik = _dakika(ayar, 'siklikDakika', 10);
+        final ses = (ayar['sound'] as String?) ?? 'melodi_19';
+        ekle(
+            _kilTaban + (k * 2) * gunSayisi + slot,
+            'Haydi kalk!',
+            'Vakit girdi, $ad namazını kıl.',
+            an.add(Duration(minutes: ilk)),
+            ses);
+        ekle(
+            _kilTaban + (k * 2 + 1) * gunSayisi + slot,
+            'Hatırlatma',
+            '$ad namazını henüz kılmadıysan vakit daralıyor.',
+            an.add(Duration(minutes: ilk + siklik)),
+            ses);
+      }
+
+      if (teheccut['enabled'] == true) {
+        final dakika = _dakika(teheccut, 'offset', 45);
+        ekle(
+            _teheccutTaban + slot,
+            'Teheccüt Vakti',
+            'Teheccüt namazı için uyanma vakti, imsağa yaklaşık $dakika dakika var.',
+            imsak.subtract(Duration(minutes: dakika)),
+            (teheccut['sound'] as String?) ?? 'uyari');
+      }
+
+      if (cuma['enabled'] == true && gun.tarih.weekday == DateTime.friday) {
+        final dakika = _dakika(cuma, 'offset', 60);
+        ekle(
+            _cumaTaban + slot,
+            'Cuma Namazı Hatırlatması',
+            'Cuma namazına yaklaşık $dakika dakika kaldı.',
+            ogle.subtract(Duration(minutes: dakika)),
+            (cuma['sound'] as String?) ?? 'uyari');
+      }
+
+      if (oruc['enabled'] == true &&
+          (gun.tarih.weekday == DateTime.monday ||
+              gun.tarih.weekday == DateTime.thursday)) {
+        final dakika = _dakika(oruc, 'offset', 60);
+        ekle(
+            _orucTaban + slot,
+            gun.tarih.weekday == DateTime.monday
+                ? 'Pazartesi Orucu'
+                : 'Perşembe Orucu',
+            'Sahur vakti! İmsağa yaklaşık $dakika dakika kaldı.',
+            imsak.subtract(Duration(minutes: dakika)),
+            (oruc['sound'] as String?) ?? 'uyari');
+      }
+
+      if (ramazanAyar['enabled'] == true &&
+          ramazan != null &&
+          !gun.tarih.isBefore(_gunOf(ramazan.start)) &&
+          !gun.tarih.isAfter(_gunOf(ramazan.end))) {
+        final dakika = _dakika(ramazanAyar, 'offset', 60);
+        ekle(
+            _ramazanTaban + slot,
+            'Ramazan Davulcusu',
+            'Sahur vakti! İmsağa yaklaşık $dakika dakika kaldı.',
+            imsak.subtract(Duration(minutes: dakika)),
+            (ramazanAyar['sound'] as String?) ?? 'uyari');
       }
     }
+    return plan;
   }
+
+  /// Bu zamanlayıcının yönettiği id'ler: eski haftalık/günlük tekrarlar ve
+  /// yenilerin aralıkları. Bunların dışındaki id'lere dokunulmaz.
+  static bool _bizimId(int id) =>
+      (id >= 101 && id <= 104) || // eski Cuma, oruç, Teheccüt
+      (id >= 200 && id <= 229) || // Ramazan
+      (id >= 300 && id <= 341) || // eski haftalık ezanlar
+      (id >= 350 && id <= 355) || // eski "vaktine yaklaşıyor"
+      (id >= 400 && id <= 407) || // eski Vaktinde Kıl
+      (id >= 1000 && id < 1500); // yeni tek seferlik bildirimler
+
+  /// Sistemde bekleyenlerle [plan] arasındaki farkı bulur: yalnızca eksik ya da
+  /// değişmiş bildirimler kurulur, plandan çıkmış olanlar iptal edilir.
+  ///
+  /// [bekleyen]: sistemdeki bekleyen bildirimlerin id → payload (parmak izi)
+  /// eşlemesi. Eski kurulumdan kalan tekrarlı bildirimlerin payload'ı yoktur;
+  /// bu yüzden hiçbir plan girdisiyle eşleşmez ve id'leri plana girmediyse
+  /// iptal edilir.
+  static ({List<PlanliBildirim> kurulacak, List<int> iptal}) farkHesapla({
+    required List<PlanliBildirim> plan,
+    required Map<int, String?> bekleyen,
+    required bool tamZamanli,
+  }) {
+    final planIdleri = {for (final b in plan) b.id};
+    return (
+      kurulacak: [
+        for (final b in plan)
+          if (bekleyen[b.id] != b.parmakIzi(tamZamanli)) b,
+      ],
+      iptal: [
+        for (final id in bekleyen.keys)
+          if (_bizimId(id) && !planIdleri.contains(id)) id,
+      ],
+    );
+  }
+
+  /// [plan]ı sisteme kurar. Ağır işlemdir (bildirim başına ~15-30 ms), bu
+  /// yüzden yalnızca değişen bildirimlere dokunur ([farkHesapla]).
+  static Future<({int kurulan, int iptal})> uygula(
+      List<PlanliBildirim> plan, Konum konum) async {
+    zamanDilimleriniHazirla();
+    final servis = NotificationService.instance;
+    final tamZamanli = await servis.tamZamanliBildirimIzniVar();
+    final fark = farkHesapla(
+        plan: plan,
+        bekleyen: await servis.bekleyenler(),
+        tamZamanli: tamZamanli);
+
+    for (final id in fark.iptal) {
+      await servis.cancel(id);
+    }
+    final dilim = tz.getLocation(konum.saatDilimi);
+    for (final b in fark.kurulacak) {
+      await servis.scheduleAt(
+        id: b.id,
+        title: b.baslik,
+        body: b.govde,
+        zaman: tz.TZDateTime.from(b.an, dilim),
+        soundKey: b.ses,
+        tamZamanli: tamZamanli,
+        payload: b.parmakIzi(tamZamanli),
+      );
+    }
+    return (kurulan: fark.kurulacak.length, iptal: fark.iptal.length);
+  }
+
+  static DateTime _gunOf(DateTime t) => DateTime.utc(t.year, t.month, t.day);
+
+  static int _dakika(Map<String, dynamic> ayar, String key, int varsayilan) =>
+      (ayar[key] as num?)?.toInt() ?? varsayilan;
+
+  static Map<String, dynamic> _ayar(Map<String, dynamic> ayarlar, String key) =>
+      Map<String, dynamic>.from(ayarlar[key] as Map? ?? const {});
 
   /// "Günler" alanını Firestore/SharedPreferences round-trip'inden sonra
   /// bile güvenle List<bool>'a çevirir; index 0=Pazar ... 6=Cumartesi
@@ -179,193 +467,6 @@ class ReminderScheduler {
       return List.filled(7, true);
     }
     return raw.map((e) => e == true).toList();
-  }
-
-  static Future<void> _rescheduleVaktindeKil(
-      AuthService authService, Map<String, dynamic> timings) async {
-    final ayarlar = authService.vaktindeKilAyarlari;
-    for (var i = 0; i < vaktindeKilKeys.length; i++) {
-      final key = vaktindeKilKeys[i];
-      final ayar = _ayar(ayarlar, key);
-      final field = vakitAladhanField[key]!;
-      final minutes = parseMinutesOfDay(timings[field]);
-      final id1 = vaktindeKilBaseId + i * 2;
-      final id2 = id1 + 1;
-
-      if (ayar['enabled'] != true || minutes == null) {
-        await NotificationService.instance.cancel(id1);
-        await NotificationService.instance.cancel(id2);
-        continue;
-      }
-
-      final displayName = vakitDisplayNames[key]!;
-      final ilkUyari = (ayar['ilkUyariDakika'] as int?) ?? 30;
-      final siklik = (ayar['siklikDakika'] as int?) ?? 10;
-      final sound = (ayar['sound'] as String?) ?? 'melodi_19';
-
-      final t1 = triggerTime(minutes, -ilkUyari);
-      await NotificationService.instance.scheduleDaily(
-        id: id1,
-        title: 'Haydi kalk!',
-        body: 'Vakit girdi, $displayName namazını kıl.',
-        hour: t1.hour,
-        minute: t1.minute,
-        soundKey: sound,
-      );
-
-      final t2 = triggerTime(minutes, -(ilkUyari + siklik));
-      await NotificationService.instance.scheduleDaily(
-        id: id2,
-        title: 'Hatırlatma',
-        body: '$displayName namazını henüz kılmadıysan vakit daralıyor.',
-        hour: t2.hour,
-        minute: t2.minute,
-        soundKey: sound,
-      );
-    }
-  }
-
-  static Map<String, dynamic> _ayar(
-          Map<String, dynamic> ayarlar, String key) =>
-      Map<String, dynamic>.from(ayarlar[key] as Map? ?? const {});
-
-  static Future<Map<String, dynamic>?> timingsFor(
-      AuthService authService, String city) async {
-    final cached = await authService.getCachedPrayerTimes(city);
-    if (cached != null) return cached;
-    try {
-      final url = Uri.parse(
-          'https://api.aladhan.com/v1/timingsByCity?city=$city&country=Turkey&method=${authService.apiMethod}');
-      final response =
-          await http.get(url).timeout(const Duration(seconds: 8));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body)['data']['timings']
-            as Map<String, dynamic>;
-        await authService.cachePrayerTimes(city, data);
-        return data;
-      }
-    } catch (_) {
-      // internet yok ve önbellek de boşsa, bu turda hatırlatıcı planlanamaz.
-    }
-    return null;
-  }
-
-  /// "05:23 (+03)" gibi Aladhan formatındaki bir vakit metnini gece
-  /// yarısından itibaren geçen dakikaya çevirir. Test edilebilir olması
-  /// için public bırakıldı.
-  static int? parseMinutesOfDay(dynamic raw) {
-    if (raw is! String) return null;
-    final parts = raw.split(' ').first.split(':');
-    if (parts.length != 2) return null;
-    final hour = int.tryParse(parts[0]);
-    final minute = int.tryParse(parts[1]);
-    if (hour == null || minute == null) return null;
-    return hour * 60 + minute;
-  }
-
-  /// Bir vakitten belirli dakika önceki saat:dakikayı hesaplar. Test
-  /// edilebilir olması için public bırakıldı.
-  static ({int hour, int minute}) triggerTime(
-      int baseMinutesOfDay, int offsetMinutes) {
-    final total = ((baseMinutesOfDay - offsetMinutes) % 1440 + 1440) % 1440;
-    return (hour: total ~/ 60, minute: total % 60);
-  }
-
-  static Future<void> _rescheduleCuma(
-      Map<String, dynamic> ayar, int ogleMinutes) async {
-    if (ayar['enabled'] != true) {
-      await NotificationService.instance.cancel(cumaId);
-      return;
-    }
-    final offset = (ayar['offset'] as int?) ?? 60;
-    final t = triggerTime(ogleMinutes, offset);
-    await NotificationService.instance.scheduleWeekly(
-      id: cumaId,
-      title: 'Cuma Namazı Hatırlatması',
-      body: 'Cuma namazına yaklaşık $offset dakika kaldı.',
-      weekday: DateTime.friday,
-      hour: t.hour,
-      minute: t.minute,
-      soundKey: (ayar['sound'] as String?) ?? 'uyari',
-    );
-  }
-
-  static Future<void> _rescheduleOruc(
-      Map<String, dynamic> ayar, int imsakMinutes) async {
-    if (ayar['enabled'] != true) {
-      await NotificationService.instance.cancel(orucPazartesiId);
-      await NotificationService.instance.cancel(orucPersembeId);
-      return;
-    }
-    final offset = (ayar['offset'] as int?) ?? 60;
-    final t = triggerTime(imsakMinutes, offset);
-    final soundKey = (ayar['sound'] as String?) ?? 'uyari';
-    await NotificationService.instance.scheduleWeekly(
-      id: orucPazartesiId,
-      title: 'Pazartesi Orucu',
-      body: 'Sahur vakti! İmsağa yaklaşık $offset dakika kaldı.',
-      weekday: DateTime.monday,
-      hour: t.hour,
-      minute: t.minute,
-      soundKey: soundKey,
-    );
-    await NotificationService.instance.scheduleWeekly(
-      id: orucPersembeId,
-      title: 'Perşembe Orucu',
-      body: 'Sahur vakti! İmsağa yaklaşık $offset dakika kaldı.',
-      weekday: DateTime.thursday,
-      hour: t.hour,
-      minute: t.minute,
-      soundKey: soundKey,
-    );
-  }
-
-  static Future<void> _rescheduleTeheccut(
-      Map<String, dynamic> ayar, int imsakMinutes) async {
-    if (ayar['enabled'] != true) {
-      await NotificationService.instance.cancel(teheccutId);
-      return;
-    }
-    final offset = (ayar['offset'] as int?) ?? 45;
-    final t = triggerTime(imsakMinutes, offset);
-    await NotificationService.instance.scheduleDaily(
-      id: teheccutId,
-      title: 'Teheccüt Vakti',
-      body: 'Teheccüt namazı için uyanma vakti, imsağa yaklaşık $offset dakika var.',
-      hour: t.hour,
-      minute: t.minute,
-      soundKey: (ayar['sound'] as String?) ?? 'uyari',
-    );
-  }
-
-  static Future<void> _rescheduleRamazan(
-      Map<String, dynamic> ayar, int imsakMinutes) async {
-    await NotificationService.instance
-        .cancelRange(ramazanBaseId, ramazanBaseId + ramazanMaxDays - 1);
-    if (ayar['enabled'] != true) return;
-
-    final window = await currentRamadanWindow();
-    if (window == null) return;
-
-    final offset = (ayar['offset'] as int?) ?? 60;
-    final soundKey = (ayar['sound'] as String?) ?? 'uyari';
-    final t = triggerTime(imsakMinutes, offset);
-
-    var day = window.start;
-    var index = 0;
-    while (!day.isAfter(window.end) && index < ramazanMaxDays) {
-      final dateTime =
-          DateTime(day.year, day.month, day.day, t.hour, t.minute);
-      await NotificationService.instance.scheduleOnce(
-        id: ramazanBaseId + index,
-        title: 'Ramazan Davulcusu',
-        body: 'Sahur vakti! İmsağa yaklaşık $offset dakika kaldı.',
-        dateTime: dateTime,
-        soundKey: soundKey,
-      );
-      day = day.add(const Duration(days: 1));
-      index++;
-    }
   }
 
   /// `assets/json/dini_gunler.json` içinden içinde bulunulan/gelecek en
@@ -402,8 +503,8 @@ class ReminderScheduler {
     for (final giris in ramazanGirisleri) {
       final start = dateOf(giris);
       if (start == null) continue;
-      final bayram = entries.where((e) =>
-          e['baslik'] == 'Ramazan Bayramı' && e['yil'] == giris['yil']);
+      final bayram = entries.where(
+          (e) => e['baslik'] == 'Ramazan Bayramı' && e['yil'] == giris['yil']);
       final bayramTarihi = bayram.isEmpty ? null : dateOf(bayram.first);
       final end = (bayramTarihi ?? start.add(const Duration(days: 30)))
           .subtract(const Duration(days: 1));

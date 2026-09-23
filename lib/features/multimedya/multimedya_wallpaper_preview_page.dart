@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
@@ -27,8 +28,7 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
       final filePath = '${tempDir.path}/duvar_kagidi_${widget.item.id}.jpg';
       tempFilePath = filePath;
       await Dio().download(widget.item.fullImageUrl, filePath);
-      await SharePlus.instance
-          .share(ShareParams(files: [XFile(filePath)]));
+      await SharePlus.instance.share(ShareParams(files: [XFile(filePath)]));
     } catch (e) {
       // Görsel indirilemedi (ör. internet yok) — en azından linki paylaşabilsin.
       await SharePlus.instance
@@ -65,16 +65,16 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text("Duvar Kağıdı Olarak Ayarla",
-                    style: TextStyle(
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(context.t("Duvar Kağıdı Olarak Ayarla"),
+                    style: const TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold)),
               ),
               option("Ana Ekran", Icons.home_rounded, WallpaperTarget.home),
               option("Kilit Ekranı", Icons.lock_rounded, WallpaperTarget.lock),
-              option("Her İkisi", Icons.smartphone_rounded,
-                  WallpaperTarget.both),
+              option(
+                  "Her İkisi", Icons.smartphone_rounded, WallpaperTarget.both),
             ],
           ),
         );
@@ -95,14 +95,15 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result.isSuccess
-              ? "Duvar kağıdı ayarlandı."
-              : "Duvar kağıdı ayarlanamadı."),
+              ? context.t("Duvar kağıdı ayarlandı.")
+              : context.t("Duvar kağıdı ayarlanamadı.")),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Duvar kağıdı ayarlanırken hata oluştu.")),
+        SnackBar(
+            content: Text(context.t("Duvar kağıdı ayarlanırken hata oluştu."))),
       );
     } finally {
       if (mounted) setState(() => _isSetting = false);

@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ezan_vakti_uygulamasi/core/theme/app_theme.dart';
@@ -12,7 +13,7 @@ class VideoTab extends StatelessWidget {
     if (grouped.isEmpty) {
       return Center(
         child: Text(
-          "Bu bölümde henüz içerik yok.",
+          context.t("Bu bölümde henüz içerik yok."),
           style: TextStyle(color: AppTheme.getSubTextColor(context)),
         ),
       );

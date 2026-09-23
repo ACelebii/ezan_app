@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
@@ -12,6 +13,7 @@ import '../imsakiye/imsakiye_page.dart';
 import '../menu/menu_page.dart';
 import '../../core/services/notification_service.dart';
 import '../hatirlaticilar/data/reminder_scheduler.dart';
+import 'izin_akisi.dart';
 
 class MainNavigationPage extends StatefulWidget {
   const MainNavigationPage({super.key});
@@ -23,6 +25,11 @@ class _MainNavigationPageState extends State<MainNavigationPage>
     with WidgetsBindingObserver {
   int _currentIndex = 0;
   late final List<Widget> _pages;
+
+  /// Bir kez açılmış sekmeler. Sekmeler ilk açılışta oluşturulur: aksi halde
+  /// Pusula'nın konum izni penceresi ve pusula sensörü, kimse Pusula'yı
+  /// açmadan her uygulama açılışında çalışır.
+  final _acilanSekmeler = <int>{0};
 
   @override
   void initState() {
@@ -72,8 +79,8 @@ class _MainNavigationPageState extends State<MainNavigationPage>
         if (syncNotifier.state == SyncState.error) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content:
-                  Text("Senkronizasyon hatası: ${syncNotifier.errorMessage}"),
+              content: Text(context
+                  .t("Senkronizasyon hatası: ${syncNotifier.errorMessage}")),
               backgroundColor: Colors.red,
             ));
           }
@@ -86,10 +93,29 @@ class _MainNavigationPageState extends State<MainNavigationPage>
 
   Future<void> _kurulumVeHatirlaticilariPlanla() async {
     await NotificationService.instance.initialize();
-    await NotificationService.instance.requestPermissions();
+    if (!mounted) return;
+    await ilkAcilisIzinleriniIste(context);
     if (!mounted) return;
     final authService = Provider.of<AuthService>(context, listen: false);
     await ReminderScheduler.rescheduleAll(authService);
+    await _arkaPlanYenilemesiniKaydet();
+  }
+
+  /// Uygulama günlerce açılmasa da bildirimlerin bitmemesi için 12 saatte bir
+  /// (ağ varken) bildirimleri yenileyen arka plan görevi. `update`: sıklık
+  /// değişirse uygulanır, mevcut sürenin zamanlaması sıfırlanmaz.
+  Future<void> _arkaPlanYenilemesiniKaydet() async {
+    try {
+      await Workmanager().registerPeriodicTask(
+        ReminderScheduler.arkaPlanGorevi,
+        ReminderScheduler.arkaPlanGorevi,
+        frequency: const Duration(hours: 12),
+        constraints: Constraints(networkType: NetworkType.connected),
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
+      );
+    } catch (e) {
+      debugPrint("Bildirim yenileme görevi kaydedilemedi: $e");
+    }
   }
 
   @override
@@ -108,20 +134,33 @@ class _MainNavigationPageState extends State<MainNavigationPage>
 
   @override
   Widget build(BuildContext context) {
-    bool isDark = Theme.of(context).brightness == Brightness.dark;
     final authService = context.watch<AuthService>();
+    // Gökyüzü ana ekranı tema ne olursa olsun koyudur; alt menü de ona uyar
+    // (menü yalnızca ana ekranda görünür).
+    bool isDark = authService.anaSayfaStili == 'Gökyüzü' ||
+        Theme.of(context).brightness == Brightness.dark;
+    _acilanSekmeler.add(_currentIndex);
 
     return Scaffold(
       extendBody: true,
       // Stack ve Consumer KALDIRILDI! Artık uygulama açılırken kilitlenmeyecek!
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      body: IndexedStack(index: _currentIndex, children: [
+        for (var i = 0; i < _pages.length; i++)
+          _acilanSekmeler.contains(i) ? _pages[i] : const SizedBox.shrink(),
+      ]),
       bottomNavigationBar: IgnorePointer(
         ignoring: _currentIndex != 0,
         child: AnimatedSlide(
           duration: const Duration(milliseconds: 350),
           curve: Curves.easeOutCubic,
           offset: _currentIndex == 0 ? Offset.zero : const Offset(0, 1.5),
-          child: _buildCustomBottomBar(context, authService, isDark),
+          // Sayfalar kendi yönlerini ayarlar; alt menü de dile göre aynalanır.
+          child: Directionality(
+            textDirection: authService.uygulamaDili == "العربية"
+                ? TextDirection.rtl
+                : TextDirection.ltr,
+            child: _buildCustomBottomBar(context, authService, isDark),
+          ),
         ),
       ),
     );

@@ -51,8 +51,8 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAQYfgmJaQARDif2L2q-NPi8O1HntjSkEc',
-    appId: '1:1002532399609:android:89f6d34937f3f1de9df528',
+    apiKey: 'AIzaSyBc4D2ChNiU_158bHxeh9sk196GRNxLVCU',
+    appId: '1:1002532399609:android:21c650931f19a6cf9df528',
     messagingSenderId: '1002532399609',
     projectId: 'heroic-gamma-268212',
     storageBucket: 'heroic-gamma-268212.firebasestorage.app',

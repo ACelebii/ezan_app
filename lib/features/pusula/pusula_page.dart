@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -79,7 +80,7 @@ class _PusulaView extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 10),
-                _buildStatusHeader(isAligned),
+                _buildStatusHeader(context, isAligned),
                 Expanded(
                   child: Center(
                     child: Stack(
@@ -95,7 +96,7 @@ class _PusulaView extends StatelessWidget {
                     ),
                   ),
                 ),
-                _buildAngleDisplay(displayHeading),
+                _buildAngleDisplay(context, displayHeading),
                 const SizedBox(height: 60),
               ],
             ),
@@ -117,8 +118,9 @@ class _PusulaView extends StatelessWidget {
             context.push('/pusula/qibla-map');
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Konum alınıyor, lütfen bekleyin...'),
+              SnackBar(
+                  content:
+                      Text(context.t('Konum alınıyor, lütfen bekleyin...')),
                   backgroundColor: Colors.orange),
             );
           }
@@ -146,8 +148,9 @@ class _PusulaView extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color:
-                isAligned ? Colors.amber.withValues(alpha: 0.2) : Colors.transparent,
+            color: isAligned
+                ? Colors.amber.withValues(alpha: 0.2)
+                : Colors.transparent,
             blurRadius: 50,
             spreadRadius: 15,
           )
@@ -268,7 +271,8 @@ class _PusulaView extends StatelessWidget {
         borderRadius: BorderRadius.circular(2),
         boxShadow: [
           BoxShadow(
-              color: (isAligned ? Colors.amber : Colors.white).withValues(alpha: 0.6),
+              color: (isAligned ? Colors.amber : Colors.white)
+                  .withValues(alpha: 0.6),
               blurRadius: 15)
         ],
       ),
@@ -298,17 +302,18 @@ class _PusulaView extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusHeader(bool isAligned) {
+  Widget _buildStatusHeader(BuildContext context, bool isAligned) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
       decoration: BoxDecoration(
-        color: isAligned ? Colors.amber.withValues(alpha: 0.15) : Colors.black26,
+        color:
+            isAligned ? Colors.amber.withValues(alpha: 0.15) : Colors.black26,
         borderRadius: BorderRadius.circular(30),
         border: Border.all(color: isAligned ? Colors.amber : Colors.white10),
       ),
       child: Text(
-        isAligned ? "KIBLEYE YÖNELDİNİZ" : "KIBLE YÖNÜ",
+        isAligned ? context.t("KIBLEYE YÖNELDİNİZ") : context.t("KIBLE YÖNÜ"),
         style: TextStyle(
             color: isAligned ? Colors.amber : Colors.white54,
             fontWeight: FontWeight.bold,
@@ -317,7 +322,7 @@ class _PusulaView extends StatelessWidget {
     );
   }
 
-  Widget _buildAngleDisplay(double heading) {
+  Widget _buildAngleDisplay(BuildContext context, double heading) {
     return Column(
       children: [
         Text("${heading.toInt()}°",
@@ -326,8 +331,8 @@ class _PusulaView extends StatelessWidget {
                 fontSize: 58,
                 fontWeight: FontWeight.w100,
                 letterSpacing: -2)),
-        const Text("DERECE",
-            style: TextStyle(
+        Text(context.t("DERECE"),
+            style: const TextStyle(
                 color: Colors.white24,
                 fontSize: 12,
                 letterSpacing: 4,

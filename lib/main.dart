@@ -13,6 +13,7 @@ import 'features/kutuphane/data/kutuphane_repository.dart';
 import 'features/hutbe/data/hutbe_repository.dart';
 import 'features/kuran/kuran_download_service.dart';
 import 'features/hatim/hatim_provider.dart';
+import 'features/hatirlaticilar/data/reminder_scheduler.dart';
 import 'features/zikirmatik/zikirmatik_provider.dart';
 
 import 'locator.dart';
@@ -21,6 +22,16 @@ import 'routes.dart';
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
+    // Bildirim yenileme görevi: Firebase'e/arayüze ihtiyaç duymaz, kendi
+    // girdi kaydından çalışır.
+    if (task == ReminderScheduler.arkaPlanGorevi) {
+      try {
+        return await ReminderScheduler.arkaPlandaYenile();
+      } catch (e) {
+        debugPrint("Arka plan bildirim yenileme hatası: $e");
+        return false;
+      }
+    }
     // Her adım kendi try/catch'inde: biri başarısız olursa (ör. geçici ağ
     // hatası) diğerleri yine de çalışır ve arka plan görevi sessizce
     // tamamen ölmez (önceden try/catch hiç yoktu).
@@ -44,13 +55,13 @@ void callbackDispatcher() {
 }
 
 // --- GLOBAL HAFIZA VE TEMA MOTORU ---
-final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
 final ValueNotifier<Map<String, dynamic>?> globalLocation = ValueNotifier(null);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env_production");
   await initializeDateFormatting('tr_TR', null);
+  await AppTheme.modYukle();
   setupLocator();
   Workmanager().initialize(callbackDispatcher);
 
@@ -84,7 +95,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ZikirmatikProvider()),
       ],
       child: ValueListenableBuilder<ThemeMode>(
-        valueListenable: themeNotifier,
+        valueListenable: AppTheme.mod,
         builder: (_, ThemeMode currentMode, __) {
           return MaterialApp.router(
             routerConfig: appRouter,

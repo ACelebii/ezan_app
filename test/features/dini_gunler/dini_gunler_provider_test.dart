@@ -4,48 +4,28 @@ import 'package:ezan_vakti_uygulamasi/features/dini_gunler/data/dini_gunler_repo
 import 'package:ezan_vakti_uygulamasi/features/dini_gunler/dini_gunler_model.dart';
 import 'package:ezan_vakti_uygulamasi/features/dini_gunler/providers/dini_gunler_provider.dart';
 
+DiniGunlerModel _gun(int y, int m, int d, String baslik) => DiniGunlerModel(
+    tarih: DateTime.utc(y, m, d),
+    tur: 'test',
+    hicri: '',
+    baslik: baslik,
+    baslikEn: baslik,
+    detay: '',
+    detayEn: '');
+
 class _FakeDiniGunlerRepository extends DiniGunlerRepository {
   @override
-  Future<List<DiniGunlerModel>> getDiniGunler() async {
-    return [
-      DiniGunlerModel(
-          yil: 2026,
-          ay: 'Ocak',
-          gunNo: '1',
-          gunAd: 'Perşembe',
-          baslik: 'Yılbaşı',
-          hicri: '',
-          detay: ''),
-      DiniGunlerModel(
-          yil: 2026,
-          ay: 'Ocak',
-          gunNo: '15',
-          gunAd: 'Perşembe',
-          baslik: 'Regaib Gecesi',
-          hicri: '',
-          detay: ''),
-      DiniGunlerModel(
-          yil: 2026,
-          ay: 'Mart',
-          gunNo: '1',
-          gunAd: 'Pazar',
-          baslik: 'Miraç Gecesi',
-          hicri: '',
-          detay: ''),
-      DiniGunlerModel(
-          yil: 2025,
-          ay: 'Aralık',
-          gunNo: '31',
-          gunAd: 'Çarşamba',
-          baslik: 'Yıl Sonu',
-          hicri: '',
-          detay: ''),
-    ];
-  }
+  Future<List<DiniGunlerModel>> getDiniGunler() async => [
+        _gun(2026, 1, 1, 'Yılbaşı'),
+        _gun(2026, 1, 15, 'Regaib Gecesi'),
+        _gun(2026, 3, 1, 'Miraç Gecesi'),
+        _gun(2025, 12, 31, 'Yıl Sonu'),
+      ];
 }
 
-Future<DiniGunlerProvider> _createLoadedProvider() async {
-  final provider = DiniGunlerProvider();
+Future<DiniGunlerProvider> _createLoadedProvider(
+    {DateTime Function()? simdi}) async {
+  final provider = DiniGunlerProvider(simdi: simdi);
   await pumpEventQueue();
   return provider;
 }
@@ -61,16 +41,33 @@ void main() {
   tearDown(() => getIt.reset());
 
   group('DiniGunlerProvider', () {
-    test('defaults to year 2026 and loads data', () async {
-      final provider = await _createLoadedProvider();
+    test('varsayılan yıl, şimdiki yıldır ve o yılın verisi yüklenir', () async {
+      final provider =
+          await _createLoadedProvider(simdi: () => DateTime(2026, 9, 21));
 
       expect(provider.isLoading, isFalse);
       expect(provider.seciliYil, 2026);
       expect(provider.yillikVeri, hasLength(3));
     });
 
-    test('setYil filters yillikVeri to the selected year only', () async {
-      final provider = await _createLoadedProvider();
+    test('şimdiki yılın verisi yoksa verisi olan son yıla düşer', () async {
+      final provider =
+          await _createLoadedProvider(simdi: () => DateTime(2031, 1, 1));
+
+      expect(provider.seciliYil, 2026);
+      expect(provider.yillikVeri, isNotEmpty);
+    });
+
+    test('yillar yalnızca verisi olan yılları sıralı listeler', () async {
+      final provider =
+          await _createLoadedProvider(simdi: () => DateTime(2026, 9, 21));
+
+      expect(provider.yillar, [2025, 2026]);
+    });
+
+    test('setYil yillikVeri\'yi yalnızca seçilen yıla süzer', () async {
+      final provider =
+          await _createLoadedProvider(simdi: () => DateTime(2026, 9, 21));
 
       provider.setYil(2025);
 
@@ -79,12 +76,13 @@ void main() {
       expect(provider.yillikVeri.first.baslik, 'Yıl Sonu');
     });
 
-    test('gruplanmisVeri groups the selected year by month', () async {
-      final provider = await _createLoadedProvider();
+    test('gruplanmisVeri seçili yılı Türkçe ay adına göre gruplar', () async {
+      final provider =
+          await _createLoadedProvider(simdi: () => DateTime(2026, 9, 21));
 
       final grouped = provider.gruplanmisVeri;
 
-      expect(grouped.keys, containsAll(['Ocak', 'Mart']));
+      expect(grouped.keys, ['Ocak', 'Mart']);
       expect(grouped['Ocak'], hasLength(2));
       expect(grouped['Mart'], hasLength(1));
     });

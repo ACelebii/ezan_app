@@ -1,7 +1,9 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../core/services/konum_servisi.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'cami_service.dart';
 import 'cami_model.dart';
@@ -33,6 +35,8 @@ class _CamiPageState extends State<CamiPage> {
     _determinePosition();
   }
 
+  final _konumServisi = KonumServisi();
+
   Future<void> _determinePosition() async {
     setState(() {
       _isLoading = true;
@@ -40,51 +44,21 @@ class _CamiPageState extends State<CamiPage> {
       _locationPermanentlyDenied = false;
     });
     try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (!mounted) return;
-        setState(() {
-          _isLoading = false;
-          _locationError = 'Konum servisleri kapalı.';
-        });
-        return;
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          if (!mounted) return;
-          setState(() {
-            _isLoading = false;
-            _locationError = 'Konum izni reddedildi.';
-          });
-          return;
-        }
-      }
-      if (permission == LocationPermission.deniedForever) {
-        if (!mounted) return;
-        setState(() {
-          _isLoading = false;
-          _locationError = 'Konum izni kalıcı olarak reddedildi.';
-          _locationPermanentlyDenied = true;
-        });
-        return;
-      }
-
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings:
-            const LocationSettings(timeLimit: Duration(seconds: 15)),
+      final position = await _konumServisi.konumAl(
+        ayar: const LocationSettings(timeLimit: Duration(seconds: 15)),
       );
       if (!mounted) return;
       setState(() => _currentPosition = position);
       _fetchMosques();
-    } catch (e) {
-      debugPrint("Konum hatası: $e");
+    } on KonumHatasi catch (h) {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _locationError = 'Konum bilgisi alınamadı.';
+        _locationError = h.sorun == KonumSorunu.alinamadi
+            ? 'Konum bilgisi alınamadı.'
+            : h.mesaj;
+        _locationPermanentlyDenied =
+            h.sorun == KonumSorunu.izinKaliciReddedildi;
       });
     }
   }
@@ -160,8 +134,8 @@ class _CamiPageState extends State<CamiPage> {
       launched = await launchUrl(url, mode: LaunchMode.externalApplication);
     }
     if (!launched && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Harita uygulaması açılamadı.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.t('Harita uygulaması açılamadı.'))));
     }
   }
 
@@ -175,8 +149,8 @@ class _CamiPageState extends State<CamiPage> {
               const Center(child: CircularProgressIndicator()),
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: _buildGlassButton(Icons.arrow_back_ios_new_rounded,
-                    () => context.pop()),
+                child: _buildGlassButton(
+                    Icons.arrow_back_ios_new_rounded, () => context.pop()),
               ),
             ],
           ),
@@ -194,16 +168,16 @@ class _CamiPageState extends State<CamiPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(_locationError ?? 'Konum bilgisi alınamadı',
+                      Text(context.t(_locationError ?? 'Konum bilgisi alınamadı'),
                           textAlign: TextAlign.center),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _locationPermanentlyDenied
-                            ? Geolocator.openAppSettings
+                            ? _konumServisi.ayarlariAc
                             : _determinePosition,
                         child: Text(_locationPermanentlyDenied
-                            ? 'Ayarları Aç'
-                            : 'Tekrar Dene'),
+                            ? context.t('Ayarları Aç')
+                            : context.t('Tekrar Dene')),
                       ),
                     ],
                   ),
@@ -211,8 +185,8 @@ class _CamiPageState extends State<CamiPage> {
               ),
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: _buildGlassButton(Icons.arrow_back_ios_new_rounded,
-                    () => context.pop()),
+                child: _buildGlassButton(
+                    Icons.arrow_back_ios_new_rounded, () => context.pop()),
               ),
             ],
           ),
@@ -292,13 +266,13 @@ class _CamiPageState extends State<CamiPage> {
         children: [
           const Icon(Icons.wifi_off_rounded, color: Colors.redAccent, size: 20),
           const SizedBox(width: 10),
-          const Expanded(
-            child: Text('Cami listesi yüklenemedi.',
-                style: TextStyle(color: Colors.black87, fontSize: 13)),
+          Expanded(
+            child: Text(context.t('Cami listesi yüklenemedi.'),
+                style: const TextStyle(color: Colors.black87, fontSize: 13)),
           ),
           TextButton(
             onPressed: _fetchMosques,
-            child: const Text('Tekrar Dene'),
+            child: Text(context.t('Tekrar Dene')),
           ),
         ],
       ),
@@ -316,8 +290,8 @@ class _CamiPageState extends State<CamiPage> {
           BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8)
         ],
       ),
-      child: const Text('Yakınında cami bulunamadı.',
-          style: TextStyle(color: Colors.black87, fontSize: 13)),
+      child: Text(context.t('Yakınında cami bulunamadı.'),
+          style: const TextStyle(color: Colors.black87, fontSize: 13)),
     );
   }
 
@@ -370,7 +344,7 @@ class _CamiPageState extends State<CamiPage> {
                 child: ElevatedButton.icon(
                   onPressed: () => _launchNavigation(cami, 'Otomobil'),
                   icon: const Icon(Icons.directions_car_rounded, size: 18),
-                  label: const Text('Araçla'),
+                  label: Text(context.t('Araçla')),
                 ),
               ),
               const SizedBox(width: 10),
@@ -378,7 +352,7 @@ class _CamiPageState extends State<CamiPage> {
                 child: ElevatedButton.icon(
                   onPressed: () => _launchNavigation(cami, 'Yürüme'),
                   icon: const Icon(Icons.directions_walk_rounded, size: 18),
-                  label: const Text('Yürüyerek'),
+                  label: Text(context.t('Yürüyerek')),
                 ),
               ),
             ],
@@ -418,8 +392,8 @@ class _CamiPageState extends State<CamiPage> {
           });
         },
         itemBuilder: (context) => [
-          const PopupMenuItem(value: 'Uydu', child: Text('Uydu')),
-          const PopupMenuItem(value: 'Standart', child: Text('Standart')),
+          PopupMenuItem(value: 'Uydu', child: Text(context.t('Uydu'))),
+          PopupMenuItem(value: 'Standart', child: Text(context.t('Standart'))),
         ],
       ),
     );

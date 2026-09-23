@@ -34,6 +34,36 @@ class _HesabimLoginPageState extends State<HesabimLoginPage> {
         behavior: SnackBarBehavior.floating));
   }
 
+  Future<void> _hesabiSilOnayi(AuthService authService) async {
+    final onay = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(authService
+            .translate("Hesabını silmek istediğine emin misin?")),
+        content: Text(authService.translate(
+            "Bu işlem geri alınamaz. Hesabın, ayarların ve aldığın hatim görevleri silinir.")),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: Text(authService.translate("Vazgeç"))),
+          TextButton(
+              onPressed: () => Navigator.pop(c, true),
+              child: Text(authService.translate("Hesabı Sil"),
+                  style: const TextStyle(color: Colors.redAccent))),
+        ],
+      ),
+    );
+    if (onay != true || !mounted) return;
+    final hata = await authService.deleteAccount();
+    if (!mounted) return;
+    if (hata != null) {
+      _showError(hata);
+    } else {
+      _showSuccess(authService.translate("Hesabın silindi."));
+      context.pop();
+    }
+  }
+
   bool _isEmailValid(String email) {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
@@ -127,6 +157,27 @@ class _HesabimLoginPageState extends State<HesabimLoginPage> {
                 child: Text(authService.translate("Çıkış Yap"),
                     style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.bold)))),
+        const SizedBox(height: 16),
+        SizedBox(
+            height: 55,
+            child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    side: const BorderSide(color: Colors.redAccent),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16))),
+                onPressed: authService.isLoading
+                    ? null
+                    : () => _hesabiSilOnayi(authService),
+                child: authService.isLoading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                            color: Colors.redAccent, strokeWidth: 2))
+                    : Text(authService.translate("Hesabımı Sil"),
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)))),
       ],
     );
   }
@@ -352,4 +403,3 @@ class _HesabimLoginPageState extends State<HesabimLoginPage> {
     );
   }
 }
-

@@ -1,119 +1,462 @@
-[
-  {
-    "yil": 2024,
-    "ay": "Ocak",
-    "gunNo": "11",
-    "gunAd": "Ocak\nPerşembe",
-    "baslik": "Regaib Kandili",
-    "hicri": "29 Cemaziyelahir 1445",
-    "detay": "Regaib Kandili detayları..."
+{
+ "kaynak": "T.C. Diyanet İşleri Başkanlığı, Vakit Hesaplama: Dini Günler Listesi",
+ "uretim": "2026-09-20",
+ "araç": "tools/dini_gunler_uret.py",
+ "tanimlar": {
+  "uc_aylar": {
+   "baslik": "Üç Ayların Başlangıcı",
+   "baslikEn": "Beginning of the Three Holy Months",
+   "detay": "Recep, Şaban ve Ramazan aylarından oluşan, ibadet ve tövbe için fırsat sayılan mübarek zaman diliminin başlangıcıdır. Recep ayının ilk günüdür.",
+   "detayEn": "The start of the three holy months of Rajab, Sha'ban and Ramadan, a period regarded as an opportunity for worship and repentance. It is the first day of Rajab."
   },
-  {
-    "yil": 2024,
-    "ay": "Şubat",
-    "gunNo": "06",
-    "gunAd": "Şubat\nSalı",
-    "baslik": "Miraç Kandili",
-    "hicri": "26 Recep 1445",
-    "detay": "Miraç Kandili detayları..."
+  "regaib": {
+   "baslik": "Regaib Kandili",
+   "baslikEn": "Raghaib Night",
+   "detay": "Recep ayının ilk Cuma gecesidir (Perşembe'yi Cuma'ya bağlayan gece). Üç Aylar'ın ilk kandilidir; bu gece dua, ibadet ve tövbe ile geçirilir.",
+   "detayEn": "The night of the first Friday of Rajab (the night linking Thursday to Friday). It is the first of the holy nights of the three months and is spent in prayer, worship and repentance."
   },
-  {
-    "yil": 2025,
-    "ay": "Şubat",
-    "gunNo": "13",
-    "gunAd": "Şubat\nPerşembe",
-    "baslik": "Berat Kandili",
-    "hicri": "14 Şaban 1446",
-    "detay": "Berat Kandili detayları..."
+  "miraç": {
+   "baslik": "Miraç Kandili",
+   "baslikEn": "Miraj Night",
+   "detay": "Recep ayının 26'sını 27'sine bağlayan gecedir. Peygamber Efendimiz'in (s.a.v) Mescid-i Haram'dan Mescid-i Aksa'ya, oradan da semaya yükseltildiği ve beş vakit namazın farz kılındığı mübarek gece olarak anılır.",
+   "detayEn": "The night linking the 26th of Rajab to the 27th. It is remembered as the blessed night on which the Prophet (peace be upon him) was taken from the Sacred Mosque to Al-Aqsa and then ascended to the heavens, and on which the five daily prayers were made obligatory."
   },
-  {
-    "yil": 2025,
-    "ay": "Mart",
-    "gunNo": "01",
-    "gunAd": "Mart\nCumartesi",
-    "baslik": "Ramazan'ın İlk Günü",
-    "hicri": "1 Ramazan 1446",
-    "detay": "On bir ayın sultanı Ramazan..."
+  "berat": {
+   "baslik": "Berat Kandili",
+   "baslikEn": "Berat Night",
+   "detay": "Berat Kandili, günahlardan arınma ve temize çıkma gecesidir. Şaban ayının 14'ünü 15'ine bağlayan bu gecede Allah'ın rahmetinin yeryüzüne tecelli ettiği, bağışlanma kapılarının ardına kadar açıldığı kabul edilir.",
+   "detayEn": "The night of purification from sins and a fresh start. On this night, linking the 14th of Sha'ban to the 15th, God's mercy is believed to be manifest on earth and the doors of forgiveness to be wide open."
   },
-  {
-    "yil": 2026,
-    "ay": "Ocak",
-    "gunNo": "15",
-    "gunAd": "Ocak\nPerşembe",
-    "baslik": "Miraç Kandili",
-    "hicri": "26 Recep 1447",
-    "detay": "Kandiller; ışıklarıyla sadece karanlık gecelerimizi değil, aynı zamanda manevi feyziyle de daralan gönüllerimizi aydınlatan, zihinlerimizi berraklaştıran gecelerdir...\n\nÖze dönüşün, Yüce Yaratanımıza yürekten yakarış ve yönelişin kutlu zaman dilimleridir."
+  "ramazan": {
+   "baslik": "Ramazan Başlangıcı",
+   "baslikEn": "Start of Ramadan",
+   "detay": "Rahmet, bereket ve mağfiret ayı olan Ramazan ayının başlangıcı. Kur'an-ı Kerim'in indirilmeye başlandığı, oruç ibadetinin yerine getirildiği mübarek ay.",
+   "detayEn": "The beginning of Ramadan, the month of mercy, blessing and forgiveness, in which the Qur'an began to be revealed and the fast is observed."
   },
-  {
-    "yil": 2026,
-    "ay": "Şubat",
-    "gunNo": "02",
-    "gunAd": "Şubat\nPazartesi",
-    "baslik": "Berat Kandili",
-    "hicri": "14 Şaban 1447",
-    "detay": "Berat Kandili, günahlardan arınma ve temize çıkma gecesidir. Allah'ın rahmetinin yeryüzüne tecelli ettiği, bağışlanma kapılarının ardına kadar açıldığı mübarek bir gecedir."
+  "kadir": {
+   "baslik": "Kadir Gecesi",
+   "baslikEn": "Laylat al-Qadr (Night of Power)",
+   "detay": "Ramazan'ın 26'sını 27'sine bağlayan gecedir. Bin aydan daha hayırlı olan Kadir Gecesi, Yüce kitabımız Kur'an-ı Kerim'in Peygamber Efendimize (s.a.v) indirilmeye başlandığı, meleklerin yeryüzüne indiği eşsiz bir gecedir.",
+   "detayEn": "The night linking the 26th of Ramadan to the 27th. Better than a thousand months, it is the unique night on which the Qur'an began to be revealed to the Prophet (peace be upon him) and the angels descend to earth."
   },
-  {
-    "yil": 2026,
-    "ay": "Şubat",
-    "gunNo": "18",
-    "gunAd": "Şubat\nÇarşamba",
-    "baslik": "Ramazan'ın İlk Günü",
-    "hicri": "1 Ramazan 1447",
-    "detay": "Rahmet, bereket ve mağfiret ayı olan Ramazan ayının başlangıcı. Kur'an-ı Kerim'in indirilmeye başlandığı, oruç ibadetinin yerine getirildiği mübarek ay."
+  "arefe_ramazan": {
+   "baslik": "Ramazan Bayramı Arefesi",
+   "baslikEn": "Eve of Eid al-Fitr",
+   "detay": "Ramazan Bayramı'ndan bir önceki gündür. Bayram hazırlıkları yapılır, fıtır sadakası verilir.",
+   "detayEn": "The day before Eid al-Fitr, when preparations for the festival are made and the charity of fitr is given."
   },
-  {
-    "yil": 2026,
-    "ay": "Mart",
-    "gunNo": "16",
-    "gunAd": "Mart\nPazartesi",
-    "baslik": "Kadir Gecesi",
-    "hicri": "26 Ramazan 1447",
-    "detay": "Bin aydan daha hayırlı olan Kadir Gecesi. Yüce kitabımız Kur'an-ı Kerim'in Peygamber Efendimize (s.a.v) indirilmeye başlandığı, meleklerin yeryüzüne indiği eşsiz bir gecedir."
+  "ramazan_bayrami": {
+   "baslik": "Ramazan Bayramı",
+   "baslikEn": "Eid al-Fitr",
+   "detay": "Başı rahmet, ortası mağfiret, sonu cehennem azabından kurtuluş olan Ramazan ayını geride bırakarak kavuştuğumuz mübarek Ramazan Bayramı.",
+   "detayEn": "The blessed festival that follows Ramadan, a month whose beginning is mercy, whose middle is forgiveness and whose end is deliverance from the Fire."
   },
-  {
-    "yil": 2026,
-    "ay": "Mart",
-    "gunNo": "20",
-    "gunAd": "Mart\nCuma",
-    "baslik": "Ramazan Bayramı",
-    "hicri": "1 Şevval 1447",
-    "detay": "Başı rahmet, ortası mağfiret, sonu cehennem azabından kurtuluş olan Ramazan ayını geride bırakarak kavuştuğumuz mübarek Ramazan Bayramı."
+  "arefe_kurban": {
+   "baslik": "Kurban Bayramı Arefesi",
+   "baslikEn": "Eve of Eid al-Adha (Day of Arafah)",
+   "detay": "Zilhicce'nin dokuzuncu günü, Kurban Bayramı'nın arefesidir. Hacıların Arafat'ta vakfe yaptığı gündür.",
+   "detayEn": "The ninth of Dhu al-Hijjah, the eve of Eid al-Adha, when the pilgrims stand at Arafat."
   },
-  {
-    "yil": 2026,
-    "ay": "Mayıs",
-    "gunNo": "27",
-    "gunAd": "Mayıs\nÇarşamba",
-    "baslik": "Kurban Bayramı",
-    "hicri": "10 Zilhicce 1447",
-    "detay": "Hz. İbrahim'in itaatini ve Hz. İsmail'in teslimiyetini hatırlatan, paylaşmanın ve yardımlaşmanın zirveye ulaştığı mübarek Kurban Bayramı."
+  "kurban_bayrami": {
+   "baslik": "Kurban Bayramı",
+   "baslikEn": "Eid al-Adha",
+   "detay": "Hz. İbrahim'in itaatini ve Hz. İsmail'in teslimiyetini hatırlatan, paylaşmanın ve yardımlaşmanın zirveye ulaştığı mübarek Kurban Bayramı.",
+   "detayEn": "The blessed festival that recalls the obedience of Prophet Ibrahim and the submission of Prophet Ismail, when sharing and helping others reach their peak."
   },
-  {
-    "yil": 2026,
-    "ay": "Haziran",
-    "gunNo": "16",
-    "gunAd": "Haziran\nSalı",
-    "baslik": "Hicri Yılbaşı",
-    "hicri": "1 Muharrem 1448",
-    "detay": "Peygamber Efendimiz Hz. Muhammed'in (s.a.v) Mekke'den Medine'ye hicretini esas alan Hicri takvimin ilk günü ve yeni yılın başlangıcı."
+  "hicri_yilbasi": {
+   "baslik": "Hicri Yılbaşı",
+   "baslikEn": "Islamic New Year",
+   "detay": "Peygamber Efendimiz Hz. Muhammed'in (s.a.v) Mekke'den Medine'ye hicretini esas alan Hicri takvimin ilk günü ve yeni yılın başlangıcı.",
+   "detayEn": "The first day of the Hijri calendar, which is based on the migration of the Prophet Muhammad (peace be upon him) from Mecca to Medina, and the start of the new year."
   },
-  {
-    "yil": 2026,
-    "ay": "Haziran",
-    "gunNo": "25",
-    "gunAd": "Haziran\nPerşembe",
-    "baslik": "Aşure Günü",
-    "hicri": "10 Muharrem 1448",
-    "detay": "Muharrem ayının onuncu günü olan Aşure Günü, tarihte birçok önemli hadisenin yaşandığı, paylaşmanın, dayanışmanın ve birlikteliğin simgesidir."
+  "asure": {
+   "baslik": "Aşure Günü",
+   "baslikEn": "Day of Ashura",
+   "detay": "Muharrem ayının onuncu günü olan Aşure Günü, tarihte birçok önemli hadisenin yaşandığı, paylaşmanın, dayanışmanın ve birlikteliğin simgesidir.",
+   "detayEn": "The tenth day of Muharram, on which many important events took place in history; a symbol of sharing, solidarity and togetherness."
   },
-  {
-    "yil": 2026,
-    "ay": "Ağustos",
-    "gunNo": "24",
-    "gunAd": "Ağustos\nPazartesi",
-    "baslik": "Mevlid Kandili",
-    "hicri": "12 Rebiülevvel 1448",
-    "detay": "İnsanlığı karanlıktan aydınlığa çıkaran, rahmet elçisi Peygamber Efendimiz Hz. Muhammed'in (s.a.v) yeryüzünü şereflendirdiği veladet gecesidir."
+  "mevlid": {
+   "baslik": "Mevlid Kandili",
+   "baslikEn": "Mawlid Night",
+   "detay": "İnsanlığı karanlıktan aydınlığa çıkaran, rahmet elçisi Peygamber Efendimiz Hz. Muhammed'in (s.a.v) yeryüzünü şereflendirdiği veladet gecesidir.",
+   "detayEn": "The night of the birth of the Prophet Muhammad (peace be upon him), the messenger of mercy who led humanity from darkness to light."
   }
-]
+ },
+ "gunler": [
+  {
+   "tarih": "2024-01-11",
+   "tur": "regaib",
+   "hicri": "29 Cemaziyelahir 1445"
+  },
+  {
+   "tarih": "2024-01-12",
+   "tur": "uc_aylar",
+   "hicri": "1 Recep 1445"
+  },
+  {
+   "tarih": "2024-02-06",
+   "tur": "miraç",
+   "hicri": "26 Recep 1445"
+  },
+  {
+   "tarih": "2024-02-24",
+   "tur": "berat",
+   "hicri": "14 Şaban 1445"
+  },
+  {
+   "tarih": "2024-03-11",
+   "tur": "ramazan",
+   "hicri": "1 Ramazan 1445"
+  },
+  {
+   "tarih": "2024-04-05",
+   "tur": "kadir",
+   "hicri": "26 Ramazan 1445"
+  },
+  {
+   "tarih": "2024-04-09",
+   "tur": "arefe_ramazan",
+   "hicri": "30 Ramazan 1445"
+  },
+  {
+   "tarih": "2024-04-10",
+   "tur": "ramazan_bayrami_1",
+   "hicri": "1 Şevval 1445"
+  },
+  {
+   "tarih": "2024-04-11",
+   "tur": "ramazan_bayrami_2",
+   "hicri": "2 Şevval 1445"
+  },
+  {
+   "tarih": "2024-04-12",
+   "tur": "ramazan_bayrami_3",
+   "hicri": "3 Şevval 1445"
+  },
+  {
+   "tarih": "2024-06-15",
+   "tur": "arefe_kurban",
+   "hicri": "9 Zilhicce 1445"
+  },
+  {
+   "tarih": "2024-06-16",
+   "tur": "kurban_bayrami_1",
+   "hicri": "10 Zilhicce 1445"
+  },
+  {
+   "tarih": "2024-06-17",
+   "tur": "kurban_bayrami_2",
+   "hicri": "11 Zilhicce 1445"
+  },
+  {
+   "tarih": "2024-06-18",
+   "tur": "kurban_bayrami_3",
+   "hicri": "12 Zilhicce 1445"
+  },
+  {
+   "tarih": "2024-06-19",
+   "tur": "kurban_bayrami_4",
+   "hicri": "13 Zilhicce 1445"
+  },
+  {
+   "tarih": "2024-07-07",
+   "tur": "hicri_yilbasi",
+   "hicri": "1 Muharrem 1446"
+  },
+  {
+   "tarih": "2024-07-16",
+   "tur": "asure",
+   "hicri": "10 Muharrem 1446"
+  },
+  {
+   "tarih": "2024-09-14",
+   "tur": "mevlid",
+   "hicri": "11 Rebiülevvel 1446"
+  },
+  {
+   "tarih": "2025-01-01",
+   "tur": "uc_aylar",
+   "hicri": "1 Recep 1446"
+  },
+  {
+   "tarih": "2025-01-02",
+   "tur": "regaib",
+   "hicri": "2 Recep 1446"
+  },
+  {
+   "tarih": "2025-01-26",
+   "tur": "miraç",
+   "hicri": "26 Recep 1446"
+  },
+  {
+   "tarih": "2025-02-13",
+   "tur": "berat",
+   "hicri": "14 Şaban 1446"
+  },
+  {
+   "tarih": "2025-03-01",
+   "tur": "ramazan",
+   "hicri": "1 Ramazan 1446"
+  },
+  {
+   "tarih": "2025-03-26",
+   "tur": "kadir",
+   "hicri": "26 Ramazan 1446"
+  },
+  {
+   "tarih": "2025-03-29",
+   "tur": "arefe_ramazan",
+   "hicri": "29 Ramazan 1446"
+  },
+  {
+   "tarih": "2025-03-30",
+   "tur": "ramazan_bayrami_1",
+   "hicri": "1 Şevval 1446"
+  },
+  {
+   "tarih": "2025-03-31",
+   "tur": "ramazan_bayrami_2",
+   "hicri": "2 Şevval 1446"
+  },
+  {
+   "tarih": "2025-04-01",
+   "tur": "ramazan_bayrami_3",
+   "hicri": "3 Şevval 1446"
+  },
+  {
+   "tarih": "2025-06-05",
+   "tur": "arefe_kurban",
+   "hicri": "9 Zilhicce 1446"
+  },
+  {
+   "tarih": "2025-06-06",
+   "tur": "kurban_bayrami_1",
+   "hicri": "10 Zilhicce 1446"
+  },
+  {
+   "tarih": "2025-06-07",
+   "tur": "kurban_bayrami_2",
+   "hicri": "11 Zilhicce 1446"
+  },
+  {
+   "tarih": "2025-06-08",
+   "tur": "kurban_bayrami_3",
+   "hicri": "12 Zilhicce 1446"
+  },
+  {
+   "tarih": "2025-06-09",
+   "tur": "kurban_bayrami_4",
+   "hicri": "13 Zilhicce 1446"
+  },
+  {
+   "tarih": "2025-06-26",
+   "tur": "hicri_yilbasi",
+   "hicri": "1 Muharrem 1447"
+  },
+  {
+   "tarih": "2025-07-05",
+   "tur": "asure",
+   "hicri": "10 Muharrem 1447"
+  },
+  {
+   "tarih": "2025-09-03",
+   "tur": "mevlid",
+   "hicri": "11 Rebiülevvel 1447"
+  },
+  {
+   "tarih": "2025-12-21",
+   "tur": "uc_aylar",
+   "hicri": "1 Recep 1447"
+  },
+  {
+   "tarih": "2025-12-25",
+   "tur": "regaib",
+   "hicri": "5 Recep 1447"
+  },
+  {
+   "tarih": "2026-01-15",
+   "tur": "miraç",
+   "hicri": "26 Recep 1447"
+  },
+  {
+   "tarih": "2026-02-02",
+   "tur": "berat",
+   "hicri": "14 Şaban 1447"
+  },
+  {
+   "tarih": "2026-02-19",
+   "tur": "ramazan",
+   "hicri": "1 Ramazan 1447"
+  },
+  {
+   "tarih": "2026-03-16",
+   "tur": "kadir",
+   "hicri": "26 Ramazan 1447"
+  },
+  {
+   "tarih": "2026-03-19",
+   "tur": "arefe_ramazan",
+   "hicri": "29 Ramazan 1447"
+  },
+  {
+   "tarih": "2026-03-20",
+   "tur": "ramazan_bayrami_1",
+   "hicri": "1 Şevval 1447"
+  },
+  {
+   "tarih": "2026-03-21",
+   "tur": "ramazan_bayrami_2",
+   "hicri": "2 Şevval 1447"
+  },
+  {
+   "tarih": "2026-03-22",
+   "tur": "ramazan_bayrami_3",
+   "hicri": "3 Şevval 1447"
+  },
+  {
+   "tarih": "2026-05-26",
+   "tur": "arefe_kurban",
+   "hicri": "9 Zilhicce 1447"
+  },
+  {
+   "tarih": "2026-05-27",
+   "tur": "kurban_bayrami_1",
+   "hicri": "10 Zilhicce 1447"
+  },
+  {
+   "tarih": "2026-05-28",
+   "tur": "kurban_bayrami_2",
+   "hicri": "11 Zilhicce 1447"
+  },
+  {
+   "tarih": "2026-05-29",
+   "tur": "kurban_bayrami_3",
+   "hicri": "12 Zilhicce 1447"
+  },
+  {
+   "tarih": "2026-05-30",
+   "tur": "kurban_bayrami_4",
+   "hicri": "13 Zilhicce 1447"
+  },
+  {
+   "tarih": "2026-06-16",
+   "tur": "hicri_yilbasi",
+   "hicri": "1 Muharrem 1448"
+  },
+  {
+   "tarih": "2026-06-25",
+   "tur": "asure",
+   "hicri": "10 Muharrem 1448"
+  },
+  {
+   "tarih": "2026-08-24",
+   "tur": "mevlid",
+   "hicri": "11 Rebiülevvel 1448"
+  },
+  {
+   "tarih": "2026-12-10",
+   "tur": "uc_aylar",
+   "hicri": "1 Recep 1448"
+  },
+  {
+   "tarih": "2026-12-10",
+   "tur": "regaib",
+   "hicri": "1 Recep 1448"
+  },
+  {
+   "tarih": "2027-01-04",
+   "tur": "miraç",
+   "hicri": "26 Recep 1448"
+  },
+  {
+   "tarih": "2027-01-22",
+   "tur": "berat",
+   "hicri": "14 Şaban 1448"
+  },
+  {
+   "tarih": "2027-02-08",
+   "tur": "ramazan",
+   "hicri": "1 Ramazan 1448"
+  },
+  {
+   "tarih": "2027-03-05",
+   "tur": "kadir",
+   "hicri": "26 Ramazan 1448"
+  },
+  {
+   "tarih": "2027-03-08",
+   "tur": "arefe_ramazan",
+   "hicri": "29 Ramazan 1448"
+  },
+  {
+   "tarih": "2027-03-09",
+   "tur": "ramazan_bayrami_1",
+   "hicri": "1 Şevval 1448"
+  },
+  {
+   "tarih": "2027-03-10",
+   "tur": "ramazan_bayrami_2",
+   "hicri": "2 Şevval 1448"
+  },
+  {
+   "tarih": "2027-03-11",
+   "tur": "ramazan_bayrami_3",
+   "hicri": "3 Şevval 1448"
+  },
+  {
+   "tarih": "2027-05-15",
+   "tur": "arefe_kurban",
+   "hicri": "9 Zilhicce 1448"
+  },
+  {
+   "tarih": "2027-05-16",
+   "tur": "kurban_bayrami_1",
+   "hicri": "10 Zilhicce 1448"
+  },
+  {
+   "tarih": "2027-05-17",
+   "tur": "kurban_bayrami_2",
+   "hicri": "11 Zilhicce 1448"
+  },
+  {
+   "tarih": "2027-05-18",
+   "tur": "kurban_bayrami_3",
+   "hicri": "12 Zilhicce 1448"
+  },
+  {
+   "tarih": "2027-05-19",
+   "tur": "kurban_bayrami_4",
+   "hicri": "13 Zilhicce 1448"
+  },
+  {
+   "tarih": "2027-06-06",
+   "tur": "hicri_yilbasi",
+   "hicri": "1 Muharrem 1449"
+  },
+  {
+   "tarih": "2027-06-15",
+   "tur": "asure",
+   "hicri": "10 Muharrem 1449"
+  },
+  {
+   "tarih": "2027-08-13",
+   "tur": "mevlid",
+   "hicri": "11 Rebiülevvel 1449"
+  },
+  {
+   "tarih": "2027-11-29",
+   "tur": "uc_aylar",
+   "hicri": "1 Recep 1449"
+  },
+  {
+   "tarih": "2027-12-02",
+   "tur": "regaib",
+   "hicri": "4 Recep 1449"
+  },
+  {
+   "tarih": "2027-12-24",
+   "tur": "miraç",
+   "hicri": "26 Recep 1449"
+  }
+ ]
+}

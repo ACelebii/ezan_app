@@ -1,8 +1,11 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:http/http.dart' as http;
 import 'settings_common.dart';
+import '../../core/vakit/il_kodlari.dart';
+import '../../core/vakit/kayitli_sehir.dart';
+import '../../core/vakit/vakit_modelleri.dart';
+import '../../core/vakit/vakit_servisi.dart';
+import '../../locator.dart';
 
 class AddCityPreviewPage extends StatefulWidget {
   final String baslangicSehri;
@@ -13,6 +16,11 @@ class AddCityPreviewPage extends StatefulWidget {
 
 class _AddCityPreviewPageState extends State<AddCityPreviewPage> {
   late String _gosterilenSehir;
+
+  /// Dünya listesinden seçilen yer; Türkiye'deki il için null (il adından
+  /// bulunur).
+  Konum? _yabanciKonum;
+  int _istek = 0;
   bool isLoading = true;
   bool hasError = false;
   Map<String, String> vakitler = {};
@@ -28,8 +36,6 @@ class _AddCityPreviewPageState extends State<AddCityPreviewPage> {
     "Tahran Üniversitesi",
     "ITNA Ashari, Caferi",
     "UOIF Fransa İslam Organizasyon Birliği",
-    "Mısır (BIS)",
-    "Temkinli Takvim",
     "JAKIM (Malezya)"
   ];
 
@@ -44,56 +50,31 @@ class _AddCityPreviewPageState extends State<AddCityPreviewPage> {
     _fetchVakitler(_gosterilenSehir);
   }
 
-  int _getApiMethodId(String method) {
-    switch (method) {
-      case "Kuzey Amerika (ISNA)":
-        return 2;
-      case "Müslim World Lig":
-        return 3;
-      case "Ummül Kurra":
-        return 4;
-      case "Mısır":
-        return 5;
-      case "Tahran Üniversitesi":
-        return 7;
-      case "Diyanet Takvimi":
-        return 13;
-      default:
-        return 13;
-    }
-  }
-
+  /// Şehrin bugünkü vakitlerini (Diyanet, olmazsa Aladhan) önizleme için yükler.
   Future<void> _fetchVakitler(String sehir) async {
+    final istek = ++_istek;
     setState(() {
       isLoading = true;
       hasError = false;
     });
     try {
-      int methodId = _getApiMethodId(_seciliYontem);
-      final url =
-          'https://api.aladhan.com/v1/timingsByCity?city=$sehir&country=Turkey&method=$methodId';
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body)['data']['timings'];
-        setState(() {
-          vakitler = {
-            "İmsak": data['Imsak'],
-            "Güneş": data['Sunrise'],
-            "Öğle": data['Dhuhr'],
-            "İkindi": data['Asr'],
-            "Akşam": data['Maghrib'],
-            "Yatsı": data['Isha']
-          };
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          hasError = true;
-          isLoading = false;
-        });
-      }
+      final konum = _yabanciKonum ?? kayittanKonum({'isim': sehir});
+      if (konum == null) throw VakitHatasi('$sehir için Diyanet kodu yok.');
+      final servis = locator<VakitServisi>();
+      final bugun = servis.bugun(konum);
+      // Seçili (henüz kaydedilmemiş) yöntemle; ikindi ve temkin mevcut ayarlar.
+      final tercih =
+          context.read<AuthService>().vakitTercihiIcin(_seciliYontem);
+      final gunler = await servis.vakitleriGetir(konum, tercih);
+      final gun = gunler.firstWhere((g) => g.tarih == bugun);
+      if (!mounted || istek != _istek) return;
+      setState(() {
+        vakitler = {for (final v in Vakit.values) v.ad: gun.saatler[v]!};
+        isLoading = false;
+      });
     } catch (e) {
       debugPrint("Şehir vakitleri alınamadı ($sehir): $e");
+      if (!mounted || istek != _istek) return;
       setState(() {
         hasError = true;
         isLoading = false;
@@ -171,27 +152,18 @@ class _AddCityPreviewPageState extends State<AddCityPreviewPage> {
           actions: [
             TextButton(
                 onPressed: () {
-                  List<dynamic> guncelListe =
-                      List.from(authService.kayitliSehirler);
-                  bool sehirZatenVar =
-                      guncelListe.any((s) => s['isim'] == _gosterilenSehir);
-                  for (var s in guncelListe) {
-                    s["secili"] = "false";
-                  }
-
-                  if (sehirZatenVar) {
-                    guncelListe.firstWhere(
-                            (s) => s['isim'] == _gosterilenSehir)['secili'] =
-                        'true';
-                  } else {
-                    guncelListe.add({
-                      "isim": _gosterilenSehir,
-                      "sehir": "Türkiye",
-                      "tur": _seciliYontem,
-                      "secili": "true"
-                    });
-                  }
-                  authService.updateSetting('kayitli_sehirler', guncelListe);
+                  final konum = _yabanciKonum ??
+                      kayittanKonum({'isim': _gosterilenSehir});
+                  if (konum == null) return;
+                  // Aynı yer (kimliği aynı) zaten kayıtlıysa tekrar eklenmez,
+                  // yalnızca seçilir.
+                  authService.sehirleriKaydet(
+                      authService.kayitliSehirler.ekleyipSecerek(KayitliSehir(
+                    isim: _gosterilenSehir,
+                    ulke: _yabanciKonum?.ulke ?? "Türkiye",
+                    tur: _seciliYontem,
+                    konum: konum,
+                  )));
                   authService.updateSetting('hesaplama_yontemi', _seciliYontem);
                   context.pop();
                   context.pop();
@@ -225,7 +197,12 @@ class _AddCityPreviewPageState extends State<AddCityPreviewPage> {
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold),
                                 overflow: TextOverflow.ellipsis),
-                            Text(authService.translate("Türkiye"),
+                            // Yabancı yerde saat dilimi de yazılır: yanlış bulunmuşsa
+                            // kullanıcı kaydetmeden fark edebilsin.
+                            Text(
+                                _yabanciKonum == null
+                                    ? authService.translate("Türkiye")
+                                    : '${_yabanciKonum!.ulke} · ${_yabanciKonum!.saatDilimi}',
                                 style: TextStyle(
                                     color: getSubTextColor(context),
                                     fontSize: 16)),
@@ -235,17 +212,37 @@ class _AddCityPreviewPageState extends State<AddCityPreviewPage> {
                       TextButton(
                           onPressed: () async {
                             final yeniArama = await context
-                                .push<String>('/settings/cities/search');
-                            if (yeniArama != null) {
-                              setState(() => _gosterilenSehir = yeniArama);
-                              _fetchVakitler(_gosterilenSehir);
+                                .push<Object>('/settings/cities/search');
+                            if (yeniArama is Konum) {
+                              setState(() {
+                                _yabanciKonum = yeniArama;
+                                _gosterilenSehir = yeniArama.ad;
+                              });
+                            } else if (yeniArama is String) {
+                              setState(() {
+                                _yabanciKonum = null;
+                                _gosterilenSehir = yeniArama;
+                              });
+                            } else {
+                              return;
                             }
+                            _fetchVakitler(_gosterilenSehir);
                           },
                           child: Text(authService.translate("Değiştir"),
                               style: TextStyle(
                                   color: getTextColor(context), fontSize: 14))),
                     ],
                   ),
+                  if (_yabanciKonum != null &&
+                      _yabanciKonum!.diyanetIlceId == null) ...[
+                    // GPS ile bulunan ve Diyanet'in listesinde karşılığı olmayan yer.
+                    const SizedBox(height: 8),
+                    Text(
+                        authService.translate(
+                            "Bu yer için Diyanet saati yok; vakitler koordinata göre hesaplanır (Diyanet yöntemiyle, birkaç dakika sapabilir)."),
+                        style: TextStyle(
+                            color: getSubTextColor(context), fontSize: 12)),
+                  ],
                   const SizedBox(height: 24),
                   if (isLoading)
                     Center(
@@ -332,7 +329,6 @@ class _AddCityPreviewPageState extends State<AddCityPreviewPage> {
     );
   }
 }
-
 
 class _TimeColumn extends StatelessWidget {
   final String title;

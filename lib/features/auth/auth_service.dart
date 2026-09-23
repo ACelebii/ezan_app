@@ -1,14 +1,40 @@
+import '../../core/i18n/ceviri.dart';
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/vakit/kayitli_sehir.dart';
+import '../../core/vakit/vakit_tercihi.dart';
+import '../hatim/data/hatim_repository.dart';
+
+/// Çevirisi olan uygulama dilleri. `translate` yalnızca İngilizceyi çevirir;
+/// çevirisi olmayan bir dil seçtirmek, yazıları Türkçe bırakıp yalnızca yönü
+/// değiştirirdi. Yeni bir dil, çevirisiyle birlikte buraya eklenir (sağdan sola
+/// yazılan diller için ekranların RTL altyapısı hazırdır).
+const desteklenenDiller = ['Türkçe', 'English'];
+
+/// Kayıtlı dil desteklenenler arasında değilse (eskiden seçilen Arapça,
+/// Almanca, Fransızca ya da bozuk kayıt) Türkçe.
+String gecerliDil(Object? kayit) =>
+    desteklenenDiller.contains(kayit) ? kayit as String : 'Türkçe';
 
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // ÖNEMLİ: bu projenin Firestore veritabanının GERÇEK adı "default"
+  // (parantezsiz) — `FirebaseFirestore.instance` SDK'nın "(default)" özel
+  // adını arar, ki bu projede YOK; sessizce yanlış (var olmayan) veritabanına
+  // bağlanır (yazmalar/dinlemeler sonsuza dek "NOT_FOUND" ile yeniden dener,
+  // hiçbir zaman hata ya da sonuç vermez). Diğer tüm repository'lerle
+  // (Hatim/Hutbe/Kütüphane/Multimedya) AYNI deseni kullan.
+  final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(
+    app: Firebase.app(),
+    databaseId: dotenv.env['FIREBASE_DB_ID'] ?? 'default',
+  );
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   User? _user;
@@ -23,34 +49,12 @@ class AuthService extends ChangeNotifier {
 
   void setApiKey(String key) => _apiKey = key;
 
-  Future<void> cachePrayerTimes(String city, Map<String, dynamic> data) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('cached_vakitler_$city', jsonEncode(data));
-  }
-
-  Future<Map<String, dynamic>?> getCachedPrayerTimes(String city) async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? data = prefs.getString('cached_vakitler_$city');
-    if (data != null) {
-      return jsonDecode(data);
-    }
-    return null;
-  }
-
   final Map<String, dynamic> _guestSettings = {
     'hesaplama_yontemi': 'Diyanet Takvimi',
     'ikindi_hesabi': 'Şafi, Maliki, Hanbeli, Türkiye',
-    'ana_sayfa_stili': 'Listeli',
+    'ana_sayfa_stili': 'Gökyüzü',
     'uygulama_dili': 'Türkçe',
-    'kayitli_sehirler': [
-      {
-        'isim': 'İstanbul',
-        'sehir': 'Türkiye',
-        'lat': 41.0082,
-        'lon': 28.9784,
-        'secili': 'true'
-      }
-    ],
+    'kayitli_sehirler': [KayitliSehir.varsayilan.toMap()],
     'hatirlaticilar': {
       'cuma': {'enabled': true, 'offset': 60, 'sound': 'ezan_kisa'},
       'oruc': {'enabled': true, 'offset': 60, 'sound': 'ezan_kisa'},
@@ -112,7 +116,7 @@ class AuthService extends ChangeNotifier {
         Map<String, dynamic> loadedSettings = jsonDecode(settingsJson);
         if (loadedSettings['ana_sayfa_stili'] == null ||
             loadedSettings['ana_sayfa_stili'].isEmpty) {
-          loadedSettings['ana_sayfa_stili'] = 'Listeli';
+          loadedSettings['ana_sayfa_stili'] = 'Gökyüzü';
           final String newSettingsJson = jsonEncode(loadedSettings);
           await prefs.setString('guestSettingsData', newSettingsJson);
         }
@@ -154,190 +158,11 @@ class AuthService extends ChangeNotifier {
   }
 
   // =========================================================
-  // SADELEŞTİRİLMİŞ ÇEVİRİ MOTORU (SADECE TÜRKÇE & İNGİLİZCE)
+  // ÇEVİRİ: motor `Ceviri` sınıfında (lib/core/i18n/ceviri.dart). Burası yalnız
+  // geçerli uygulama dilini verir; eski çağrılar (`translate`) kırılmasın diye
+  // kalır. Yeni kodda `context.t(...)` kullanılır.
   // =========================================================
-  String translate(String? text) {
-    if (text == null || text.trim().isEmpty) return "";
-
-    final lang = uygulamaDili;
-    if (lang == "Türkçe") return text;
-
-    if (lang == "English") {
-      if (text.endsWith(" Dakika Önce")) {
-        String num = text.split(" ")[0];
-        return "$num Mins Before";
-      }
-      if (text.endsWith(" Dakika")) {
-        String num = text.split(" ")[0];
-        return "$num Mins";
-      }
-      if (text.endsWith(" vaktine kalan")) {
-        String name = translate(text.split(" ")[0]);
-        return "$name in";
-      }
-      if (text.endsWith(" vaktinde oku")) {
-        String name = translate(text.split(" ")[0]);
-        return "Read on $name time";
-      }
-      if (text.endsWith(" Vakti")) {
-        String name = translate(text.split(" ")[0]);
-        return "$name Time";
-      }
-      if (text.endsWith(" Ezanı")) {
-        String name = translate(text.split(" ")[0]);
-        return "$name Adhan";
-      }
-
-      final dict = {
-        // Ayarlar & Alt Menüler
-        "Otomatik": "Auto",
-        "Açık (Karanlık Tema)": "On (Dark Theme)",
-        "Kapalı (Aydınlık Tema)": "Off (Light Theme)",
-        "Uygulama görünüm temasını seçin": "Choose app appearance theme",
-        "Vazgeç": "Cancel",
-        "Ayarlar": "Settings",
-        "AKTİF GÖRÜNÜM": "ACTIVE THEME",
-        "Şehirler": "Cities",
-        "Yeni Şehir Ekle": "Add New City",
-        "Ara": "Search",
-        "Değiştir": "Change",
-        "Kaydet": "Save",
-        "Düzenle": "Edit",
-        "Türkiye": "Turkey",
-        "Konumum": "My Location",
-        "Şehir bilgileri alınamadı.": "Failed to get city data.",
-
-        // Menü & Vakitler
-        "Yakın Camiler": "Nearby Mosques",
-        "Hatim": "Hatm",
-        "Kazalar": "Missed Prayers",
-        "Ajanda": "Agenda",
-        "Dini Günler": "Religious Days",
-        "Haftanın Hutbesi": "Sermon of the Week",
-        "Multimedya": "Multimedia",
-        "Amel Defteri": "Deeds Book",
-        "Hesaplanıyor...": "Calculating...",
-        "Yükleniyor...": "Loading...",
-        "Vaktin Çıkmasına": "Time Left",
-        "Vaktine": "Time",
-        "İmsak": "Imsak",
-        "Güneş": "Sunrise",
-        "Sabah": "Fajr",
-        "Öğle": "Dhuhr",
-        "İkindi": "Asr",
-        "Akşam": "Maghrib",
-        "Yatsı": "Isha",
-
-        // Aylar & Günler
-        "Ocak": "January",
-        "Şubat": "February",
-        "Mart": "March",
-        "Nisan": "April",
-        "Mayıs": "May",
-        "Haziran": "June",
-        "Temmuz": "July",
-        "Ağustos": "August",
-        "Eylül": "September",
-        "Ekim": "October",
-        "Kasım": "November",
-        "Aralık": "December",
-        "Pzt": "Mon",
-        "Sal": "Tue",
-        "Çar": "Wed",
-        "Per": "Thu",
-        "Cum": "Fri",
-        "Cmt": "Sat",
-        "Paz": "Sun",
-        "Shawwal": "Shawwal",
-        "Ramadan": "Ramadan",
-        "Dhu al-Qidah": "Dhu al-Qidah",
-        "Dhu al-Hijjah": "Dhu al-Hijjah",
-        "Muharram": "Muharram",
-        "Safar": "Safar",
-        "Rabi al-Awwal": "Rabi al-Awwal",
-        "Rabi al-Thani": "Rabi al-Thani",
-        "Jumada al-Awwal": "Jumada al-Awwal",
-        "Jumada al-Thani": "Jumada al-Thani",
-        "Rajab": "Rajab",
-        "Shaban": "Sha'ban",
-
-        // Ayarlar Menü Öğeleri
-        "Kuran": "Quran",
-        "Kütüphane": "Library",
-        "Pusula": "Compass",
-        "İmsakiye": "Schedule",
-        "Zikirmatik": "Tasbih",
-        "Camiler": "Mosques",
-        "Dualar": "Prayers",
-        "Menü": "Menu",
-        "Vakitler": "Times",
-
-        "Hesaplama Yöntemi": "Calculation Method",
-        "İkindi Hesabı": "Asr Calculation",
-        "Temkinler": "Safety Times",
-        "Hatırlatıcılar": "Reminders",
-        "Bildirimleri Ertele": "Snooze Notifications",
-        "Vaktinde Kıl": "Pray on Time",
-        "Bildirim İzinleri": "Notification Perms",
-        "Durumu": "Status",
-        "Ses": "Sound",
-        "Uyarı Süresi": "Alert Time",
-        "İlk Uyarı Gecikmesi": "First Alert Delay",
-        "Uyarı Sıklığı": "Alert Frequency",
-        "Günler": "Days",
-        "Tüm Günler Açık": "All Days On",
-        "Tüm Günler Kapalı": "All Days Off",
-        "Vaktinden Önce Uyarı": "Early Alert",
-        "Güneş Vaktinden 60 Dakika Önce": "60 Mins Before Sunrise",
-
-        "Uygulama Dili": "App Language",
-        "Konum İzinleri": "Location Perms",
-        "Gece Modu": "Dark Mode",
-        "Canlı Etkinlik": "Live Activity",
-        "Ana Sayfa Stili": "Home Style",
-        "Hesabım": "My Account",
-        "Profilim": "My Profile",
-        "KUR'AN-I KERİM YAZI BOYUTU": "QURAN FONT SIZE",
-        "Boyut Ayarla": "Adjust Size",
-        "Açık": "On",
-        "Kapalı": "Off",
-        "Başlat": "Start",
-
-        // Kayıt / Giriş Ekranları
-        "Hesap Oluştur": "Create Account",
-        "Şifremi Unuttum": "Forgot Password",
-        "Çıkış Yap": "Log Out",
-        "Hoş Geldin!": "Welcome!",
-        "Mail Adresiniz": "Your Email",
-        "Şifre": "Password",
-        "Şifre Belirleyin": "Set Password",
-        "Kayıt Ol": "Sign Up",
-        "Giriş Yap": "Log In",
-        "Google ile Oturum Aç": "Sign in with Google",
-        "Apple ile Giriş Yap": "Sign in with Apple",
-        "veya": "or",
-        "Şifre Sıfırlama": "Reset Password",
-        "Şifrenizi mi Unuttunuz?": "Forgot your password?",
-        "Bağlantı Gönder": "Send Link",
-
-        // Çeşitli
-        "Ertele": "Snooze",
-        "Tarih Seç": "Select Date",
-        "Bitti": "Done",
-        "İptal": "Cancel",
-        "Sabah Ezanı [Kapalı]": "Fajr Adhan [Off]",
-        "Namazların geciktirilmeden kılınması için; ilk uyarı gecikme süresinden sonra uyan sıklığına göre 2 defa hatırlatma yapan bir özelliktir. 'Haydi kalk! Vakit girdi, Namazını kıl' diyen hayırlı bir arkadaş gibidir.":
-            "A feature that reminds you twice to pray on time. Like a good friend saying 'Come on, it is time to pray!'.",
-        "Varsayılan Sistem Sesi": "Default System Sound",
-        "Sesi kullanmak için önce indirmelisiniz.": "Download the sound first.",
-        "Ses Seçimi": "Select Sound",
-      };
-
-      return dict[text] ?? text;
-    }
-
-    return text;
-  }
+  String translate(String? text) => Ceviri.cevir(text, uygulamaDili);
 
   // =========================================================
   // GETTERLAR
@@ -345,9 +170,10 @@ class AuthService extends ChangeNotifier {
 
   String get anaSayfaStili {
     String stil = _user != null
-        ? (_userData?['ayarlar']?['ana_sayfa_stili'] ?? 'Listeli')
-        : (_guestSettings['ana_sayfa_stili'] ?? 'Listeli');
+        ? (_userData?['ayarlar']?['ana_sayfa_stili'] ?? 'Gökyüzü')
+        : (_guestSettings['ana_sayfa_stili'] ?? 'Gökyüzü');
     List<String> gecerliTemalar = [
+      'Gökyüzü',
       'Listeli',
       'Dairesel',
       'Analog Saat',
@@ -355,13 +181,13 @@ class AuthService extends ChangeNotifier {
       'Timeline',
       'Dashboard'
     ];
-    if (!gecerliTemalar.contains(stil)) return 'Listeli';
+    if (!gecerliTemalar.contains(stil)) return 'Gökyüzü';
     return stil;
   }
 
-  String get uygulamaDili => _user != null
-      ? (_userData?['ayarlar']?['uygulama_dili'] ?? 'Türkçe')
-      : (_guestSettings['uygulama_dili'] ?? 'Türkçe');
+  String get uygulamaDili => gecerliDil(_user != null
+      ? _userData?['ayarlar']?['uygulama_dili']
+      : _guestSettings['uygulama_dili']);
   String get hesaplamaYontemi => _user != null
       ? (_userData?['ayarlar']?['hesaplama_yontemi'] ?? 'Diyanet Takvimi')
       : _guestSettings['hesaplama_yontemi'];
@@ -392,8 +218,8 @@ class AuthService extends ChangeNotifier {
   /// Vakit bazlı ezan alarmı ayarları (İmsak/Sabah/Öğle/İkindi/Akşam/Yatsı).
   /// [hatirlaticiAyarlari] ile aynı varsayılanlarla-birleştirme deseni.
   Map<String, dynamic> get vakitEzanAyarlari {
-    final defaults = Map<String, dynamic>.from(
-        _guestSettings['vakit_ezan_ayarlari'] as Map);
+    final defaults =
+        Map<String, dynamic>.from(_guestSettings['vakit_ezan_ayarlari'] as Map);
     final kayitli = _user != null
         ? _userData?['ayarlar']?['vakit_ezan_ayarlari'] as Map?
         : _guestSettings['vakit_ezan_ayarlari'] as Map?;
@@ -445,9 +271,27 @@ class AuthService extends ChangeNotifier {
     };
   }
 
-  String get bildirimErteleDurumu => _user != null
-      ? (_userData?['ayarlar']?['bildirim_ertele'] ?? 'Kapalı')
-      : (_guestSettings['bildirim_ertele'] ?? 'Kapalı');
+  /// "Bildirimleri Ertele" bitiş anı (UTC); ertelenmemişse ya da süre
+  /// dolduysa null. Bitiş anı, seçim yapıldığında ayrıca saklanır: etiket
+  /// ("2 saat") sürenin ne zaman başladığını taşımaz.
+  DateTime? get bildirimErteleBitis {
+    final raw = _user != null
+        ? _userData?['ayarlar']?['bildirim_ertele_bitis']
+        : _guestSettings['bildirim_ertele_bitis'];
+    final ms = (raw as num?)?.toInt();
+    if (ms == null || ms <= 0) return null;
+    final bitis = DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true);
+    return bitis.isAfter(DateTime.now()) ? bitis : null;
+  }
+
+  /// Ayarlar'da görünen durum: süre dolduysa (ya da eskiden kalma, bitişi
+  /// bilinmeyen bir seçimse) "Kapalı".
+  String get bildirimErteleDurumu {
+    final etiket = _user != null
+        ? (_userData?['ayarlar']?['bildirim_ertele'] ?? 'Kapalı')
+        : (_guestSettings['bildirim_ertele'] ?? 'Kapalı');
+    return bildirimErteleBitis == null ? 'Kapalı' : etiket as String;
+  }
 
   /// Kur'an-ı Kerim sayfasında Arapça metin için yazı boyutu (px).
   double get kuranYaziBoyutu {
@@ -457,38 +301,31 @@ class AuthService extends ChangeNotifier {
     return (raw as num?)?.toDouble() ?? 28.0;
   }
 
-  List<dynamic> get kayitliSehirler => _user != null
+  /// Kayıtlı şehirler (Ayarlar > Şehirler). Depolanan biçim [KayitliSehir.toMap]
+  /// ile aynıdır (eski kayıtlar aynen okunur); bozuk satırlar atlanır ve tam bir
+  /// şehir seçili gelir.
+  List<KayitliSehir> get kayitliSehirler => KayitliSehir.listeCoz(_user != null
       ? (_userData?['ayarlar']?['kayitli_sehirler'] ??
           _guestSettings['kayitli_sehirler'])
-      : _guestSettings['kayitli_sehirler'];
+      : _guestSettings['kayitli_sehirler']);
 
-  Map<String, dynamic> get seciliSehir {
-    try {
-      return kayitliSehirler.firstWhere((s) => s['secili'] == 'true',
-          orElse: () => kayitliSehirler.first);
-    } catch (e) {
-      return _guestSettings['kayitli_sehirler'][0];
-    }
-  }
+  KayitliSehir get seciliSehir => kayitliSehirler.seciliOlan;
 
-  int get apiMethod {
-    switch (hesaplamaYontemi) {
-      case "Kuzey Amerika (ISNA)":
-        return 2;
-      case "Müslim World Lig":
-        return 3;
-      case "Ummül Kurra":
-        return 4;
-      case "Mısır":
-        return 5;
-      case "Tahran Üniversitesi":
-        return 7;
-      case "Diyanet Takvimi":
-        return 13;
-      default:
-        return 13;
-    }
-  }
+  Future<void> sehirleriKaydet(List<KayitliSehir> liste) =>
+      updateSetting('kayitli_sehirler', [for (final s in liste) s.toMap()]);
+
+  /// Vakit hesabıyla ilgili bütün ayarlar (yöntem, ikindi hesabı, temkin).
+  VakitTercihi get vakitTercihi => vakitTercihiIcin(hesaplamaYontemi);
+
+  /// [yontem] adıyla, geri kalan ayarlar (ikindi, temkin) mevcut haliyle
+  /// tercih. Şehir önizlemesi, henüz kaydedilmemiş bir yöntemi denemek için
+  /// kullanır.
+  VakitTercihi vakitTercihiIcin(String yontem) => VakitTercihi.ayarlardan(
+        yontem: yontem,
+        ikindiHesabi: ikindiHesabi,
+        temkin: temkinDegerleri,
+        varsayilanTemkin: _varsayilanTemkinler,
+      );
 
   Future<void> updateSetting(String key, dynamic value) async {
     if (_user != null) {
@@ -529,7 +366,7 @@ class AuthService extends ChangeNotifier {
           'email': email.trim(),
           'kayit_tarihi': FieldValue.serverTimestamp(),
           'ayarlar': {
-            'ana_sayfa_stili': 'Listeli',
+            'ana_sayfa_stili': 'Gökyüzü',
             'hesaplama_yontemi': _guestSettings['hesaplama_yontemi'],
             'ikindi_hesabi': _guestSettings['ikindi_hesabi'],
             'uygulama_dili': _guestSettings['uygulama_dili'],
@@ -578,7 +415,7 @@ class AuthService extends ChangeNotifier {
           'email': userCredential.user!.email,
           'kayit_tarihi': FieldValue.serverTimestamp(),
           'ayarlar': {
-            'ana_sayfa_stili': 'Listeli',
+            'ana_sayfa_stili': 'Gökyüzü',
             'hesaplama_yontemi': _guestSettings['hesaplama_yontemi'],
             'ikindi_hesabi': _guestSettings['ikindi_hesabi'],
             'uygulama_dili': _guestSettings['uygulama_dili'],
@@ -597,6 +434,67 @@ class AuthService extends ChangeNotifier {
   Future<void> logout() async {
     await _googleSignIn.signOut();
     await _auth.signOut();
+  }
+
+  /// Hesabı ve ayarlarını kalıcı olarak siler (Play'in "hesap silme"
+  /// zorunluluğu). Geri alınamaz. Kullanıcının aldığı ama henüz tamamlamadığı
+  /// Hatim görevleri önce bırakılır ([HatimRepository.dropTask]): paylaşılan
+  /// hatimin sayaçları doğru kalır, görev başkasına açılır. Son girişten uzun
+  /// süre geçtiyse Firebase tekrar giriş ister (kod 'requires-recent-login');
+  /// kullanıcı normal giriş akışıyla tekrar girip yeniden dener.
+  ///
+  /// Tamamlanmış Hatim görevlerinde kalan görünen ad (`hatimler/*/assignments`
+  /// içindeki `userName`) silinmez (kayıt paylaşılan hatimin tamamlanma
+  /// sayısına dahil, silinirse istatistik bozulur); bunun yerine sabit bir
+  /// değere anonimleştirilir. Firestore kuralı yalnız bu dar güncellemeye
+  /// izin verir (bkz. firestore.rules).
+  static const _silinmisKullaniciAdi = 'Silinmiş Kullanıcı';
+
+  Future<String?> deleteAccount() async {
+    final u = _auth.currentUser;
+    if (u == null) return 'Giriş yapılmamış.';
+    _setLoading(true);
+    try {
+      final gorevler = await _firestore
+          .collection('users')
+          .doc(u.uid)
+          .collection('hatimGorevleri')
+          .get();
+      final hatimRepo = HatimRepository();
+      for (final g in gorevler.docs) {
+        final hatimId = g.data()['hatimId']?.toString();
+        if (hatimId != null) {
+          await hatimRepo.dropTask(
+              hatimId: hatimId, itemId: g.id, userId: u.uid);
+        }
+      }
+
+      // Tamamlanmış görevlerdeki adı anonimleştir. SIRALAMA ÖNEMLİ: bu,
+      // Auth hesabı silinmeden ÖNCE olmalı; hesap silindikten sonra oturum
+      // geçersiz sayılır ve Firestore kuralı hiçbir yazmaya izin vermez.
+      final tamamlananlar = await _firestore
+          .collectionGroup('assignments')
+          .where('userId', isEqualTo: u.uid)
+          .get();
+      for (final d in tamamlananlar.docs) {
+        if (d.data()['status'] == 'completed') {
+          await d.reference.update({'userName': _silinmisKullaniciAdi});
+        }
+      }
+
+      await _firestore.collection('users').doc(u.uid).delete();
+      await _googleSignIn.signOut();
+      await u.delete();
+      _setLoading(false);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      _setLoading(false);
+      return _translateFirebaseError(e.code);
+    } catch (e) {
+      debugPrint('Hesap silme hatası: $e');
+      _setLoading(false);
+      return 'Hesap silinemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.';
+    }
   }
 
   String _translateFirebaseError(String code) {

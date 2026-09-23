@@ -163,15 +163,17 @@ void main() {
     late _FakeHatimRepository repo;
 
     setUp(() {
-      final hatim = HatimModel(
+      const hatim = HatimModel(
         id: "42010",
         date: "06.04.2026",
         participants: 0,
         okunmaYuzdesi: 0,
         paylasilmaYuzdesi: 0,
-        tasks: const [],
+        tasks: [],
       );
-      repo = _FakeHatimRepository([hatim], {
+      repo = _FakeHatimRepository([
+        hatim
+      ], {
         "42010": [_item("c1")],
       });
     });
@@ -292,8 +294,7 @@ void main() {
       expect(updated.tasks.first.availableItems.first.isCompleted, isTrue);
     });
 
-    test('dropTask returns the item to available and clears myTasks',
-        () async {
+    test('dropTask returns the item to available and clears myTasks', () async {
       final provider = HatimProvider(repository: repo);
       provider.onAuthChanged("user1");
       await _settle();

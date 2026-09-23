@@ -1,3 +1,4 @@
+import '../../core/i18n/cevir.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
@@ -41,8 +42,9 @@ class KutuphaneIcerikPage extends StatelessWidget {
               child: CircularProgressIndicator(color: Colors.amber));
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(
-              child: Text("Bu kategoriye ait içerik henüz eklenmemiş."));
+          return Center(
+              child: Text(
+                  context.t("Bu kategoriye ait içerik henüz eklenmemiş.")));
         }
 
         final altOgeler = snapshot.data!;

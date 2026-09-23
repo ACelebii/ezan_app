@@ -6,6 +6,13 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Ezan bildirimlerinin dakikasında çalması için (Android 12+). Android 14+'ta
+         kullanıcı "Alarmlar ve hatırlatıcılar" ekranından açmalıdır. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Arka plan bildirim yenilemesinin (WorkManager, 12 saatte bir) pil
+         tasarrufuyla geciktirilmemesi için "Pil optimizasyonunu yoksay" izni
+         istenebilsin diye (Hatırlatıcılar sayfasındaki kart, isteğe bağlı). -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <!-- app_badge_plus: Kazalar sayısını uygulama ikonunda rozet olarak
          gösterebilmek için, bu launcher'ları destekleyen üreticilerin
@@ -23,7 +30,7 @@
     <uses-permission android:name="com.huawei.android.launcher.permission.WRITE_SETTINGS" />
 
     <application
-        android:label="ezan_app"
+        android:label="Ezan Vakti"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity
